@@ -1,1 +1,1 @@
-# Graphite
+# Graphite: A graph based language
