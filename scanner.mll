@@ -37,6 +37,13 @@ rule token = parse
 | "int"    { INT }
 | "bool"   { BOOL }
 | "float"  { FLOAT }
+| "node"   { NODE }
+| "edge"   { EDGE }
+| "graph"  { GRAPH }
+| "union"  { UNION }
+| "inter"  { INTER }
+| "diff"   { DIFF }
+| "xor"    { XOR }
 | "null"   { NULL }
 | "true"   { BLIT(true)  }
 | "false"  { BLIT(false) }
