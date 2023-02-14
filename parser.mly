@@ -2,9 +2,9 @@
 open Ast
 %}
 
-%token SEMI LPAREN RPAREN LBRACE RBRACE COMMA PLUS MINUS TIMES DIVIDE ASSIGN
+%token SEMI LPAREN RPAREN LBRACE RBRACE COMMA PLUS MINUS TIMES DIVIDE ASSIGN COLON
 %token NOT EQ NEQ LT LEQ GT GEQ AND OR
-%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID
+%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT NULL
 %token <int> LITERAL
 %token <bool> BLIT
 %token <string> ID FLIT
@@ -35,8 +35,8 @@ decls:
  | decls fdecl { (fst $1, ($2 :: snd $1)) }
 
 fdecl:
-   typ ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
-     { { typ = $1;
+   ty ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
+     { { ty = $1;
 	 fname = $2;
 	 formals = List.rev $4;
 	 locals = List.rev $7;
@@ -47,21 +47,21 @@ formals_opt:
   | formal_list   { $1 }
 
 formal_list:
-    typ ID                   { [($1,$2)]     }
-  | formal_list COMMA typ ID { ($3,$4) :: $1 }
+    ty ID                   { [($1,$2)]     }
+  | formal_list COMMA ty ID { ($3,$4) :: $1 }
 
-typ:
+ty:
     INT   { Int   }
   | BOOL  { Bool  }
   | FLOAT { Float }
-  | VOID  { Void  }
+  | NULL  { Null  }
 
 vdecl_list:
     /* nothing */    { [] }
   | vdecl_list vdecl { $2 :: $1 }
 
 vdecl:
-   typ ID SEMI { ($1, $2) }
+   ty ID SEMI { ($1, $2) }
 
 stmt_list:
     /* nothing */  { [] }
@@ -82,24 +82,24 @@ expr_opt:
   | expr          { $1 }
 
 expr:
-    LITERAL          { Literal($1)            }
+    LITERAL          { IntLit($1)            }
   | FLIT	     { Fliteral($1)           }
   | BLIT             { BoolLit($1)            }
   | ID               { Id($1)                 }
-  | expr PLUS   expr { Binop($1, Add,   $3)   }
-  | expr MINUS  expr { Binop($1, Sub,   $3)   }
-  | expr TIMES  expr { Binop($1, Mult,  $3)   }
-  | expr DIVIDE expr { Binop($1, Div,   $3)   }
-  | expr EQ     expr { Binop($1, Equal, $3)   }
-  | expr NEQ    expr { Binop($1, Neq,   $3)   }
-  | expr LT     expr { Binop($1, Less,  $3)   }
-  | expr LEQ    expr { Binop($1, Leq,   $3)   }
-  | expr GT     expr { Binop($1, Greater, $3) }
-  | expr GEQ    expr { Binop($1, Geq,   $3)   }
-  | expr AND    expr { Binop($1, And,   $3)   }
-  | expr OR     expr { Binop($1, Or,    $3)   }
-  | MINUS expr %prec NOT { Unop(Neg, $2)      }
-  | NOT expr         { Unop(Not, $2)          }
+  | expr PLUS   expr { BinExp($1, Add,   $3)   }
+  | expr MINUS  expr { BinExp($1, Sub,   $3)   }
+  | expr TIMES  expr { BinExp($1, Mult,  $3)   }
+  | expr DIVIDE expr { BinExp($1, Div,   $3)   }
+  | expr EQ     expr { BinExp($1, Eq, $3)   }
+  | expr NEQ    expr { BinExp($1, Neq,   $3)   }
+  | expr LT     expr { BinExp($1, Less,  $3)   }
+  | expr LEQ    expr { BinExp($1, Leq,   $3)   }
+  | expr GT     expr { BinExp($1, Grtr, $3) }
+  | expr GEQ    expr { BinExp($1, Geq,   $3)   }
+  | expr AND    expr { BinExp($1, And,   $3)   }
+  | expr OR     expr { BinExp($1, Or,    $3)   }
+  | MINUS expr %prec NOT { UnExp(Neg, $2)      }
+  | NOT expr         { UnExp(Not, $2)          }
   | ID ASSIGN expr   { Assign($1, $3)         }
   | ID LPAREN args_opt RPAREN { Call($1, $3)  }
   | LPAREN expr RPAREN { $2                   }

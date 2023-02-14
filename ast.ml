@@ -1,22 +1,24 @@
-type binop = Add | Sub | Mul | Div | Eq | Neq | Less | Leq
+type binop = Add | Sub | Mult | Div | Eq | Neq | Less | Leq
                  | Grtr | Geq | And | Or 
 
 type unop = Neg | Not 
 
-type ty = Graph | Node | Edge | Int | Float | String | Bool | Null
+type ty = (*Graph | Node | Edge | *) Int | Float | Bool | Null
 
-type setop = Union | Inter | Diff | Xor
+type bind = ty * string
+
+(*type setop = Union | Inter | Diff | Xor*)
 
 type expr =
      BinExp of expr * binop * expr
    | UnExp of unop * expr
-   | SetExp of expr * setop * expr
+   (*| SetExp of expr * setop * expr*)
    | IntLit of int
    | Fliteral of string
-   | BoolList of bool
-   | Graph of string
+   | BoolLit of bool
+   (*| Graph of string
    | Node of string
-   | Edge of string 
+   | Edge of string *)
    | Id of string
    | Assign of string * expr
    | Call of string * expr list
@@ -33,7 +35,7 @@ type stmt =
 
 
 type func_decl = {
-    typ : typ;
+    ty : ty;
     fname : string;
     formals : bind list;
     locals : bind list;
@@ -49,11 +51,11 @@ let string_of_op = function
   | Sub -> "-"
   | Mult -> "*"
   | Div -> "/"
-  | Equal -> "=="
+  | Eq -> "=="
   | Neq -> "!="
   | Less -> "<"
   | Leq -> "<="
-  | Greater -> ">"
+  | Grtr -> ">"
   | Geq -> ">="
   | And -> "&&"
   | Or -> "||"
@@ -63,14 +65,14 @@ let string_of_uop = function
   | Not -> "!"
 
 let rec string_of_expr = function
-    Literal(l) -> string_of_int l
+    IntLit(l) -> string_of_int l
   | Fliteral(l) -> l
   | BoolLit(true) -> "true"
   | BoolLit(false) -> "false"
   | Id(s) -> s
-  | Binop(e1, o, e2) ->
+  | BinExp(e1, o, e2) ->
       string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
-  | Unop(o, e) -> string_of_uop o ^ string_of_expr e
+  | UnExp(o, e) -> string_of_uop o ^ string_of_expr e
   | Assign(v, e) -> v ^ " = " ^ string_of_expr e
   | Call(f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
@@ -93,13 +95,13 @@ let string_of_typ = function
     Int -> "int"
   | Bool -> "bool"
   | Float -> "float"
-  | Void -> "void"
+  | Null -> "null"
 
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
 
 let string_of_fdecl fdecl =
-  string_of_typ fdecl.typ ^ " " ^
+  string_of_typ fdecl.ty ^ " " ^
   fdecl.fname ^ "(" ^ String.concat ", " (List.map snd fdecl.formals) ^
   ")\n{\n" ^
   String.concat "" (List.map string_of_vdecl fdecl.locals) ^
