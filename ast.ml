@@ -21,6 +21,7 @@ type expr =
   | Setop of expr * setop * expr
   | Assign of string * expr
   | Call of string * expr list
+  | Node of string * expr * expr (* TODO: confirm this & test *)
   | Noexpr
 
 type stmt =
@@ -81,6 +82,7 @@ let rec string_of_expr = function
   | Assign(v, e) -> v ^ " = " ^ string_of_expr e
   | Call(f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
+  | Node(_, _, _) -> "Node"
   | Noexpr -> ""
 
 let rec string_of_stmt = function

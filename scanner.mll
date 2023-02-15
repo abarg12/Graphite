@@ -6,8 +6,9 @@ let digit = ['0' - '9']
 let digits = digit+
 
 rule token = parse
-  [' ' '\t' '\r' '\n'] { token lexbuf } (* Whitespace *)
-  | "#"     { comment lexbuf }           (* Comments *)
+  [' ' '\t' '\r'] { token lexbuf } (* Whitespace *)
+  | "#"      { comment lexbuf }           (* Comments *)
+  | '\n'     { NEWLINE }
   | '('      { LPAREN }
   | ')'      { RPAREN }
   | '{'      { LBRACE }
@@ -26,9 +27,9 @@ rule token = parse
   | "<="     { LEQ }
   | ">"      { GT }
   | ">="     { GEQ }
-  | "&&"     { AND }
-  | "||"     { OR }
-  | "!"      { NOT }
+  | "and"    { AND }
+  | "or"     { OR }
+  | "not"    { NOT }
   | "if"     { IF }
   | "else"   { ELSE }
   | "for"    { FOR }
@@ -38,6 +39,7 @@ rule token = parse
   | "bool"   { BOOL }
   | "float"  { FLOAT }
   | "void"   { VOID }
+  | "node"   { NODE }
   | "true"   { BLIT(true)  }
   | "false"  { BLIT(false) }
   | digits as lxm { LITERAL(int_of_string lxm) }

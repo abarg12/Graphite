@@ -4,12 +4,13 @@
 open Ast
 %}
 
-%token SEMI LPAREN RPAREN LBRACE RBRACE COMMA PLUS MINUS TIMES DIVIDE ASSIGN COLON
+%token SEMI LPAREN RPAREN LBRACE RBRACE COMMA PLUS MINUS TIMES DIVIDE ASSIGN COLON NEWLINE
 %token NOT EQ NEQ LT LEQ GT GEQ AND OR INTER UNION DIFF XOR
 %token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID
 %token <int> LITERAL
 %token <bool> BLIT
 %token <string> ID FLIT STRING
+%token NODE
 %token EOF
 
 %start program
@@ -38,12 +39,12 @@ decls:
  | decls fdecl { (fst $1, ($2 :: snd $1)) }
 
 fdecl:
-   typ ID LPAREN formals_opt RPAREN COLON vdecl_list stmt_list
+   typ ID LPAREN formals_opt RPAREN COLON NEWLINE vdecl_list stmt_list
      { { typ = $1;
 	 fname = $2;
 	 formals = List.rev $4;
-	 locals = List.rev $7;
-	 body = List.rev $8 } }
+	 locals = List.rev $8;
+	 body = List.rev $9 } }
 
 formals_opt:
     /* nothing */ { [] }
@@ -64,15 +65,15 @@ vdecl_list:
   | vdecl_list vdecl { $2 :: $1 }
 
 vdecl:
-   typ ID  { ($1, $2) }
+   typ ID NEWLINE { ($1, $2) }
 
 stmt_list:
     /* nothing */  { [] }
   | stmt_list stmt { $2 :: $1 }
 
 stmt:
-    expr                               { Expr $1               }
-  | RETURN expr_opt                     { Return $2             }
+    expr NEWLINE                            { Expr $1               }
+  | RETURN expr_opt NEWLINE                 { Return $2             }
   | LBRACE stmt_list RBRACE                 { Block(List.rev $2)    }
   | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) }
   | IF LPAREN expr RPAREN stmt ELSE stmt    { If($3, $5, $7)        }
@@ -89,6 +90,7 @@ expr:
   | FLIT	           { Fliteral($1)           }
   | BLIT             { BoolLit($1)            }
   | ID               { Id($1)                 }
+  | NODE ID expr expr { Node($2, $3, $4)      }
   | expr PLUS   expr { Binop($1, Add,   $3)   }
   | expr MINUS  expr { Binop($1, Sub,   $3)   }
   | expr TIMES  expr { Binop($1, Mult,  $3)   }
