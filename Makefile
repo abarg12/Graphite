@@ -1,5 +1,6 @@
-calc.native : toplevel.ml ast.ml parser.mly scanner.mll
-	ocamlbuild toplevel.native
+toplevel.native : parser.mly scanner.mll 
+	opam exec -- \
+	ocamlbuild -use-ocamlfind toplevel.native
 
 clean :
 	ocamlbuild -clean

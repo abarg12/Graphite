@@ -1,13 +1,15 @@
+/* Ocamlyacc parser for MicroC */
+
 %{
 open Ast
 %}
 
 %token SEMI LPAREN RPAREN LBRACE RBRACE COMMA PLUS MINUS TIMES DIVIDE ASSIGN COLON
-%token NOT EQ NEQ LT LEQ GT GEQ AND OR
-%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT NULL
+%token NOT EQ NEQ LT LEQ GT GEQ AND OR INTER UNION DIFF XOR
+%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID
 %token <int> LITERAL
 %token <bool> BLIT
-%token <string> ID FLIT
+%token <string> ID FLIT STRING
 %token EOF
 
 %start program
@@ -20,6 +22,7 @@ open Ast
 %left AND
 %left EQ NEQ
 %left LT GT LEQ GEQ
+%left INTER UNION DIFF XOR
 %left PLUS MINUS
 %left TIMES DIVIDE
 %right NOT
@@ -35,8 +38,8 @@ decls:
  | decls fdecl { (fst $1, ($2 :: snd $1)) }
 
 fdecl:
-   ty ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
-     { { ty = $1;
+   typ ID LPAREN formals_opt RPAREN COLON vdecl_list stmt_list
+     { { typ = $1;
 	 fname = $2;
 	 formals = List.rev $4;
 	 locals = List.rev $7;
@@ -47,29 +50,29 @@ formals_opt:
   | formal_list   { $1 }
 
 formal_list:
-    ty ID                   { [($1,$2)]     }
-  | formal_list COMMA ty ID { ($3,$4) :: $1 }
+    typ ID                   { [($1,$2)]     }
+  | formal_list COMMA typ ID { ($3,$4) :: $1 }
 
-ty:
+typ:
     INT   { Int   }
   | BOOL  { Bool  }
   | FLOAT { Float }
-  | NULL  { Null  }
+  | VOID  { Void  }
 
 vdecl_list:
     /* nothing */    { [] }
   | vdecl_list vdecl { $2 :: $1 }
 
 vdecl:
-   ty ID SEMI { ($1, $2) }
+   typ ID  { ($1, $2) }
 
 stmt_list:
     /* nothing */  { [] }
   | stmt_list stmt { $2 :: $1 }
 
 stmt:
-    expr SEMI                               { Expr $1               }
-  | RETURN expr_opt SEMI                    { Return $2             }
+    expr                               { Expr $1               }
+  | RETURN expr_opt                     { Return $2             }
   | LBRACE stmt_list RBRACE                 { Block(List.rev $2)    }
   | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) }
   | IF LPAREN expr RPAREN stmt ELSE stmt    { If($3, $5, $7)        }
@@ -82,24 +85,28 @@ expr_opt:
   | expr          { $1 }
 
 expr:
-    LITERAL          { IntLit($1)            }
-  | FLIT	     { Fliteral($1)           }
+    LITERAL          { Literal($1)            }
+  | FLIT	           { Fliteral($1)           }
   | BLIT             { BoolLit($1)            }
   | ID               { Id($1)                 }
-  | expr PLUS   expr { BinExp($1, Add,   $3)   }
-  | expr MINUS  expr { BinExp($1, Sub,   $3)   }
-  | expr TIMES  expr { BinExp($1, Mult,  $3)   }
-  | expr DIVIDE expr { BinExp($1, Div,   $3)   }
-  | expr EQ     expr { BinExp($1, Eq, $3)   }
-  | expr NEQ    expr { BinExp($1, Neq,   $3)   }
-  | expr LT     expr { BinExp($1, Less,  $3)   }
-  | expr LEQ    expr { BinExp($1, Leq,   $3)   }
-  | expr GT     expr { BinExp($1, Grtr, $3) }
-  | expr GEQ    expr { BinExp($1, Geq,   $3)   }
-  | expr AND    expr { BinExp($1, And,   $3)   }
-  | expr OR     expr { BinExp($1, Or,    $3)   }
-  | MINUS expr %prec NOT { UnExp(Neg, $2)      }
-  | NOT expr         { UnExp(Not, $2)          }
+  | expr PLUS   expr { Binop($1, Add,   $3)   }
+  | expr MINUS  expr { Binop($1, Sub,   $3)   }
+  | expr TIMES  expr { Binop($1, Mult,  $3)   }
+  | expr DIVIDE expr { Binop($1, Div,   $3)   }
+  | expr EQ     expr { Binop($1, Equal, $3)   }
+  | expr NEQ    expr { Binop($1, Neq,   $3)   }
+  | expr LT     expr { Binop($1, Less,  $3)   }
+  | expr LEQ    expr { Binop($1, Leq,   $3)   }
+  | expr GT     expr { Binop($1, Greater, $3) }
+  | expr GEQ    expr { Binop($1, Geq,   $3)   }
+  | expr AND    expr { Binop($1, And,   $3)   }
+  | expr OR     expr { Binop($1, Or,    $3)   }
+  | expr UNION  expr { Setop($1, Union, $3)   }
+  | expr INTER  expr { Setop($1, Inter, $3)   }
+  | expr DIFF   expr { Setop($1, Diff, $3)    }
+  | expr XOR    expr { Setop($1, Xor, $3)     }
+  | MINUS expr %prec NOT { Unop(Neg, $2)      }
+  | NOT expr         { Unop(Not, $2)          }
   | ID ASSIGN expr   { Assign($1, $3)         }
   | ID LPAREN args_opt RPAREN { Call($1, $3)  }
   | LPAREN expr RPAREN { $2                   }

@@ -1,4 +1,4 @@
-int main() {
-   int x = 4 + 4;
-   return x;
-}
+int main():
+   # test comment
+   int a
+   return 0

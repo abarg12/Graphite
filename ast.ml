@@ -1,29 +1,27 @@
-type binop = Add | Sub | Mult | Div | Eq | Neq | Less | Leq
-                 | Grtr | Geq | And | Or 
+(* Abstract Syntax Tree and functions for printing it *)
 
-type unop = Neg | Not 
+type op = Add | Sub | Mult | Div | Equal | Neq | Less | Leq | Greater | Geq |
+          And | Or 
 
-type ty = (*Graph | Node | Edge | *) Int | Float | Bool | Null
+type setop = Inter | Diff | Union | Xor
 
-type bind = ty * string
+type uop = Neg | Not
 
-(*type setop = Union | Inter | Diff | Xor*)
+type typ = Int | Bool | Float | Void
+
+type bind = typ * string
 
 type expr =
-     BinExp of expr * binop * expr
-   | UnExp of unop * expr
-   (*| SetExp of expr * setop * expr*)
-   | IntLit of int
-   | Fliteral of string
-   | BoolLit of bool
-   (*| Graph of string
-   | Node of string
-   | Edge of string *)
-   | Id of string
-   | Assign of string * expr
-   | Call of string * expr list
-   | Noexpr
-
+    Literal of int
+  | Fliteral of string
+  | BoolLit of bool
+  | Id of string
+  | Binop of expr * op * expr
+  | Unop of uop * expr
+  | Setop of expr * setop * expr
+  | Assign of string * expr
+  | Call of string * expr list
+  | Noexpr
 
 type stmt =
     Block of stmt list
@@ -33,9 +31,8 @@ type stmt =
   | For of expr * expr * expr * stmt
   | While of expr * stmt
 
-
 type func_decl = {
-    ty : ty;
+    typ : typ;
     fname : string;
     formals : bind list;
     locals : bind list;
@@ -51,28 +48,36 @@ let string_of_op = function
   | Sub -> "-"
   | Mult -> "*"
   | Div -> "/"
-  | Eq -> "=="
+  | Equal -> "=="
   | Neq -> "!="
   | Less -> "<"
   | Leq -> "<="
-  | Grtr -> ">"
+  | Greater -> ">"
   | Geq -> ">="
   | And -> "&&"
   | Or -> "||"
+
+let string_of_setop = function
+    Union -> "union"
+  | Inter -> "inter"
+  | Xor -> "xor"
+  | Diff -> "diff"
 
 let string_of_uop = function
     Neg -> "-"
   | Not -> "!"
 
 let rec string_of_expr = function
-    IntLit(l) -> string_of_int l
+    Literal(l) -> string_of_int l
   | Fliteral(l) -> l
   | BoolLit(true) -> "true"
   | BoolLit(false) -> "false"
   | Id(s) -> s
-  | BinExp(e1, o, e2) ->
+  | Binop(e1, o, e2) ->
       string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
-  | UnExp(o, e) -> string_of_uop o ^ string_of_expr e
+  | Unop(o, e) -> string_of_uop o ^ string_of_expr e
+  | Setop(e1, o, e2) ->
+      string_of_expr e1 ^ " " ^ string_of_setop o ^ " " ^ string_of_expr e2
   | Assign(v, e) -> v ^ " = " ^ string_of_expr e
   | Call(f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
@@ -82,12 +87,12 @@ let rec string_of_stmt = function
     Block(stmts) ->
       "{\n" ^ String.concat "" (List.map string_of_stmt stmts) ^ "}\n"
   | Expr(expr) -> string_of_expr expr ^ ";\n";
-  | Return(expr) -> "return " ^ string_of_expr expr ^ ";\n";
+  | Return(expr) -> "return " ^ string_of_expr expr ^ "\n";
   | If(e, s, Block([])) -> "if (" ^ string_of_expr e ^ ")\n" ^ string_of_stmt s
   | If(e, s1, s2) ->  "if (" ^ string_of_expr e ^ ")\n" ^
       string_of_stmt s1 ^ "else\n" ^ string_of_stmt s2
   | For(e1, e2, e3, s) ->
-      "for (" ^ string_of_expr e1  ^ " ; " ^ string_of_expr e2 ^ " ; " ^
+      "for (" ^ string_of_expr e1  ^ string_of_expr e2 ^ " ; " ^
       string_of_expr e3  ^ ") " ^ string_of_stmt s
   | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
 
@@ -95,18 +100,17 @@ let string_of_typ = function
     Int -> "int"
   | Bool -> "bool"
   | Float -> "float"
-  | Null -> "null"
+  | Void -> "void"
 
-
-let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
+let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ "\n"
 
 let string_of_fdecl fdecl =
-  string_of_typ fdecl.ty ^ " " ^
+  string_of_typ fdecl.typ ^ " " ^
   fdecl.fname ^ "(" ^ String.concat ", " (List.map snd fdecl.formals) ^
-  ")\n{\n" ^
+  "):\n" ^
   String.concat "" (List.map string_of_vdecl fdecl.locals) ^
   String.concat "" (List.map string_of_stmt fdecl.body) ^
-  "}\n"
+  "\n"
 
 let string_of_program (vars, funcs) =
   String.concat "" (List.map string_of_vdecl vars) ^ "\n" ^
