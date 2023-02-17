@@ -1,4 +1,6 @@
 int main():
    # test comment
    int a
-   return 0
+   int b
+   b = 2
+   return 0 

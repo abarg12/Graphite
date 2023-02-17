@@ -7,7 +7,7 @@ type setop = Inter | Diff | Union | Xor
 
 type uop = Neg | Not
 
-type typ = Int | Bool | Float | Void
+type typ = Int | Bool | Float | Void | Node
 
 type bind = typ * string
 
@@ -21,7 +21,6 @@ type expr =
   | Setop of expr * setop * expr
   | Assign of string * expr
   | Call of string * expr list
-  | Node of string * expr * expr (* TODO: confirm this & test *)
   | Noexpr
 
 type stmt =
@@ -55,8 +54,8 @@ let string_of_op = function
   | Leq -> "<="
   | Greater -> ">"
   | Geq -> ">="
-  | And -> "&&"
-  | Or -> "||"
+  | And -> "and"
+  | Or -> "or"
 
 let string_of_setop = function
     Union -> "union"
@@ -66,7 +65,7 @@ let string_of_setop = function
 
 let string_of_uop = function
     Neg -> "-"
-  | Not -> "!"
+  | Not -> "not"
 
 let rec string_of_expr = function
     Literal(l) -> string_of_int l
@@ -82,7 +81,6 @@ let rec string_of_expr = function
   | Assign(v, e) -> v ^ " = " ^ string_of_expr e
   | Call(f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
-  | Node(_, _, _) -> "Node"
   | Noexpr -> ""
 
 let rec string_of_stmt = function
@@ -103,6 +101,7 @@ let string_of_typ = function
   | Bool -> "bool"
   | Float -> "float"
   | Void -> "void"
+  | Node -> "node"
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ "\n"
 
