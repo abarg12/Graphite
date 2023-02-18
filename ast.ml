@@ -109,6 +109,8 @@ let string_of_fdecl fdecl =
   string_of_typ fdecl.typ ^ " " ^
   fdecl.fname ^ "(" ^ String.concat ", " (List.map snd fdecl.formals) ^
   "):\n" ^
+  (*** TODO: indent each line inside a function, possibly another list operation
+           to add a tab character at the beginning of each line ***)
   String.concat "" (List.map string_of_vdecl fdecl.locals) ^
   String.concat "" (List.map string_of_stmt fdecl.body) ^
   "\n"
