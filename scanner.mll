@@ -8,7 +8,7 @@ let digits = digit+
 rule token = parse
   [' ' '\t' '\r'] { token lexbuf } (* Whitespace *)
   | "#"      { comment lexbuf }           (* Comments *)
-  | '\n'     { NEWLINE }
+  | '\n'+    { NEWLINE }
   | "//"     { comment lexbuf }
   | '('      { LPAREN }
   | ')'      { RPAREN }
