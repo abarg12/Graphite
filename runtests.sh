@@ -20,4 +20,3 @@ for entry in ./tests/negative/* ./tests/positive/*; do
     fi
 done
 
-

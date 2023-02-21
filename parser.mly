@@ -4,13 +4,13 @@
 open Ast
 %}
 
-%token SEMI LPAREN RPAREN LBRACE RBRACE COMMA PLUS MINUS TIMES DIVIDE ASSIGN COLON NEWLINE
+%token SEMI LPAREN RPAREN LBRACE RBRACE COMMA PLUS MINUS TIMES DIVIDE ASSIGN COLON NEWLINE DOT
 %token NOT EQ NEQ LT LEQ GT GEQ AND OR INTER UNION DIFF XOR
-%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID
+%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID STRING_T
 %token <int> LITERAL
 %token <bool> BLIT
 %token <string> ID FLIT STRING
-%token NODE //(*TODO: how do we represent the ocaml type of a NODE? We can't just put <record> probably?*)
+%token NODE EDGE GRAPH 
 %token EOF
 
 %start program
@@ -46,7 +46,7 @@ fdecl:
      { { typ = $1;
          fname = $2;
          formals = List.rev $4;
-         body = (List.rev (fst $9), List.rev (snd $9)) } }
+         body = (List.rev (fst $7), List.rev (snd $7)) } }
 
 formals_opt:
     /* nothing */ { [] }
@@ -61,7 +61,10 @@ typ:
   | BOOL  { Bool  }
   | FLOAT { Float }
   | VOID  { Void  }
-  | NODE  { Node  } //(* is this correct way to list new node type *)
+  | NODE  { Node  } 
+  | EDGE  { Edge  }
+  | GRAPH { Graph } // (** might need to change ??? **)
+  | STRING_T { String }
 
 func_body:
   /* nothing */ { ([], [])               }
@@ -75,7 +78,7 @@ vdecl_list:
 //(*** TODO: add addtional rule to allow for declarations and assignment in one line ***)
 vdecl:
    typ ID SEMI  { ($1, $2) }
-
+   
 stmt_list:
     /* nothing */  { [] }
   | stmt_list stmt { $2 :: $1 }
@@ -84,7 +87,7 @@ stmt:
     expr SEMI                            { Expr $1               }
   | RETURN expr_opt SEMI                 { Return $2             }
   | LBRACE stmt_list RBRACE                 { Block(List.rev $2)    }
-  | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) }. (* might want to change syntax of if and for *)
+  | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) } //(* might want to change syntax of if and for *)
   | IF LPAREN expr RPAREN stmt ELSE stmt    { If($3, $5, $7)        }
   | FOR LPAREN expr_opt SEMI expr SEMI expr_opt RPAREN stmt  
                                             { For($3, $5, $7, $9)   }
@@ -100,6 +103,7 @@ expr: //(*** do we add node as an expression? ***)
   | FLIT	           { Fliteral($1)           }
   | BLIT             { BoolLit($1)            }
   | ID               { Id($1)                 }
+  | STRING           { String($1)             }
   | expr PLUS   expr { Binop($1, Add,   $3)   }
   | expr MINUS  expr { Binop($1, Sub,   $3)   }
   | expr TIMES  expr { Binop($1, Mult,  $3)   }
@@ -121,6 +125,9 @@ expr: //(*** do we add node as an expression? ***)
   | ID ASSIGN expr   { Assign($1, $3)         }
   | ID LPAREN args_opt RPAREN { Call($1, $3)  } 
   | LPAREN expr RPAREN { $2                   }
+  | ID DOT ID        { DotOp($1, $3) }
+  | ID DOT ID ASSIGN expr SEMI { DotAssign($1, $3, $5) }
+
 
 args_opt:
     /* nothing */ { [] }

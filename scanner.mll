@@ -9,6 +9,7 @@ rule token = parse
   [' ' '\t' '\r' '\n'] { token lexbuf } (* Whitespace *)
   | "#"      { comment lexbuf }           (* Comments *)
   | "//"     { comment lexbuf }
+  | '.'      { DOT }
   | '('      { LPAREN }
   | ')'      { RPAREN }
   | '{'      { LBRACE }
@@ -30,6 +31,10 @@ rule token = parse
   | "and"    { AND }
   | "or"     { OR }
   | "not"    { NOT }
+  | "union"  { UNION }
+  | "diff"   { DIFF }
+  | "inter"  { INTER }
+  | "xor"    { XOR }
   | "if"     { IF }
   | "else"   { ELSE }
   | "for"    { FOR }
@@ -40,12 +45,15 @@ rule token = parse
   | "float"  { FLOAT }
   | "void"   { VOID }
   | "node"   { NODE }
+  | "edge"   { EDGE }
+  | "graph"  { GRAPH }
+  | "string" { STRING_T }
   | "true"   { BLIT(true)  }
   | "false"  { BLIT(false) }
   | digits as lxm { LITERAL(int_of_string lxm) }
   | digits '.'  digit* as lxm { FLIT(lxm) }
   | ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_']* as lxm { ID(lxm) }
-  | '"'['a'-'z' 'A'-'Z' '0'-'9' '_']*'"' as lxm { STRING(lxm) }
+  | '"'['a'-'z' 'A'-'Z' '0'-'9' '_' ' ' '\n']*'"' as lxm { STRING(lxm) }
   | eof { EOF }
   | _ as char { raise (Failure("illegal character " ^ Char.escaped char)) }
 

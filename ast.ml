@@ -7,7 +7,7 @@ type setop = Inter | Diff | Union | Xor
 
 type uop = Neg | Not
 
-type typ = Int | Bool | Float | Void | Node
+type typ = Int | Bool | Float | Void | Node | Edge | Graph | String
 
 type bind = typ * string
 
@@ -16,11 +16,14 @@ type expr =
   | Fliteral of string
   | BoolLit of bool
   | Id of string
+  | String of string
   | Binop of expr * op * expr
   | Unop of uop * expr
   | Setop of expr * setop * expr
   | Assign of string * expr
   | Call of string * expr list
+  | DotOp of string * string 
+  | DotAssign of string * string * expr
   | Noexpr
 
 type stmt =
@@ -73,6 +76,7 @@ let rec string_of_expr = function
   | BoolLit(true) -> "true"
   | BoolLit(false) -> "false"
   | Id(s) -> s
+  | String(s) -> s
   | Binop(e1, o, e2) ->
       string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
   | Unop(o, e) -> string_of_uop o ^ string_of_expr e
@@ -81,20 +85,26 @@ let rec string_of_expr = function
   | Assign(v, e) -> v ^ " = " ^ string_of_expr e
   | Call(f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
+  | DotOp(i1, i2) -> i1 ^ "." ^ i2
+  | DotAssign(i1, i2, e1) -> i1 ^ "." ^ i2 ^ " = " ^ string_of_expr e1 ^ ";"
   | Noexpr -> ""
 
-let rec string_of_stmt = function
-    Block(stmts) ->
-      "{\n" ^ String.concat "" (List.map string_of_stmt stmts) ^ "}\n"
-  | Expr(expr) -> string_of_expr expr ^ ";\n";
-  | Return(expr) -> "return " ^ string_of_expr expr ^ "\n";
-  | If(e, s, Block([])) -> "if (" ^ string_of_expr e ^ ")\n" ^ string_of_stmt s
-  | If(e, s1, s2) ->  "if (" ^ string_of_expr e ^ ")\n" ^
-      string_of_stmt s1 ^ "else\n" ^ string_of_stmt s2
-  | For(e1, e2, e3, s) ->
+let rec repeat str i = match str, i with 
+      str, 0 -> ""
+    | str, i -> str ^ repeat str (i-1)
+
+let rec string_of_stmt stmt i = match stmt, i with
+    Block(stmt), i ->
+      "{\n" ^ (repeat "    " i) ^ String.concat (repeat "    " i) (List.map2 string_of_stmt stmt (List.map (fun x -> i+1) stmt)) ^ (repeat "    " (i-1)) ^ "}\n"
+  | Expr(expr), i -> string_of_expr expr ^ ";\n";
+  | Return(expr), i -> "return " ^ string_of_expr expr ^ "\n";
+  | If(e, s, Block([])), i -> "if (" ^ string_of_expr e ^ ") " ^ string_of_stmt s i
+  | If(e, s1, s2), i ->  "if (" ^ string_of_expr e ^ ") " ^
+      string_of_stmt s1 (i+1) ^ (repeat "    " i) ^ "else " ^ string_of_stmt s2 (i+1)
+  | For(e1, e2, e3, s), i ->
       "for (" ^ string_of_expr e1  ^ string_of_expr e2 ^ " ; " ^
-      string_of_expr e3  ^ ") " ^ string_of_stmt s
-  | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
+      string_of_expr e3  ^ ") " ^ string_of_stmt s i
+  | While(e, s), i -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s i
 
 let string_of_typ = function
     Int -> "int"
@@ -102,11 +112,14 @@ let string_of_typ = function
   | Float -> "float"
   | Void -> "void"
   | Node -> "node"
+  | Edge -> "edge"
+  | Graph -> "graph"
+  | String -> "string"
 
-let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ "\n"
+let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
 
-let string_of_func_body (bs, ds) = "  " ^ String.concat "  " (List.map string_of_vdecl bs) ^ "\n" ^
-                                   "  " ^ String.concat "  " (List.map string_of_stmt ds) ^ "\n"
+let string_of_func_body (bs, ds) = "    " ^ String.concat "    " (List.map string_of_vdecl bs) ^
+                                   "    " ^ String.concat "    " (List.map2 string_of_stmt ds (List.map (fun x -> 1) ds)) ^ "\n"
 
 let string_of_fdecl fdecl =
   string_of_typ fdecl.typ ^ " " ^
