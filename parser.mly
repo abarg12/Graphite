@@ -9,8 +9,8 @@ open Ast
 %token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID LIST
 %token <int> LITERAL
 %token <bool> BLIT
-%token <string> ID FLIT
-%token NODE /*TODO: how do we represent the ocaml type of a NODE? We can't just put <record> probably?*/
+%token <string> ID FLIT STRING
+%token NODE //(*TODO: how do we represent the ocaml type of a NODE? We can't just put <record> probably?*)
 %token EOF
 
 %start program
@@ -38,23 +38,15 @@ decls:
  | decls vdecl { (($2 :: fst $1), snd $1) }
  | decls fdecl { (fst $1, ($2 :: snd $1)) }
 
-/***TODO: change to allow for interchangeable formals and locals, in microC all
-          all variable declarations come before statements ***/
+//(***TODO: change to allow for interchangeable formals and locals, in microC all
+//          all variable declarations come before statements ***)
 fdecl:
-   typ ID LPAREN formals_opt RPAREN COLON variable_newlines vdecl_list stmt_list
+   //typ ID LPAREN formals_opt RPAREN newline_opt LBRACE NEWLINE vdecl_list stmt_list RBRACE newline_or_eof 
+   typ ID LPAREN formals_opt RPAREN LBRACE func_body RBRACE 
      { { typ = $1;
          fname = $2;
          formals = List.rev $4;
-         locals = List.rev $8;
-         body = List.rev $9 } }
-
-variable_newlines:
-                              { [] }
-  | variable_newlines NEWLINE { [] }
-
-delimit: 
-    NEWLINE variable_newlines { [] }
-  | EOF                       { [] } /* TODO: test if this effects program rule */
+         body = (List.rev (fst $9), List.rev (snd $9)) } }
 
 formals_opt:
     /* nothing */ { [] }
@@ -69,24 +61,29 @@ typ:
   | BOOL  { Bool  }
   | FLOAT { Float }
   | VOID  { Void  }
-  | NODE  { Node  } /* is this correct way to list new node type */
-  | LIST  { List } /* usage: list variable declaration */
+  | NODE  { Node  } //(* is this correct way to list new node type *)
+  | LIST  { List  }
+
+func_body:
+  /* nothing */ { ([], [])               }
+  | func_body vdecl { (($2 :: fst $1), snd $1) }
+  | func_body stmt  { (fst $1, ($2 :: snd $1)) }
 
 vdecl_list:
     /* nothing */    { [] }
   | vdecl_list vdecl { $2 :: $1 }
 
-/*** TODO: add addtional rule to allow for declarations and assignment in one line ***/
+//(*** TODO: add addtional rule to allow for declarations and assignment in one line ***)
 vdecl:
-   typ ID delimit  { ($1, $2) }
+   typ ID SEMI  { ($1, $2) }
 
 stmt_list:
     /* nothing */  { [] }
   | stmt_list stmt { $2 :: $1 }
 
 stmt:
-    expr delimit                            { Expr $1               }
-  | RETURN expr_opt delimit                 { Return $2             }
+    expr SEMI                            { Expr $1               }
+  | RETURN expr_opt SEMI                 { Return $2             }
   | LBRACE stmt_list RBRACE                 { Block(List.rev $2)    }
   | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) } /* might want to change syntax of if and for */
   | IF LPAREN expr RPAREN stmt ELSE stmt    { If($3, $5, $7)        }
@@ -99,8 +96,7 @@ expr_opt:
   | expr          { $1 }
 
 
-/*** do we add node as an expression? ***/
-expr:
+expr: //(*** do we add node as an expression? ***)
     LITERAL          { Literal($1)            }
   | FLIT	           { Fliteral($1)           }
   | BLIT             { BoolLit($1)            }

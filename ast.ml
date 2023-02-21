@@ -32,14 +32,14 @@ type stmt =
   | For of expr * expr * expr * stmt
   | While of expr * stmt
 
+type func_body = bind list * stmt list
+
 type func_decl = {
     typ : typ;
     fname : string;
     formals : bind list;
-    locals : bind list;
-    body : stmt list;
+    body : func_body;
   }
-
 type program = bind list * func_decl list
 
 (* Pretty-printing functions *)
@@ -108,15 +108,17 @@ let string_of_typ = function
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ "\n"
 
+let string_of_func_body (bs, ds) = "  " ^ String.concat "  " (List.map string_of_vdecl bs) ^ "\n" ^
+                                   "  " ^ String.concat "  " (List.map string_of_stmt ds) ^ "\n"
+
 let string_of_fdecl fdecl =
   string_of_typ fdecl.typ ^ " " ^
   fdecl.fname ^ "(" ^ String.concat ", " (List.map snd fdecl.formals) ^
-  "):\n" ^
+  ") \n{\n" ^
   (*** TODO: indent each line inside a function, possibly another list operation
            to add a tab character at the beginning of each line ***)
-  String.concat "" (List.map string_of_vdecl fdecl.locals) ^
-  String.concat "" (List.map string_of_stmt fdecl.body) ^
-  "\n"
+  (string_of_func_body fdecl.body) ^
+  "}\n"
 
 let string_of_program (vars, funcs) =
   String.concat "" (List.map string_of_vdecl vars) ^ "\n" ^
