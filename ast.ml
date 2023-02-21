@@ -43,7 +43,12 @@ type func_decl = {
     formals : bind list;
     body : func_body;
   }
-type program = bind list * func_decl list
+  
+type decl = 
+    Bind of bind
+  | Fdecl of func_decl
+
+type program = decl list 
 
 (* Pretty-printing functions *)
 
@@ -98,8 +103,8 @@ let rec repeat str i = match str, i with
 let rec string_of_stmt stmt i = match stmt, i with
     Block(stmt), i ->
       "{\n" ^ (repeat "    " i) ^ String.concat (repeat "    " i) (List.map2 string_of_stmt stmt (List.map (fun x -> i+1) stmt)) ^ (repeat "    " (i-1)) ^ "}\n"
-  | Expr(expr), i -> string_of_expr expr ^ ";\n";
-  | Return(expr), i -> "return " ^ string_of_expr expr ^ "\n";
+  | Expr(expr), i -> string_of_expr expr ^ ";\n"
+  | Return(expr), i -> "return " ^ string_of_expr expr ^ "\n"
   | If(e, s, Block([])), i -> "if (" ^ string_of_expr e ^ ") " ^ string_of_stmt s i
   | If(e, s1, s2), i ->  "if (" ^ string_of_expr e ^ ") " ^
       string_of_stmt s1 (i+1) ^ (repeat "    " i) ^ "else " ^ string_of_stmt s2 (i+1)
@@ -133,6 +138,9 @@ let string_of_fdecl fdecl =
   (string_of_func_body fdecl.body) ^
   "}\n"
 
-let string_of_program (vars, funcs) =
-  String.concat "" (List.map string_of_vdecl vars) ^ "\n" ^
-  String.concat "\n" (List.map string_of_fdecl funcs)
+let rec string_of_program = function 
+    [] -> ""
+  | Bind b :: ds -> string_of_vdecl b ^ string_of_program ds
+  | Fdecl f :: ds -> string_of_fdecl f ^ string_of_program ds
+  (*String.concat "" (List.map string_of_vdecl vars) ^ "\n" ^
+  String.concat "\n" (List.map string_of_fdecl funcs)*)

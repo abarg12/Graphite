@@ -33,10 +33,13 @@ open Ast
 program:
   decls EOF { $1 }
 
+decl: 
+   fdecl { Fdecl $1 }
+ | vdecl { Bind $1 }
+
 decls:
-   /* nothing */ { ([], [])               }
- | decls vdecl { (($2 :: fst $1), snd $1) }
- | decls fdecl { (fst $1, ($2 :: snd $1)) }
+   /* nothing */ { [] }
+ | decls decl { $2 :: $1 }
 
 //(***TODO: change to allow for interchangeable formals and locals, in microC all
 //          all variable declarations come before statements ***)
