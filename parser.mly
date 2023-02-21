@@ -41,20 +41,12 @@ decls:
 (***TODO: change to allow for interchangeable formals and locals, in microC all
           all variable declarations come before statements )
 fdecl:
-   typ ID LPAREN formals_opt RPAREN COLON variable_newlines vdecl_list stmt_list
+   typ ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
      { { typ = $1;
          fname = $2;
          formals = List.rev $4;
          locals = List.rev $8;
          body = List.rev $9 } }
-
-variable_newlines:
-                              { [] }
-  | variable_newlines NEWLINE { [] }
-
-delimit: 
-    NEWLINE variable_newlines { [] }
-  | EOF                       { [] } (* TODO: test if this effects program rule *)
 
 formals_opt:
     /* nothing */ { [] }
@@ -77,15 +69,15 @@ vdecl_list:
 
 (*** TODO: add addtional rule to allow for declarations and assignment in one line ***)
 vdecl:
-   typ ID delimit  { ($1, $2) }
+   typ ID SEMI  { ($1, $2) }
 
 stmt_list:
     /* nothing */  { [] }
   | stmt_list stmt { $2 :: $1 }
 
 stmt:
-    expr delimit                            { Expr $1               }
-  | RETURN expr_opt delimit                 { Return $2             }
+    expr SEMI                            { Expr $1               }
+  | RETURN expr_opt SEMI                 { Return $2             }
   | LBRACE stmt_list RBRACE                 { Block(List.rev $2)    }
   | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) }. (* might want to change syntax of if and for *)
   | IF LPAREN expr RPAREN stmt ELSE stmt    { If($3, $5, $7)        }
