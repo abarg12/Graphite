@@ -42,7 +42,7 @@ decls:
 //          all variable declarations come before statements ***)
 fdecl:
    //typ ID LPAREN formals_opt RPAREN newline_opt LBRACE NEWLINE vdecl_list stmt_list RBRACE newline_or_eof 
-   typ ID LPAREN formals_opt RPAREN newline_opt LBRACE NEWLINE func_body RBRACE newline_or_eof 
+   typ ID LPAREN formals_opt RPAREN LBRACE func_body RBRACE 
      { { typ = $1;
          fname = $2;
          formals = List.rev $4;
