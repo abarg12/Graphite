@@ -10,7 +10,7 @@ open Ast
 %token <int> LITERAL
 %token <bool> BLIT
 %token <string> ID FLIT STRING
-%token NODE (*TODO: how do we represent the ocaml type of a NODE? We can't just put <record> probably?*)
+%token NODE //(*TODO: how do we represent the ocaml type of a NODE? We can't just put <record> probably?*)
 %token EOF
 
 %start program
@@ -38,15 +38,15 @@ decls:
  | decls vdecl { (($2 :: fst $1), snd $1) }
  | decls fdecl { (fst $1, ($2 :: snd $1)) }
 
-(***TODO: change to allow for interchangeable formals and locals, in microC all
-          all variable declarations come before statements )
+//(***TODO: change to allow for interchangeable formals and locals, in microC all
+//          all variable declarations come before statements ***)
 fdecl:
-   typ ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
+   //typ ID LPAREN formals_opt RPAREN newline_opt LBRACE NEWLINE vdecl_list stmt_list RBRACE newline_or_eof 
+   typ ID LPAREN formals_opt RPAREN newline_opt LBRACE NEWLINE func_body RBRACE newline_or_eof 
      { { typ = $1;
          fname = $2;
          formals = List.rev $4;
-         locals = List.rev $8;
-         body = List.rev $9 } }
+         body = (List.rev (fst $9), List.rev (snd $9)) } }
 
 formals_opt:
     /* nothing */ { [] }
@@ -61,13 +61,18 @@ typ:
   | BOOL  { Bool  }
   | FLOAT { Float }
   | VOID  { Void  }
-  | NODE  { Node  } (* is this correct way to list new node type *)
+  | NODE  { Node  } //(* is this correct way to list new node type *)
+
+func_body:
+  /* nothing */ { ([], [])               }
+  | func_body vdecl { (($2 :: fst $1), snd $1) }
+  | func_body stmt  { (fst $1, ($2 :: snd $1)) }
 
 vdecl_list:
     /* nothing */    { [] }
   | vdecl_list vdecl { $2 :: $1 }
 
-(*** TODO: add addtional rule to allow for declarations and assignment in one line ***)
+//(*** TODO: add addtional rule to allow for declarations and assignment in one line ***)
 vdecl:
    typ ID SEMI  { ($1, $2) }
 
@@ -90,8 +95,7 @@ expr_opt:
   | expr          { $1 }
 
 
-(*** do we add node as an expression? ***)
-expr:
+expr: //(*** do we add node as an expression? ***)
     LITERAL          { Literal($1)            }
   | FLIT	           { Fliteral($1)           }
   | BLIT             { BoolLit($1)            }
