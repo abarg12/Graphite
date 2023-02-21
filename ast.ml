@@ -7,7 +7,7 @@ type setop = Inter | Diff | Union | Xor
 
 type uop = Neg | Not
 
-type typ = Int | Bool | Float | Void | Node | Edge | Graph | String
+type typ = Int | Bool | Float | Void | Node | Edge | Graph | String | List
 
 type bind = typ * string
 
@@ -24,6 +24,7 @@ type expr =
   | Call of string * expr list
   | DotOp of string * string 
   | DotAssign of string * string * expr
+  | List of expr list
   | Noexpr
 
 type stmt =
@@ -87,6 +88,7 @@ let rec string_of_expr = function
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | DotOp(i1, i2) -> i1 ^ "." ^ i2
   | DotAssign(i1, i2, e1) -> i1 ^ "." ^ i2 ^ " = " ^ string_of_expr e1 ^ ";"
+  | List(e) -> "[" ^ String.concat ", " (List.map string_of_expr e) ^ "]"
   | Noexpr -> ""
 
 let rec repeat str i = match str, i with 
@@ -115,6 +117,7 @@ let string_of_typ = function
   | Edge -> "edge"
   | Graph -> "graph"
   | String -> "string"
+  | List -> "list"
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
 

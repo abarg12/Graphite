@@ -4,9 +4,9 @@
 open Ast
 %}
 
-%token SEMI LPAREN RPAREN LBRACE RBRACE COMMA PLUS MINUS TIMES DIVIDE ASSIGN COLON NEWLINE DOT
+%token SEMI LPAREN RPAREN LBRACE RBRACE LBRAC RBRAC COMMA PLUS MINUS TIMES DIVIDE ASSIGN COLON NEWLINE DOT
 %token NOT EQ NEQ LT LEQ GT GEQ AND OR INTER UNION DIFF XOR
-%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID STRING_T
+%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID LIST STRING_T
 %token <int> LITERAL
 %token <bool> BLIT
 %token <string> ID FLIT STRING
@@ -65,6 +65,7 @@ typ:
   | EDGE  { Edge  }
   | GRAPH { Graph } // (** might need to change ??? **)
   | STRING_T { String }
+  | LIST { List }
 
 func_body:
   /* nothing */ { ([], [])               }
@@ -127,7 +128,7 @@ expr: //(*** do we add node as an expression? ***)
   | LPAREN expr RPAREN { $2                   }
   | ID DOT ID        { DotOp($1, $3) }
   | ID DOT ID ASSIGN expr SEMI { DotAssign($1, $3, $5) }
-
+  | LBRAC list_opt RBRAC { List($2)           }
 
 args_opt:
     /* nothing */ { [] }
@@ -136,3 +137,12 @@ args_opt:
 args_list:
     expr                    { [$1] }
   | args_list COMMA expr { $3 :: $1 }
+
+/* lists */
+list_opt:
+    /* nothing */        { [] }
+  | expr_list            { List.rev $1 }
+
+expr_list:
+    expr                 { [$1] }
+  | expr_list COMMA expr { $3 :: $1 }

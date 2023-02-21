@@ -12,6 +12,8 @@ rule token = parse
   | '.'      { DOT }
   | '('      { LPAREN }
   | ')'      { RPAREN }
+  | '['      { LBRAC  }
+  | ']'      { RBRAC  }
   | '{'      { LBRACE }
   | '}'      { RBRACE }
   | ';'      { SEMI }
@@ -43,6 +45,7 @@ rule token = parse
   | "int"    { INT }
   | "bool"   { BOOL }
   | "float"  { FLOAT }
+  | "list"   { LIST }
   | "void"   { VOID }
   | "node"   { NODE }
   | "edge"   { EDGE }
