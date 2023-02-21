@@ -103,8 +103,7 @@ expr_opt:
   | expr          { $1 }
 
 
-//(*** do we add node as an expression? ***)
-expr:
+expr: //(*** do we add node as an expression? ***)
     LITERAL          { Literal($1)            }
   | FLIT	           { Fliteral($1)           }
   | BLIT             { BoolLit($1)            }
