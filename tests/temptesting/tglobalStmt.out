@@ -2,7 +2,7 @@ int fun1()
 {
     int d;
     d = 3;
-    return d
+    return d;
 
 }
 int c;
@@ -10,7 +10,7 @@ int main()
 {
     int a;
     a = 2;
-    return a
+    return a;
 
 }
 int b;

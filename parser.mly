@@ -6,7 +6,7 @@ open Ast
 
 %token SEMI LPAREN RPAREN LBRACE RBRACE LBRAC RBRAC COMMA PLUS MINUS TIMES DIVIDE ASSIGN COLON NEWLINE DOT
 %token NOT EQ NEQ LT LEQ GT GEQ AND OR INTER UNION DIFF XOR
-%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID LIST STRING_T
+%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID LIST STRING_T STRUCT 
 %token <int> LITERAL
 %token <bool> BLIT
 %token <string> ID FLIT STRING
@@ -36,6 +36,7 @@ program:
 decl: 
    fdecl { Fdecl $1 }
  | vdecl { Bind $1 }
+ | bind_assign { BindAssign $1 }
 
 decls:
    /* nothing */ { [] }
@@ -60,29 +61,38 @@ formal_list:
   | formal_list COMMA typ ID { ($3,$4) :: $1 }
 
 typ:
-    INT   { Int   }
-  | BOOL  { Bool  }
-  | FLOAT { Float }
-  | VOID  { Void  }
-  | NODE  { Node  } 
-  | EDGE  { Edge  }
-  | GRAPH { Graph } // (** might need to change ??? **)
+    INT      { Int    }
+  | BOOL     { Bool   }
+  | FLOAT    { Float  }
+  | VOID     { Void   }
+  | NODE     { Node   } 
+  | EDGE     { Edge   }
+  | GRAPH    { Graph  }
   | STRING_T { String }
-  | LIST { List }
+  | LIST     { List   }
+  | STRUCT   { Struct }
 
 func_body:
   /* nothing */ { ([], [])               }
   | func_body vdecl { (($2 :: fst $1), snd $1) }
   | func_body stmt  { (fst $1, ($2 :: snd $1)) }
 
-vdecl_list:
-    /* nothing */    { [] }
-  | vdecl_list vdecl { $2 :: $1 }
 
-//(*** TODO: add addtional rule to allow for declarations and assignment in one line ***)
+/* A list of declarations is a tuple of two lists:
+     the first is the bind-assign declarations,
+     the second is just variable bindings without initializations */
+vdecl_list:
+                           { ([], []) }
+  | vdecl_list vdecl       { (fst $1, ($2 :: snd $1)) }
+  | vdecl_list bind_assign { (($2 :: fst $1), snd $1) }
+
+
 vdecl:
-   typ ID SEMI  { ($1, $2) }
-   
+    typ ID SEMI  { ($1, $2) }
+
+bind_assign:
+    typ ID ASSIGN expr SEMI { ($1, $2, $4) }
+
 stmt_list:
     /* nothing */  { [] }
   | stmt_list stmt { $2 :: $1 }
@@ -102,7 +112,7 @@ expr_opt:
   | expr          { $1 }
 
 
-expr: //(*** do we add node as an expression? ***)
+expr: 
     LITERAL          { Literal($1)            }
   | FLIT	           { Fliteral($1)           }
   | BLIT             { BoolLit($1)            }
@@ -129,9 +139,12 @@ expr: //(*** do we add node as an expression? ***)
   | ID ASSIGN expr   { Assign($1, $3)         }
   | ID LPAREN args_opt RPAREN { Call($1, $3)  } 
   | LPAREN expr RPAREN { $2                   }
-  | ID DOT ID        { DotOp($1, $3) }
-  | ID DOT ID ASSIGN expr SEMI { DotAssign($1, $3, $5) }
+  | ID DOT ID        { DotOp($1, $3)          }
+  | ID DOT ID ASSIGN expr 
+                     { DotAssign($1, $3, $5)  }
   | LBRAC list_opt RBRAC { List($2)           }
+  | STRUCT ID ASSIGN LBRACE vdecl_list RBRACE 
+          { StructAssign($2, (fst $5, snd $5))}
 
 args_opt:
     /* nothing */ { [] }

@@ -6,6 +6,6 @@ int main()
     a = 2;
     abcd = "thisisastring";
     b = 2;
-    return 0
+    return 0;
 
 }

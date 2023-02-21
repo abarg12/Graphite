@@ -1,8 +1,8 @@
 int main () {
 
-    Struct TypeName {
-        int krusty;
-        bool crab; 
-    }
+struct TypeName = {
+    int krusty;
+    bool crab; 
+};
 
 }

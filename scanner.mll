@@ -51,12 +51,13 @@ rule token = parse
   | "edge"   { EDGE }
   | "graph"  { GRAPH }
   | "string" { STRING_T }
+  | "struct" { STRUCT }
   | "true"   { BLIT(true)  }
   | "false"  { BLIT(false) }
   | digits as lxm { LITERAL(int_of_string lxm) }
   | digits '.'  digit* as lxm { FLIT(lxm) }
   | ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_']* as lxm { ID(lxm) }
-  | '"'['a'-'z' 'A'-'Z' '0'-'9' '_' ' ' '\n']*'"' as lxm { STRING(lxm) }
+  | '"'['a'-'z' 'A'-'Z' '0'-'9' '_' ' ' '\n' '!' '@' '#' '$' '%' '^' '&' '*' '(' ')' '-' '+' '=']*'"' as lxm { STRING(lxm) }
   | eof { EOF }
   | _ as char { raise (Failure("illegal character " ^ Char.escaped char)) }
 
