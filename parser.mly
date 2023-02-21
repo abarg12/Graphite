@@ -33,10 +33,17 @@ open Ast
 program:
   decls EOF { $1 }
 
+
+// (*** decls:
+  // /* nothing */ { ([], [])               }
+ //| decls vdecl { (($2 :: fst $1), snd $1) }
+ //| decls fdecl { (fst $1, ($2 :: snd $1)) } ***)
+
 decls:
-   /* nothing */ { ([], [])               }
- | decls vdecl { (($2 :: fst $1), snd $1) }
- | decls fdecl { (fst $1, ($2 :: snd $1)) }
+   /* nothing */ { [] }
+ | decls vdecl { ($2, "vdecl") :: $1 }
+ | decls fdecl { ($2, "fdecl") :: $1 }
+
 
 //(***TODO: change to allow for interchangeable formals and locals, in microC all
 //          all variable declarations come before statements ***)
@@ -127,7 +134,7 @@ expr: //(*** do we add node as an expression? ***)
   | ID LPAREN args_opt RPAREN { Call($1, $3)  } 
   | LPAREN expr RPAREN { $2                   }
   | ID DOT ID        { DotOp($1, $3) }
-  | ID DOT ID ASSIGN expr SEMI { DotAssign($1, $3, $5) }
+  | ID DOT ID ASSIGN expr { DotAssign($1, $3, $5) }
   | LBRAC list_opt RBRAC { List($2)           }
 
 args_opt:

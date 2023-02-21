@@ -38,12 +38,17 @@ type stmt =
 type func_body = bind list * stmt list
 
 type func_decl = {
-    typ : typ;
-    fname : string;
-    formals : bind list;
-    body : func_body;
-  }
-type program = bind list * func_decl list
+  typ : typ;
+  fname : string;
+  formals : bind list;
+  body : func_body;
+}
+
+type decls = 
+    Bind of bind
+  | Func_decl of func_decl
+
+type program = (decls * string) list    (***bind list * func_decl list***)
 
 (* Pretty-printing functions *)
 
@@ -133,6 +138,14 @@ let string_of_fdecl fdecl =
   (string_of_func_body fdecl.body) ^
   "}\n"
 
+(*
 let string_of_program (vars, funcs) =
   String.concat "" (List.map string_of_vdecl vars) ^ "\n" ^
   String.concat "\n" (List.map string_of_fdecl funcs)
+  *)
+
+let rec string_of_program = function
+    [] -> "" 
+  | (Bind(b), "vdecl")::tl -> string_of_program tl ^ string_of_vdecl b
+  | (Func_decl(f), "fdecl")::tl -> string_of_program tl ^ string_of_fdecl f
+  | _ -> ""
