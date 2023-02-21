@@ -12,6 +12,8 @@ rule token = parse
   | "//"     { comment lexbuf }
   | '('      { LPAREN }
   | ')'      { RPAREN }
+  | '['      { LBRAC  }
+  | ']'      { RBRAC  }
   | '{'      { LBRACE }
   | '}'      { RBRACE }
   | ';'      { SEMI }
@@ -39,6 +41,7 @@ rule token = parse
   | "int"    { INT }
   | "bool"   { BOOL }
   | "float"  { FLOAT }
+  | "list"   { LIST }
   | "void"   { VOID }
   | "node"   { NODE }
   | "true"   { BLIT(true)  }
