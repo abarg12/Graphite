@@ -4,7 +4,7 @@
 open Ast
 %}
 
-%token SEMI LPAREN RPAREN LBRACE RBRACE LBRAC RBRAC COMMA PLUS MINUS TIMES DIVIDE ASSIGN COLON NEWLINE DOT
+%token SEMI LPAREN RPAREN LBRACE RBRACE LBRAC RBRAC COMMA PLUS MINUS TIMES DIVIDE ASSIGN COLON NEWLINE DOT ARROW
 %token NOT EQ NEQ LT LEQ GT GEQ AND OR INTER UNION DIFF XOR
 %token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID LIST STRING_T STRUCT 
 %token <int> LITERAL
@@ -118,6 +118,7 @@ expr:
   | BLIT             { BoolLit($1)            }
   | ID               { Id($1)                 }
   | STRING           { String($1)             }
+  | expr ARROW  expr { Edge($1, $3)           }
   | expr PLUS   expr { Binop($1, Add,   $3)   }
   | expr MINUS  expr { Binop($1, Sub,   $3)   }
   | expr TIMES  expr { Binop($1, Mult,  $3)   }

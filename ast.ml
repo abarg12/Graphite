@@ -28,6 +28,7 @@ type expr =
   | List of expr list
   | StructAssign of (string * (((typ * string * expr) list) 
                                * ((typ * string) list)))
+  | Edge of expr * expr
   | Noexpr
 
 type bind_assign = typ * string * expr
@@ -120,6 +121,7 @@ string_of_expr = function
   | StructAssign(id, (init_binds, binds)) -> "struct " ^ id ^ " = " ^ "{\n" ^ 
                    String.concat "" (List.map string_of_bind_assign init_binds) ^ 
                    String.concat "" (List.map string_of_vdecl binds) ^ "}"
+  | Edge(e1, e2) -> string_of_expr e1 ^ " -> " ^ string_of_expr e2
   | Noexpr -> ""
 
   (*
