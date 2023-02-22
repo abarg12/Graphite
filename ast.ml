@@ -117,9 +117,9 @@ string_of_expr = function
   | DotOp(i1, i2) -> i1 ^ "." ^ i2
   | DotAssign(i1, i2, e1) -> i1 ^ "." ^ i2 ^ " = " ^ string_of_expr e1 ^ ";"
   | List(e) -> "[" ^ String.concat ", " (List.map string_of_expr e) ^ "]"
-  | StructAssign(id, (init_binds, binds)) -> "struct " ^ "id " ^ " = " ^ "{\n" ^ 
-                       String.concat "    " (List.map string_of_bind_assign init_binds) ^ 
-                       String.concat "    " (List.map string_of_vdecl binds) ^ "}\n"
+  | StructAssign(id, (init_binds, binds)) -> "struct " ^ id ^ " = " ^ "{\n" ^ 
+                   String.concat "" (List.map string_of_bind_assign init_binds) ^ 
+                   String.concat "" (List.map string_of_vdecl binds) ^ "}"
   | Noexpr -> ""
 
   (*
@@ -130,7 +130,7 @@ let rec repeat str i = match str, i with
 
 let rec string_of_stmt stmt = match stmt with
     Block(stmt) ->
-      "{\n    " ^  String.concat "    " (List.map string_of_stmt stmt) ^ "}\n"
+      "{\n" ^  String.concat "" (List.map string_of_stmt stmt) ^ "}\n"
   | Expr(expr) -> string_of_expr expr ^ ";\n"
   | Return(expr) -> "return " ^ string_of_expr expr ^ ";\n"
   | If(e, s, Block([])) -> "if (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
@@ -141,8 +141,8 @@ let rec string_of_stmt stmt = match stmt with
       string_of_expr e3  ^ ") " ^ string_of_stmt s
   | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
 
-let string_of_func_body (bs, ds) = "    " ^ String.concat "    " (List.map string_of_vdecl bs) ^
-                                   "    " ^ String.concat "    " (List.map string_of_stmt ds) ^ "\n"
+let string_of_func_body (bs, ds) = String.concat "" (List.map string_of_vdecl bs) ^
+                                   String.concat "" (List.map string_of_stmt ds) 
 
 let string_of_fdecl fdecl =
   string_of_typ fdecl.typ ^ " " ^
