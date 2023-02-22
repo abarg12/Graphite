@@ -68,10 +68,8 @@ typ:
   | VOID     { Void   }
   | NODE     { Node   } 
   | EDGE     { Edge   }
-  | GRAPH    { Graph  }
   | STRING_T { String }
   | LIST     { List   }
-  | STRUCT   { Struct }
 
 func_body:
   /* nothing */ { ([], [])               }
@@ -165,11 +163,3 @@ list_opt:
 expr_list:
     expr                 { [$1] }
   | expr_list COMMA expr { $3 :: $1 }
-
-// flags_opt:
-//     /* nothing */ { [] }
-//   | flags_list { List.rev $1 }
-
-// flags_list:
-//     STRING { [String($1)] }
-//   | flags_list COMMA STRING { String($3) :: $1 }

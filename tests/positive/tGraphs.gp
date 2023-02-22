@@ -1,0 +1,1 @@
+int main(){graph g(tree,connected);}
