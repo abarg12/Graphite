@@ -1,4 +1,4 @@
-/* Ocamlyacc parser for MicroC */
+/* Ocamlyacc parser for Graphite */
 
 %{
 open Ast
@@ -43,10 +43,7 @@ decls:
    /* nothing */ { [] }
  | decls decl { $2 :: $1 }
 
-//(***TODO: change to allow for interchangeable formals and locals, in microC all
-//          all variable declarations come before statements ***)
 fdecl:
-   //typ ID LPAREN formals_opt RPAREN newline_opt LBRACE NEWLINE vdecl_list stmt_list RBRACE newline_or_eof 
    typ ID LPAREN formals_opt RPAREN LBRACE func_body RBRACE 
      { { typ = $1;
          fname = $2;
@@ -100,7 +97,7 @@ stmt:
     expr SEMI                            { Expr $1               }
   | RETURN expr_opt SEMI                 { Return $2             }
   | LBRACE stmt_list RBRACE                 { Block(List.rev $2)    }
-  | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) } //(* might want to change syntax of if and for *)
+  | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) }
   | IF LPAREN expr RPAREN stmt ELSE stmt    { If($3, $5, $7)        }
   | FOR LPAREN expr_opt SEMI expr SEMI expr_opt RPAREN stmt  
                                             { For($3, $5, $7, $9)   }
@@ -145,7 +142,8 @@ expr:
   | LBRAC list_opt RBRAC { List($2)           }
   | STRUCT ID ASSIGN LBRACE vdecl_list RBRACE 
           { StructAssign($2, (fst $5, snd $5))}
-  | GRAPH ID LPAREN list_opt RPAREN { GraphAssign($2, $4) }
+  | GRAPH ID LPAREN list_opt RPAREN
+                        { GraphAssign($2, $4) }
 
 args_opt:
     /* nothing */ { [] }

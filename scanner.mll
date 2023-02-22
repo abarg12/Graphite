@@ -1,4 +1,4 @@
-(* Ocamllex scanner for MicroC *)
+(* Ocamllex scanner for Graphite *)
 
 { open Parser }
 
@@ -8,41 +8,48 @@ let digits = digit+
 rule token = parse
   [' ' '\t' '\r' '\n'] { token lexbuf } (* Whitespace *)
   | "#"      { comment lexbuf }           (* Comments *)
-  | "//"     { comment lexbuf }
-  | '.'      { DOT }
+  (* brackets *)
   | '('      { LPAREN }
   | ')'      { RPAREN }
   | '['      { LBRAC  }
   | ']'      { RBRAC  }
   | '{'      { LBRACE }
   | '}'      { RBRACE }
+  (* delimiters *)
   | ';'      { SEMI }
-  | ':'      { COLON }
+  | '.'      { DOT }
   | ','      { COMMA }
+  (* binary operators *)
   | '+'      { PLUS }
   | '-'      { MINUS }
   | '*'      { TIMES }
   | '/'      { DIVIDE }
   | '='      { ASSIGN }
-  | "->"     { ARROW }
+  (* edge *)
+  | "->"     { ARROW }    
+  (* comparison operators *)
   | "=="     { EQ }
   | "!="     { NEQ }
   | '<'      { LT }
   | "<="     { LEQ }
   | ">"      { GT }
   | ">="     { GEQ }
+  (* logical operators *)
   | "and"    { AND }
   | "or"     { OR }
   | "not"    { NOT }
+  (* set operators *)
   | "union"  { UNION }
   | "diff"   { DIFF }
   | "inter"  { INTER }
   | "xor"    { XOR }
+  (* statements *)
   | "if"     { IF }
   | "else"   { ELSE }
   | "for"    { FOR }
   | "while"  { WHILE }
   | "return" { RETURN }
+  (* types *)
   | "int"    { INT }
   | "bool"   { BOOL }
   | "float"  { FLOAT }
@@ -53,8 +60,10 @@ rule token = parse
   | "graph"  { GRAPH }
   | "string" { STRING_T }
   | "struct" { STRUCT }
+  (* boolean literals *)
   | "true"   { BLIT(true)  }
   | "false"  { BLIT(false) }
+  (* other *)
   | digits as lxm { LITERAL(int_of_string lxm) }
   | digits '.'  digit* as lxm { FLIT(lxm) }
   | ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_']* as lxm { ID(lxm) }

@@ -123,14 +123,8 @@ string_of_expr = function
                    String.concat "" (List.map string_of_bind_assign init_binds) ^ 
                    String.concat "" (List.map string_of_vdecl binds) ^ "}"
   | Edge(e1, e2) -> string_of_expr e1 ^ " -> " ^ string_of_expr e2
-  | GraphAssign(id, flags) -> "graph " ^ id ^ "(" ^ String.concat ", " (List.map (fun (flag) -> string_of_expr flag) flags) ^ ")"
+  | GraphAssign(id, flags) -> "graph " ^ id ^ "(" ^ String.concat ", " (List.map string_of_expr flags) ^ ")"
   | Noexpr -> ""
-
-  (*
-let rec repeat str i = match str, i with 
-      str, 0 -> ""
-    | str, i -> str ^ repeat str (i-1)
-*)
 
 let rec string_of_stmt stmt = match stmt with
     Block(stmt) ->
@@ -152,8 +146,6 @@ let string_of_fdecl fdecl =
   string_of_typ fdecl.typ ^ " " ^
   fdecl.fname ^ "(" ^ String.concat ", " (List.map snd fdecl.formals) ^
   ") \n{\n" ^
-  (*** TODO: indent each line inside a function, possibly another list operation
-           to add a tab character at the beginning of each line ***)
   (string_of_func_body fdecl.body) ^
   "}\n"
 
@@ -162,5 +154,3 @@ let rec string_of_program = function
   | Bind b :: ds -> string_of_vdecl b ^ string_of_program ds
   | Fdecl f :: ds -> string_of_fdecl f ^ string_of_program ds
   | BindAssign b :: ds -> string_of_bind_assign b ^ string_of_program ds
-  (*String.concat "" (List.map string_of_vdecl vars) ^ "\n" ^
-  String.concat "\n" (List.map string_of_fdecl funcs)*)
