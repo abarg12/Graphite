@@ -26,6 +26,7 @@ open Ast
 %left INTER UNION DIFF XOR
 %left PLUS MINUS
 %left TIMES DIVIDE
+%nonassoc ARROW
 %right NOT
 
 %%
@@ -146,6 +147,7 @@ expr:
   | LBRAC list_opt RBRAC { List($2)           }
   | STRUCT ID ASSIGN LBRACE vdecl_list RBRACE 
           { StructAssign($2, (fst $5, snd $5))}
+  | GRAPH ID LPAREN list_opt RPAREN { GraphAssign($2, $4) }
 
 args_opt:
     /* nothing */ { [] }
@@ -163,3 +165,11 @@ list_opt:
 expr_list:
     expr                 { [$1] }
   | expr_list COMMA expr { $3 :: $1 }
+
+// flags_opt:
+//     /* nothing */ { [] }
+//   | flags_list { List.rev $1 }
+
+// flags_list:
+//     STRING { [String($1)] }
+//   | flags_list COMMA STRING { String($3) :: $1 }

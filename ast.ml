@@ -29,6 +29,7 @@ type expr =
   | StructAssign of (string * (((typ * string * expr) list) 
                                * ((typ * string) list)))
   | Edge of expr * expr
+  | GraphAssign of string * expr list
   | Noexpr
 
 type bind_assign = typ * string * expr
@@ -122,6 +123,7 @@ string_of_expr = function
                    String.concat "" (List.map string_of_bind_assign init_binds) ^ 
                    String.concat "" (List.map string_of_vdecl binds) ^ "}"
   | Edge(e1, e2) -> string_of_expr e1 ^ " -> " ^ string_of_expr e2
+  | GraphAssign(id, flags) -> "graph " ^ id ^ "(" ^ String.concat ", " (List.map (fun (flag) -> string_of_expr flag) flags) ^ ")"
   | Noexpr -> ""
 
   (*
