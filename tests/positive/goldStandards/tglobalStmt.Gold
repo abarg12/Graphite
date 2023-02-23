@@ -9,7 +9,7 @@ a = 2;
 return a;
 }
 int c;
-struct deStruct = {
+dict deStruct = {
 int i;
 };
 int fun1() 

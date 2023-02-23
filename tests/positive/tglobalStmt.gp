@@ -12,7 +12,7 @@ int main () {
 
 int c;
 
-struct deStruct = {
+dict deStruct = {
     int i;
 };
 

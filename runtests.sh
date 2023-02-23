@@ -41,11 +41,12 @@ for entry in ./tests/negative/*; do
     if [[ $entry == *.gp ]]       
     then
         base_name=$(basename ${entry})
-        (./toplevel.native < $entry && echo "
-FLAG TEST:" ${base_name%%.*} "expected parsing error but no parsing error occured.
-                ") || echo ${base_name%%.*} "test PASSED (failed) as expected.
-                            "
-        
+        ./toplevel.native < $entry > ./tests/temptesting/${base_name%%.*}.out 2>&1
+
+        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/negative/goldStandards/${base_name%%.*}.Gold; 
+        then 
+            echo ${base_name} "FAILED"
+        fi 
     fi
 done
 
