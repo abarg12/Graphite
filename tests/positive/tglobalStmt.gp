@@ -1,4 +1,8 @@
-int b;
+int b = 4;
+
+if (4 == b) {
+    b = 10;
+}
 
 int main () {
     int a;
@@ -7,6 +11,10 @@ int main () {
 }
 
 int c;
+
+struct deStruct = {
+    int i;
+};
 
 int fun1 () {
     int d;

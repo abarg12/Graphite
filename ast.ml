@@ -7,8 +7,8 @@ type setop = Inter | Diff | Union | Xor
 
 type uop = Neg | Not
 
-type typ = Int | Bool | Float | Void | Node | Edge | Graph | String |
-           List | Struct 
+type typ = Int | Bool | Float | Void | Node | Edge | String |
+           List | Dict | Graph of string list
 
 type bind = typ * string
 
@@ -26,10 +26,9 @@ type expr =
   | DotOp of string * string 
   | DotAssign of string * string * expr
   | List of expr list
-  | StructAssign of (string * (((typ * string * expr) list) 
-                               * ((typ * string) list)))
+  | Dict of (string * ((typ * string * expr) list) 
+                      * ((typ * string) list))
   | Edge of expr * expr
-  | GraphAssign of string * expr list
   | Noexpr
 
 type bind_assign = typ * string * expr
@@ -42,7 +41,12 @@ type stmt =
   | For of expr * expr * expr * stmt
   | While of expr * stmt
 
-type func_body = bind list * stmt list
+type f_line = 
+    LocalBind of bind
+  | LocalBindAssign of bind_assign
+  | LocalStatement of stmt
+
+type func_body = f_line list
 
 type func_decl = {
     typ : typ;
@@ -55,6 +59,7 @@ type decl =
     Bind of bind
   | BindAssign of bind_assign
   | Fdecl of func_decl
+  | Statement of stmt
 
 type program = decl list 
 
@@ -91,10 +96,10 @@ let string_of_typ = function
   | Void -> "void"
   | Node -> "node"
   | Edge -> "edge"
-  | Graph -> "graph"
+  | Graph(flags) -> "graph <" ^ String.concat ", " (List.map (fun (x) -> x) flags) ^ ">"
   | String -> "string"
   | List -> "list"
-  | Struct -> "struct"
+  | Dict -> "dict"
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
 
@@ -119,11 +124,10 @@ string_of_expr = function
   | DotOp(i1, i2) -> i1 ^ "." ^ i2
   | DotAssign(i1, i2, e1) -> i1 ^ "." ^ i2 ^ " = " ^ string_of_expr e1 ^ ";"
   | List(e) -> "[" ^ String.concat ", " (List.map string_of_expr e) ^ "]"
-  | StructAssign(id, (init_binds, binds)) -> "struct " ^ id ^ " = " ^ "{\n" ^ 
+  | Dict(id, init_binds, binds) -> "dict " ^ id ^ " = " ^ "{\n" ^ 
                    String.concat "" (List.map string_of_bind_assign init_binds) ^ 
                    String.concat "" (List.map string_of_vdecl binds) ^ "}"
   | Edge(e1, e2) -> string_of_expr e1 ^ " -> " ^ string_of_expr e2
-  | GraphAssign(id, flags) -> "graph " ^ id ^ "(" ^ String.concat ", " (List.map string_of_expr flags) ^ ")"
   | Noexpr -> ""
 
 let rec string_of_stmt stmt = match stmt with
@@ -139,14 +143,17 @@ let rec string_of_stmt stmt = match stmt with
       string_of_expr e3  ^ ") " ^ string_of_stmt s
   | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
 
-let string_of_func_body (bs, ds) = String.concat "" (List.map string_of_vdecl bs) ^
-                                   String.concat "" (List.map string_of_stmt ds) 
+let rec string_of_fline = function
+    [] -> ""
+  | LocalBind b :: ds -> string_of_vdecl b ^ string_of_fline ds
+  | LocalBindAssign b :: ds -> string_of_bind_assign b ^ string_of_fline ds
+  | LocalStatement s :: ds -> string_of_stmt s ^ string_of_fline ds 
 
 let string_of_fdecl fdecl =
   string_of_typ fdecl.typ ^ " " ^
-  fdecl.fname ^ "(" ^ String.concat ", " (List.map snd fdecl.formals) ^
+  fdecl.fname ^ "(" ^ String.concat ", " (List.map (fun (t, id) -> string_of_typ t ^ " " ^ id) fdecl.formals) ^
   ") \n{\n" ^
-  (string_of_func_body fdecl.body) ^
+  (string_of_fline fdecl.body) ^
   "}\n"
 
 let rec string_of_program = function 
@@ -154,3 +161,4 @@ let rec string_of_program = function
   | Bind b :: ds -> string_of_vdecl b ^ string_of_program ds
   | Fdecl f :: ds -> string_of_fdecl f ^ string_of_program ds
   | BindAssign b :: ds -> string_of_bind_assign b ^ string_of_program ds
+  | Statement s :: ds -> string_of_stmt s ^ string_of_program ds

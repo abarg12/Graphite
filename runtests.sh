@@ -43,7 +43,7 @@ for entry in ./tests/negative/*; do
         base_name=$(basename ${entry})
         (./toplevel.native < $entry && echo "
 FLAG TEST:" ${base_name%%.*} "expected parsing error but no parsing error occured.
-                ") || echo ${base_name%%.*} "test FAILED as expected.
+                ") || echo ${base_name%%.*} "test PASSED (failed) as expected.
                             "
         
     fi
@@ -52,4 +52,3 @@ done
 echo "
      deleting temp testing directory...
                             "
-rm -rf ./tests/temptesting

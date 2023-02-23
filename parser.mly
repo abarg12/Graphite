@@ -6,7 +6,7 @@ open Ast
 
 %token SEMI LPAREN RPAREN LBRACE RBRACE LBRAC RBRAC COMMA PLUS MINUS TIMES DIVIDE ASSIGN COLON NEWLINE DOT ARROW
 %token NOT EQ NEQ LT LEQ GT GEQ AND OR INTER UNION DIFF XOR
-%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID LIST STRING_T STRUCT 
+%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID LIST STRING_T DICT 
 %token <int> LITERAL
 %token <bool> BLIT
 %token <string> ID FLIT STRING
@@ -32,12 +32,13 @@ open Ast
 %%
 
 program:
-  decls EOF { $1 }
+  decls EOF { List.rev $1 }
 
 decl: 
    fdecl { Fdecl $1 }
  | vdecl { Bind $1 }
  | bind_assign { BindAssign $1 }
+ | stmt { Statement $1 }
 
 decls:
    /* nothing */ { [] }
@@ -48,7 +49,7 @@ fdecl:
      { { typ = $1;
          fname = $2;
          formals = List.rev $4;
-         body = (List.rev (fst $7), List.rev (snd $7)) } }
+         body = List.rev $7; } }
 
 formals_opt:
     /* nothing */ { [] }
@@ -67,12 +68,19 @@ typ:
   | EDGE     { Edge   }
   | STRING_T { String }
   | LIST     { List   }
+  | DICT   { Dict }
+  | GRAPH LT flag_opt GT { Graph($3) }
+
+
+
+f_line:
+    vdecl { LocalBind $1 }
+  | bind_assign { LocalBindAssign $1 }
+  | stmt { LocalStatement $1 }
 
 func_body:
-  /* nothing */ { ([], [])               }
-  | func_body vdecl { (($2 :: fst $1), snd $1) }
-  | func_body stmt  { (fst $1, ($2 :: snd $1)) }
-
+/* nothing */ { ([])               }
+  | func_body f_line { $2 :: $1 }
 
 /* A list of declarations is a tuple of two lists:
      the first is the bind-assign declarations,
@@ -140,10 +148,8 @@ expr:
   | ID DOT ID ASSIGN expr 
                      { DotAssign($1, $3, $5)  }
   | LBRAC list_opt RBRAC { List($2)           }
-  | STRUCT ID ASSIGN LBRACE vdecl_list RBRACE 
-          { StructAssign($2, (fst $5, snd $5))}
-  | GRAPH ID LPAREN list_opt RPAREN
-                        { GraphAssign($2, $4) }
+  | typ ID ASSIGN LBRACE vdecl_list RBRACE 
+          { Dict($2, fst $5, snd $5) }
 
 args_opt:
     /* nothing */ { [] }
@@ -161,3 +167,10 @@ list_opt:
 expr_list:
     expr                 { [$1] }
   | expr_list COMMA expr { $3 :: $1 }
+
+flag_opt:
+    /* nothing */        { [] }
+  | flags_list           { List.rev $1 }
+flags_list:
+    ID                   { [$1] }
+  | flags_list COMMA ID  { $3 :: $1 }

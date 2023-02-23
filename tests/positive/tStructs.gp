@@ -1,6 +1,6 @@
 int main () {
 
-struct TypeName = {
+dict TypeName = {
     int krusty;
     bool crab; 
 };
