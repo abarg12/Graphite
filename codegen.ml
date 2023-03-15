@@ -19,6 +19,45 @@ open Sast
 
 module StringMap = Map.Make(String)
 
+exception Unfinished of string
+
+(*** Declare all the LLVM types we'll use ***)
+let translate decls = 
+  let context = L.global_context () in
+  let i32_t   = L.i32_type context
+  and the_module = L.create_module context "Graphite" in
+
+
+(*** Define Graphite -> LLVM types here ***)
+let ltype_of_typ = function
+    A.Int -> i32_t
+  | _ -> raise (Unfinished "not all types implemented")
+in
+
+
+(*** Expressions go here ***)
+let rec expr ((_, e) : sexpr) = match e with
+    SLiteral i -> L.const_int i32_t i
+in
+
+
+(*** Statements go here ***)
+let rec stmt = function
+  SExpr e -> expr e 
+in
+
+(*** Analyze all the declarations in program ***)
+let rec build_decls decl = match decl with
+  SStatement s -> stmt s
+in
+
+
+let l = List.map build_decls decls in 
+the_module
+
+
+(***
+
 (* Code Generation from the SAST. Returns an LLVM module if successful,
    throws an exception if something is wrong. *)
 let translate (globals, functions) =
@@ -269,3 +308,6 @@ let translate (globals, functions) =
 
   List.iter build_function_body functions;
   the_module
+
+
+  ***)

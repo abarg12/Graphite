@@ -5,6 +5,27 @@ open Sast
 
 module StringMap = Map.Make(String)
 
+let check (decls) =
+
+  (* Return a semantically-checked expression, i.e., with a type *)
+  let rec expr = function
+      Literal  l -> (Int, SLiteral l) 
+  in
+
+  (* Return a semantically-checked statement i.e. containing sexprs *)
+  let rec check_stmt = function
+      Expr e -> SExpr (expr e)
+  in 
+
+  let rec check_decl = function
+      Statement s -> SStatement (check_stmt s)
+  in
+
+  List.map check_decl decls
+
+
+(***
+
 (* Semantic checking of the AST. Returns an SAST if successful,
    throws an exception if something is wrong.
 
@@ -194,3 +215,6 @@ let check (globals, functions) =
       in raise (Failure err)
     }
   in (globals', List.map check_function functions)
+
+
+  ***)

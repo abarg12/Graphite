@@ -4,6 +4,39 @@ open Ast
 
 type sexpr = typ * sx
 and sx =
+    SLiteral of int 
+
+type sstmt =
+     SExpr of sexpr
+
+type sdecl = 
+     SStatement of sstmt
+
+type sprogram = sdecl list
+
+
+
+(*** Printing Functions Below ***)
+
+let rec string_of_sexpr (t, e) =
+  "(" ^ string_of_typ t ^ " : " ^ (match e with
+    SLiteral(l) -> string_of_int l
+    ) ^ ")"
+
+let rec string_of_sstmt stmt = match stmt with
+    SExpr(expr) -> string_of_sexpr expr ^ ";\n"
+
+let rec string_of_sprogram = function 
+    [] -> ""
+  | SStatement s :: ds -> string_of_sstmt s ^ string_of_sprogram ds
+
+
+(*
+
+open Ast
+
+type sexpr = typ * sx
+and sx =
     SLiteral of int
   | SFliteral of string
   | SBoolLit of bool
@@ -75,3 +108,5 @@ let string_of_sfdecl fdecl =
 let string_of_sprogram (vars, funcs) =
   String.concat "" (List.map string_of_vdecl vars) ^ "\n" ^
   String.concat "\n" (List.map string_of_sfdecl funcs)
+
+*)
