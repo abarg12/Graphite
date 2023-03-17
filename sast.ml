@@ -5,12 +5,14 @@ open Ast
 type sexpr = typ * sx
 and sx =
     SLiteral of int 
+  | SBinop of sexpr * op * sexpr
 
 type sstmt =
      SExpr of sexpr
 
 type sdecl = 
      SStatement of sstmt
+   | SBindAssign of typ * string * sexpr
 
 type sprogram = sdecl list
 
@@ -21,6 +23,8 @@ type sprogram = sdecl list
 let rec string_of_sexpr (t, e) =
   "(" ^ string_of_typ t ^ " : " ^ (match e with
     SLiteral(l) -> string_of_int l
+  | SBinop(e1, o, e2) ->
+      string_of_sexpr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_sexpr e2 
     ) ^ ")"
 
 let rec string_of_sstmt stmt = match stmt with
@@ -29,6 +33,7 @@ let rec string_of_sstmt stmt = match stmt with
 let rec string_of_sprogram = function 
     [] -> ""
   | SStatement s :: ds -> string_of_sstmt s ^ string_of_sprogram ds
+  | SBindAssign(typ, s, e) :: ds -> s ^ " = " ^ string_of_sexpr e ^ ";\n" ^ string_of_sprogram ds
 
 
 (*

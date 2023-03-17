@@ -25,7 +25,9 @@ exception Unfinished of string
 let translate decls = 
   let context = L.global_context () in
   let i32_t   = L.i32_type context
-  and the_module = L.create_module context "Graphite" in
+  and void_t  = L.void_type context 
+  and the_module = L.create_module context "Graphite"
+  and global_vars : L.llvalue StringMap.t = StringMap.empty in 
 
 
 (*** Define Graphite -> LLVM types here ***)
@@ -36,23 +38,69 @@ in
 
 
 (*** Expressions go here ***)
-let rec expr ((_, e) : sexpr) = match e with
+let rec expr builder ((_, e) : sexpr) = match e with
     SLiteral i -> L.const_int i32_t i
+  | SBinop (e1, op, e2) ->
+      let (t, _) = e1
+      and e1' = expr builder e1
+      and e2' = expr builder e2 in
+      if t = A.Float then (match op with 
+        A.Add     -> L.build_fadd
+      | A.Sub     -> L.build_fsub
+      | A.Mult    -> L.build_fmul
+      | A.Div     -> L.build_fdiv 
+      | A.Equal   -> L.build_fcmp L.Fcmp.Oeq
+      | A.Neq     -> L.build_fcmp L.Fcmp.One
+      | A.Less    -> L.build_fcmp L.Fcmp.Olt
+      | A.Leq     -> L.build_fcmp L.Fcmp.Ole
+      | A.Greater -> L.build_fcmp L.Fcmp.Ogt
+      | A.Geq     -> L.build_fcmp L.Fcmp.Oge
+      | A.And | A.Or ->
+          raise (Failure "internal error: semant should have rejected and/or on float")
+      ) e1' e2' "tmp" builder 
+      else (match op with
+      | A.Add     -> L.build_add
+      | A.Sub     -> L.build_sub
+      | A.Mult    -> L.build_mul
+            | A.Div     -> L.build_sdiv
+      | A.And     -> L.build_and
+      | A.Or      -> L.build_or
+      | A.Equal   -> L.build_icmp L.Icmp.Eq
+      | A.Neq     -> L.build_icmp L.Icmp.Ne
+      | A.Less    -> L.build_icmp L.Icmp.Slt
+      | A.Leq     -> L.build_icmp L.Icmp.Sle
+      | A.Greater -> L.build_icmp L.Icmp.Sgt
+      | A.Geq     -> L.build_icmp L.Icmp.Sge
+      ) e1' e2' "tmp" builder 
 in
 
 
 (*** Statements go here ***)
-let rec stmt = function
-  SExpr e -> expr e 
+let rec stmt builder = function
+  SExpr e -> let _ = expr builder e in builder
+in 
+
+let rec bindassign builder = function 
+  (typ, s, e) -> let e' = expr builder e in
+                 (*let StringMap.add s (L.define_global s e the_module) global_vars*)
+                 let _  = L.build_store e' (L.define_global s e' the_module) builder
+                 in builder  
 in
 
 (*** Analyze all the declarations in program ***)
-let rec build_decls decl = match decl with
-  SStatement s -> stmt s
+let rec build_decl builder decl = match decl with
+    SStatement s -> stmt builder s
+  | SBindAssign(typ, s, e) -> bindassign builder (typ, s, e)
 in
 
-
-let l = List.map build_decls decls in 
+let ftype = L.function_type void_t (Array.of_list []) in
+let global_scope = L.define_function "__global__" ftype the_module in
+let builder = L.builder_at_end context (L.entry_block global_scope) in
+let rec program builder = function
+    decl :: ds -> program (build_decl builder decl) ds 
+  | [] -> builder
+in
+let l = program builder decls in 
 the_module
 
 
