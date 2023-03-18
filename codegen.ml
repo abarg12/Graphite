@@ -26,8 +26,8 @@ let translate decls =
   let context = L.global_context () in
   let i32_t   = L.i32_type context
   and void_t  = L.void_type context 
-  and the_module = L.create_module context "Graphite"
-  and global_vars : L.llvalue StringMap.t = StringMap.empty in 
+  and the_module = L.create_module context "Graphite" in 
+  (*and global_vars : L.llvalue StringMap.t = StringMap.empty in *)
 
 
 (*** Define Graphite -> LLVM types here ***)
@@ -100,7 +100,7 @@ let rec program builder = function
     decl :: ds -> program (build_decl builder decl) ds 
   | [] -> builder
 in
-let l = program builder decls in 
+let _ = program builder decls in 
 the_module
 
 
