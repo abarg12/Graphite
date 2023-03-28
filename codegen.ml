@@ -94,13 +94,15 @@ let rec build_decl builder decl = match decl with
 in
 
 let ftype = L.function_type void_t (Array.of_list []) in
-let global_scope = L.define_function "__global__" ftype the_module in
+let global_scope = L.define_function "main" ftype the_module in
 let builder = L.builder_at_end context (L.entry_block global_scope) in
 let rec program builder = function
     decl :: ds -> program (build_decl builder decl) ds 
   | [] -> builder
 in
 let _ = program builder decls in 
+let _ = L.build_ret_void builder in 
+(*let _ = L.build_ret (L.const_int i32_t 0) builder in*)
 the_module
 
 
