@@ -41,6 +41,20 @@ let check (decls) =
       Statement s -> SStatement (check_stmt s)
     | BindAssign (typ, s, e) -> let e' = expr e in
                                 SBindAssign (typ, s, e')
+    | Call(fname, args) as call -> 
+      let fd = find_func fname in
+      let param_length = List.length fd.formals in
+      if List.length args != param_length then
+        raise (Failure ("expecting " ^ string_of_int param_length ^ 
+                        " arguments in " ^ string_of_expr call))
+      else let check_call (ft, _) e = 
+        let (et, e') = expr e in 
+        let err = "illegal argument found " ^ string_of_typ et ^
+          " expected " ^ string_of_typ ft ^ " in " ^ string_of_expr e
+        in (check_assign ft et err, e')
+      in 
+      let args' = List.map2 check_call fd.formals args
+      in (fd.typ, SCall(fname, args'))
     | _ -> raise (Failure("decl: not implemented"))
   in
   
