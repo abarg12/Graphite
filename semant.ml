@@ -28,21 +28,48 @@ let check (decls) =
                        string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^
                        string_of_typ t2 ^ " in " ^ string_of_expr e))
           in (ty, SBinop((t1, e1'), op, (t2, e2')))
+    | _ -> raise (Failure("expr: not implemented"))
   in
 
   (* Return a semantically-checked statement i.e. containing sexprs *)
   let rec check_stmt = function
       Expr e -> SExpr (expr e)
+    | _ -> raise (Failure("stmt: not implemented"))
   in 
 
   let rec check_decl = function
       Statement s -> SStatement (check_stmt s)
     | BindAssign (typ, s, e) -> let e' = expr e in
                                 SBindAssign (typ, s, e')
+    | _ -> raise (Failure("decl: not implemented"))
   in
+  
+  (* let built_in_decls = 
+    let add_bind map (name, ty) = StringMap.add name {
+      typ = Void; fname = name; 
+      formals = [(ty, "x")];
+      body = [] } map
+    in List.fold_left add_bind StringMap.empty [ ("print", Int) ]
+  in
+
+  let add_func map fd = 
+    let built_in_err = "function " ^ fd.fname ^ " may not be defined"
+    and dup_err = "duplicate function " ^ fd.fname
+    and make_err er = raise (Failure er)
+    and n = fd.fname (* Name of the function *)
+    in match fd with (* No duplicate functions or redefinitions of built-ins *)
+         _ when StringMap.mem n built_in_decls -> make_err built_in_err
+       | _ when StringMap.mem n map -> make_err dup_err  
+       | _ ->  StringMap.add n fd map 
+  in
+
+  (* Collect all other function names into one symbol table *)
+  let function_decls = List.fold_left add_func built_in_decls functions
+  in *)
 
   List.map check_decl decls
 
+ (* Collect function declarations for built-in functions: no bodies *)
 
 (***
 
@@ -79,18 +106,7 @@ let check (globals, functions) =
   (**** Checking Functions ****)
 
 
-  (* Collect function declarations for built-in functions: no bodies *)
-  let built_in_decls = 
-    let add_bind map (name, ty) = StringMap.add name {
-      typ = Void; fname = name; 
-      formals = [(ty, "x")];
-      locals = []; body = [] } map
-    in List.fold_left add_bind StringMap.empty [ ("print", Int);
-			                         ("printb", Bool);
-			                         ("printf", Float);
-			                         ("printbig", Int) ]
-  in
-
+ 
   (* Add function name to symbol table *)
   let add_func map fd = 
     let built_in_err = "function " ^ fd.fname ^ " may not be defined"
@@ -103,9 +119,7 @@ let check (globals, functions) =
        | _ ->  StringMap.add n fd map 
   in
 
-  (* Collect all other function names into one symbol table *)
-  let function_decls = List.fold_left add_func built_in_decls functions
-  in
+
   
   (* Return a function from our symbol table *)
   let find_func s = 

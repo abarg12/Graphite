@@ -6,6 +6,8 @@ type sexpr = typ * sx
 and sx =
     SLiteral of int 
   | SBinop of sexpr * op * sexpr
+  | SCall of string * sexpr list
+
 
 type sstmt =
      SExpr of sexpr
@@ -13,6 +15,13 @@ type sstmt =
 type sdecl = 
      SStatement of sstmt
    | SBindAssign of typ * string * sexpr
+
+type sfunc_decl = {
+  styp : typ;
+  sfname : string;
+  sformals : bind list;
+  sbody : sstmt list;
+}
 
 type sprogram = sdecl list
 
@@ -34,7 +43,6 @@ let rec string_of_sprogram = function
     [] -> ""
   | SStatement s :: ds -> string_of_sstmt s ^ string_of_sprogram ds
   | SBindAssign(typ, s, e) :: ds -> s ^ " = " ^ string_of_sexpr e ^ ";\n" ^ string_of_sprogram ds
-
 
 (*
 
