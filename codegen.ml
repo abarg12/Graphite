@@ -25,6 +25,8 @@ exception Unfinished of string
 let translate decls = 
   let context = L.global_context () in
   let i32_t   = L.i32_type context
+  and i8_t    = L.i8_type context
+(*  and string  = L.array_type i8_t context *)
   and void_t  = L.void_type context 
   and the_module = L.create_module context "Graphite" in 
   (*and global_vars : L.llvalue StringMap.t = StringMap.empty in *)
@@ -33,9 +35,17 @@ let translate decls =
 (*** Define Graphite -> LLVM types here ***)
 let ltype_of_typ = function
     A.Int -> i32_t
+ (* | A.String -> string *)
   | _ -> raise (Unfinished "not all types implemented")
 in
 
+let printf_t : L.lltype = 
+  L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
+let printf_func : L.llvalue = 
+ L.declare_function "printf" printf_t the_module in
+(*| A.Bool  -> i1_t
+  | A.Float -> float_t
+  | A.Void  -> void_t*)
 
 (*** Expressions go here ***)
 let rec expr builder ((_, e) : sexpr) = match e with
@@ -72,6 +82,9 @@ let rec expr builder ((_, e) : sexpr) = match e with
       | A.Greater -> L.build_icmp L.Icmp.Sgt
       | A.Geq     -> L.build_icmp L.Icmp.Sge
       ) e1' e2' "tmp" builder 
+      | SCall ("printf", [e]) -> 
+        L.build_call printf_func [| (expr builder e) |]
+          "printf" builder
 in
 
 
@@ -80,6 +93,7 @@ let rec stmt builder = function
   SExpr e -> let _ = expr builder e in builder
 in 
 
+(*?????*)
 let rec bindassign builder = function 
   (typ, s, e) -> let e' = expr builder e in
                  (*let StringMap.add s (L.define_global s e the_module) global_vars*)
@@ -87,19 +101,29 @@ let rec bindassign builder = function
                  in builder  
 in
 
-(*** Analyze all the declarations in program ***)
+(*** Analyze all the declarations in program ***) 
 let rec build_decl builder decl = match decl with
     SStatement s -> stmt builder s
   | SBindAssign(typ, s, e) -> bindassign builder (typ, s, e)
+  (**TODO: add fdecl and vdecl*)
 in
-
-let ftype = L.function_type void_t (Array.of_list []) in
-let global_scope = L.define_function "main" ftype the_module in
+(** to have func type have to build before you use it -- needed for line below it **)
+let ftype = L.function_type void_t (Array.of_list []) in 
+let global_scope = L.define_function "main" ftype the_module in (*CHANGED TO MAIN -- Abby *)
+(** builder initialized at the first line of global main -- where you want to put next llvm instruction **)
 let builder = L.builder_at_end context (L.entry_block global_scope) in
+(** uses builder from above -- every line is a decl **)
 let rec program builder = function
     decl :: ds -> program (build_decl builder decl) ds 
   | [] -> builder
 in
+
+let printf_t : L.lltype = 
+  L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
+let printf_func : L.llvalue = 
+ L.declare_function "printf" printf_t the_module in
+
+
 let _ = program builder decls in 
 let _ = L.build_ret_void builder in 
 (*let _ = L.build_ret (L.const_int i32_t 0) builder in*)

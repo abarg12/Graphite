@@ -6,6 +6,7 @@ let () =
   (*** print_string (Ast.string_of_program parsed_expr) ***)
   let sast = Semant.check ast in
   print_string (Llvm.string_of_llmodule (Codegen.translate sast))
+  (* print_string (Sast.string_of_program sast) *)
 
 
   (*** code from MicroC for reference

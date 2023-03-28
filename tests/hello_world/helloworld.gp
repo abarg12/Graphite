@@ -1,2 +1,3 @@
-int a = 1 + 1;
-3 - 2;
+int i = 2; 
+float x = 3; 
+printf(x);
