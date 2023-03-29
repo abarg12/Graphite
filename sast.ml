@@ -5,6 +5,7 @@ open Ast
 type sexpr = typ * sx
 and sx =
     SLiteral of int 
+  | SString of string
   | SBinop of sexpr * op * sexpr
   | SCall of string * sexpr list
 

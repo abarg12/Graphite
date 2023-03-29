@@ -1,3 +1,3 @@
 int i = 2; 
-float x = 3; 
-printf(x);
+string x = "howdy Richard"; 
+printf("howdy Richardssss");

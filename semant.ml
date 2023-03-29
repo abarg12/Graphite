@@ -7,9 +7,43 @@ module StringMap = Map.Make(String)
 
 let check (decls) =
 
+  (**** Checking Functions ****)
+
+  (* Collect function declarations for built-in functions: no bodies *)
+  (* let built_in_decls = 
+    let add_bind map (name, ty) = StringMap.add name {
+      typ = Void; fname = name; 
+      formals = [(ty, "x")];
+      body = [] } map
+    in List.fold_left add_bind StringMap.empty [ ("print", String) ]
+  in
+
+  (* Add function name to symbol table *)
+  let add_func map fd = 
+    let built_in_err = "function " ^ fd.fname ^ " may not be defined"
+    and dup_err = "duplicate function " ^ fd.fname
+    and make_err er = raise (Failure er)
+    and n = fd.fname (* Name of the function *)
+    in match fd with (* No duplicate functions or redefinitions of built-ins *)
+         _ when StringMap.mem n built_in_decls -> make_err built_in_err
+       | _ when StringMap.mem n map -> make_err dup_err  
+       | _ ->  StringMap.add n fd map 
+  in
+
+  (* Collect all other function names into one symbol table *)
+  let function_decls = List.fold_left add_func built_in_decls [] (*nothing for now*)
+  in
+  
+  (* Return a function from our symbol table *)
+  let find_func s = 
+    try StringMap.find s function_decls
+    with Not_found -> raise (Failure ("unrecognized function " ^ s))
+  in *)
+
   (* Return a semantically-checked expression, i.e., with a type *)
   let rec expr = function
-      Literal l -> (Int, SLiteral l) 
+      Literal l -> (Int, SLiteral l)
+    | String s -> (String, SString s)
     | Binop(e1, op, e2) as e -> 
           let (t1, e1') = expr e1 
           and (t2, e2') = expr e2 in
@@ -28,6 +62,24 @@ let check (decls) =
                        string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^
                        string_of_typ t2 ^ " in " ^ string_of_expr e))
           in (ty, SBinop((t1, e1'), op, (t2, e2')))
+    | Call(fname, args) as call ->
+      (* let fd = find_func fname in
+      let param_length = List.length fd.formals in
+      if List.length args != param_length then
+        raise (Failure ("expecting " ^ string_of_int param_length ^ 
+                        " arguments in " ^ string_of_expr call))
+      else let check_call (ft, _) e = 
+        let (et, e') = expr e in 
+        let err = "illegal argument found " ^ string_of_typ et ^
+          " expected " ^ string_of_typ ft ^ " in " ^ string_of_expr e
+        in (check_assign ft et err, e')
+      in 
+      let args' = List.map2 check_call fd.formals args
+      in (fd.typ, SCall(fname, args')) *)
+      
+      let args' = List.map expr args in
+      (Void, SCall(fname, args'))
+      (*(Int, SCall(fname, SString fname))*)
     | _ -> raise (Failure("expr: not implemented"))
   in
 

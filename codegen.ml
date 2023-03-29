@@ -50,6 +50,7 @@ let printf_func : L.llvalue =
 (*** Expressions go here ***)
 let rec expr builder ((_, e) : sexpr) = match e with
     SLiteral i -> L.const_int i32_t i
+  | SString s -> L.const_string context s
   | SBinop (e1, op, e2) ->
       let (t, _) = e1
       and e1' = expr builder e1
@@ -82,9 +83,13 @@ let rec expr builder ((_, e) : sexpr) = match e with
       | A.Greater -> L.build_icmp L.Icmp.Sgt
       | A.Geq     -> L.build_icmp L.Icmp.Sge
       ) e1' e2' "tmp" builder 
-      | SCall ("printf", [e]) -> 
-        L.build_call printf_func [| (expr builder e) |]
-          "printf" builder
+  | SCall ("printf", [e]) ->
+    let (_, SString(the_str)) = e in 
+    let s = L.build_global_stringptr (the_str ^ "\n") "" builder in
+    L.build_call printf_func [| s |] "" builder
+        (* let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
+        L.build_call printf_func [|  ( int_format_str ; expr builder e) |]
+           "printf" builder  *)
 in
 
 
@@ -117,11 +122,6 @@ let rec program builder = function
     decl :: ds -> program (build_decl builder decl) ds 
   | [] -> builder
 in
-
-let printf_t : L.lltype = 
-  L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
-let printf_func : L.llvalue = 
- L.declare_function "printf" printf_t the_module in
 
 
 let _ = program builder decls in 
