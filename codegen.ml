@@ -26,7 +26,7 @@ let translate decls =
   let context = L.global_context () in
   let i32_t   = L.i32_type context
   and i8_t    = L.i8_type context
-(*  and string  = L.array_type i8_t context *)
+  and string_t  = L.pointer_type (L.i8_type context)
   and void_t  = L.void_type context 
   and the_module = L.create_module context "Graphite" in 
   (*and global_vars : L.llvalue StringMap.t = StringMap.empty in *)
@@ -35,9 +35,12 @@ let translate decls =
 (*** Define Graphite -> LLVM types here ***)
 let ltype_of_typ = function
     A.Int -> i32_t
- (* | A.String -> string *)
+  | A.String -> string_t 
   | _ -> raise (Unfinished "not all types implemented")
 in
+
+(*** Workaround to silence error about never using ltype_of_typ ***)
+let _ = ltype_of_typ A.Int in 
 
 let printf_t : L.lltype = 
   L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
@@ -50,7 +53,8 @@ let printf_func : L.llvalue =
 (*** Expressions go here ***)
 let rec expr builder ((_, e) : sexpr) = match e with
     SLiteral i -> L.const_int i32_t i
-  | SString s -> L.const_string context s
+  (*| SString s -> L.const_string context s*)
+  | SString s -> L.build_global_stringptr s "" builder
   | SBinop (e1, op, e2) ->
       let (t, _) = e1
       and e1' = expr builder e1
@@ -84,12 +88,14 @@ let rec expr builder ((_, e) : sexpr) = match e with
       | A.Geq     -> L.build_icmp L.Icmp.Sge
       ) e1' e2' "tmp" builder 
   | SCall ("printf", [e]) ->
-    let (_, SString(the_str)) = e in 
+    (* let (_, SString(the_str)) = e in 
     let s = L.build_global_stringptr (the_str ^ "\n") "" builder in
-    L.build_call printf_func [| s |] "" builder
+    L.build_call printf_func [| s |] "" builder *)
+    L.build_call printf_func [| (expr builder e) |] "printf" builder
         (* let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
         L.build_call printf_func [|  ( int_format_str ; expr builder e) |]
            "printf" builder  *)
+  | _ -> raise (Failure("decl: not implemented"))
 in
 
 
@@ -98,7 +104,7 @@ let rec stmt builder = function
   SExpr e -> let _ = expr builder e in builder
 in 
 
-(*?????*)
+(* Bind assignments are declaration-assignment one-liners *)
 let rec bindassign builder = function 
   (typ, s, e) -> let e' = expr builder e in
                  (*let StringMap.add s (L.define_global s e the_module) global_vars*)
