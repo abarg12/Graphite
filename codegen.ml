@@ -27,7 +27,7 @@ let translate decls =
   let i32_t   = L.i32_type context
   and i8_t    = L.i8_type context
   and string_t  = L.pointer_type (L.i8_type context)
-  and void_t  = L.void_type context 
+  (* and void_t  = L.void_type context  *)
   and the_module = L.create_module context "Graphite" in 
   (*and global_vars : L.llvalue StringMap.t = StringMap.empty in *)
 
@@ -119,7 +119,7 @@ let rec build_decl builder decl = match decl with
   (**TODO: add fdecl and vdecl*)
 in
 (** to have func type have to build before you use it -- needed for line below it **)
-let ftype = L.function_type void_t (Array.of_list []) in 
+let ftype = L.function_type i32_t (Array.of_list []) in 
 let global_scope = L.define_function "main" ftype the_module in (*CHANGED TO MAIN -- Abby *)
 (** builder initialized at the first line of global main -- where you want to put next llvm instruction **)
 let builder = L.builder_at_end context (L.entry_block global_scope) in
@@ -131,8 +131,8 @@ in
 
 
 let _ = program builder decls in 
-let _ = L.build_ret_void builder in 
-(*let _ = L.build_ret (L.const_int i32_t 0) builder in*)
+(* let _ = L.build_ret_int builder in  *)
+let _ = L.build_ret (L.const_int i32_t 0) builder in
 the_module
 
 

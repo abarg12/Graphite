@@ -62,7 +62,7 @@ let check (decls) =
                        string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^
                        string_of_typ t2 ^ " in " ^ string_of_expr e))
           in (ty, SBinop((t1, e1'), op, (t2, e2')))
-    | Call(fname, args) as call ->
+    | Call(fname, args) ->
       (* let fd = find_func fname in
       let param_length = List.length fd.formals in
       if List.length args != param_length then

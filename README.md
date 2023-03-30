@@ -12,7 +12,20 @@ HOW TO COMPILE AND RUN COMPILER:
     To run the compiler (as stands), type "./toplevel.native" after compiling and begin programming!
 
 HOW TO RUN TEST SCRIPT: 
-    In order to run the testing script, enter 'chmod u+x runtests.sh' into your terminal, run the command, and then run './runtests.sh'. You should have opam properly installed to run this program. It will print messages documenting the testing progress, and will print a message if a test fails unexpectedly. 
+    In order to run the testing script, enter 'chmod u+x runtests.sh' into your terminal, and run the command.
+
+    TO RUN ALL TESTS:
+        ./runtests all
+    
+    TO RUN SPECIFIC TESTS (both AST and LLVM):
+        ./runtests full_path
+        where full_path is the full path to the test you want to run.
+        For example, "/tests/positive/test1.gp", not just "test1.gp".
+    
+    TO COMPILE ANY GRAPHITE PROGRAM INTO AN LLVM EXECUTABLE:
+        ./compile.sh full_path
+        where full_path is the full path to the test you want to run.
+        For example, "/graphite_programs/prog1.gp", not just "prog1.gp".
 
 SYNTAX WE STILL NEED TO ADD:
     We may look into syntactic sugar for dictionaries, such as:

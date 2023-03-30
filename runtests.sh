@@ -1,59 +1,133 @@
-#!/bin/bash 
+#!/bin/bash
 
-echo "
-     creating temp testing directory...
-                            "
 
-mkdir ./tests/temptesting
+# Path to the LLVM interpreter
+LLI="/usr/local/Cellar/llvm@14/14.0.6/bin/lli"
+
+# Path to the LLVM compiler
+LLC="/usr/local/Cellar/llvm@14/14.0.6/bin/llc"
+
+
+if [ ! -d "./tests/temptesting" ]
+then
+    mkdir ./tests/temptesting
+fi
 
 eval $(opam env) 
 
-echo "
-     compiling toplevel.native...
-                            "
-
-
 make toplevel.native
 
+if [[ $1 == all ]]
+then echo $1
+
 echo "
-     running positive tests...
+running positive tests...
                             "
 
 for entry in ./tests/positive/*; do
     if [[ $entry == *.gp ]]       
     then
         base_name=$(basename ${entry})
-        ./toplevel.native < $entry > ./tests/temptesting/${base_name%%.*}.out || 
-                echo "WARNING: " ${base_name%%.*} "test FAILED unexpectedly."
+        # if we cannot even run the test, something went wrong :(
+        ./toplevel.native -a < $entry > ./tests/temptesting/${base_name%%.*}.out ||
+                echo "" ${base_name%%.*} "something went wrong. :("
 
+        # diff
         if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/positive/goldStandards/${base_name%%.*}.Gold; 
         then 
             echo ${base_name} "FAILED"
+        else 
+            echo ${base_name} "PASSED"
         fi 
     fi
 done
 
 echo "
-     running negative tests...
+running negative ast tests...
                             "
                             
 for entry in ./tests/negative/*; do
     if [[ $entry == *.gp ]]       
     then
         base_name=$(basename ${entry})
-        ./toplevel.native < $entry > ./tests/temptesting/${base_name%%.*}.out 2>&1
+        # if we cannot even run the test, something went wrong :(
+        ./toplevel.native -a < $entry > ./tests/temptesting/${base_name%%.*}.out 2>&1
 
-        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/negative/goldStandards/${base_name%%.*}.Gold; 
+        # diff
+        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/negative/goldStandards/${base_name%%.*}.Gold;
         then 
             echo ${base_name} "FAILED"
+        else 
+            echo ${base_name} "PASSED"
         fi 
     fi
 done
 
-./toplevel.native < tests/hello_world/helloworld.gp > tests/hello_world/helloworld.out2
-
-/usr/local/Cellar/llvm@14/14.0.6/bin/lli < tests/hello_world/helloworld.out2 
-
 echo "
-     deleting temp testing directory...
+running hello world tests...
                             "
+
+
+# Compiles Graphite code into LLVM
+./toplevel.native < tests/hello_world/helloworld.gp > tests/temptesting/helloworld.out2
+
+# Runs the LLVM interpreter with the previously generated LLVM code 
+$LLI < tests/hello_world/helloworld.out2 > tests/temptesting/helloworld_compiled.out
+
+# Compares the output of the print against the gold standard
+if ! cmp -s tests/temptesting/helloworld_compiled.out tests/hello_world/helloworld.gold;
+then echo "Hello World FAILED"
+else echo "Hello World PASSED"
+fi
+else
+
+
+if [ ! -f $1 ]; 
+then
+    echo "$1 is NOT file. It must be a file."
+else
+    parentdir=$(dirname $1) 
+    echo $parentdir
+    base_name=$(basename $1)
+
+    if [ "$parentdir" = "tests/positive" ];
+    then
+        # if we cannot even run the test, something went wrong :( uwu
+        ./toplevel.native -a < $1 > ./tests/temptesting/${base_name%%.*}.out ||
+                echo "" ${base_name%%.*} "something went wrong. :("
+
+        # diff
+        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/positive/goldStandards/${base_name%%.*}.Gold; 
+        then 
+            echo ${base_name} "FAILED"
+        else 
+            echo ${base_name} "PASSED"
+        fi 
+    elif [ "$parentdir" = "tests/positive" ];
+    then 
+        # if we cannot even run the test, something went wrong :(
+        ./toplevel.native -a < $1 > ./tests/temptesting/${base_name%%.*}.out 2>&1
+
+        # diff
+        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/negative/goldStandards/${base_name%%.*}.Gold;
+        then 
+            echo ${base_name} "FAILED"
+        else 
+            echo ${base_name} "PASSED"
+        fi 
+    else 
+
+        # Compiles Graphite code into LLVM
+        ./toplevel.native < tests/hello_world/helloworld.gp > tests/temptesting/helloworld.out
+
+        # Runs the LLVM interpreter with the previously generated LLVM code 
+        $LLI < tests/temptesting/helloworld.out > tests/temptesting/helloworld_compiled.out 
+
+        # Compares the output of the print against the gold standard
+        if ! cmp -s tests/temptesting/helloworld_compiled.out tests/hello_world/helloworld.gold;
+        then echo "Hello World FAILED"
+        else echo "Hello World PASSED"
+    fi
+    fi
+fi
+fi

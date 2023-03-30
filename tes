@@ -1,6 +1,0 @@
-; ModuleID = 'Graphite'
-source_filename = "Graphite"
-
-define void @__global__() {
-entry:
-}

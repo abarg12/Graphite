@@ -33,6 +33,9 @@ type sprogram = sdecl list
 let rec string_of_sexpr (t, e) =
   "(" ^ string_of_typ t ^ " : " ^ (match e with
     SLiteral(l) -> string_of_int l
+  | SString(s) -> s
+  | SCall(f, el) ->
+    f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
   | SBinop(e1, o, e2) ->
       string_of_sexpr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_sexpr e2 
     ) ^ ")"
