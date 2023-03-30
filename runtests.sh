@@ -50,6 +50,10 @@ for entry in ./tests/negative/*; do
     fi
 done
 
+./toplevel.native < tests/hello_world/helloworld.gp > tests/hello_world/helloworld.out2
+
+/usr/local/Cellar/llvm@14/14.0.6/bin/lli < tests/hello_world/helloworld.out2 
+
 echo "
      deleting temp testing directory...
                             "
