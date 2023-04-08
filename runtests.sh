@@ -2,10 +2,10 @@
 
 
 # Path to the LLVM interpreter
-LLI="/usr/local/Cellar/llvm@14/14.0.6/bin/lli"
+LLI="lli"
 
 # Path to the LLVM compiler
-LLC="/usr/local/Cellar/llvm@14/14.0.6/bin/llc"
+LLC="llc"
 
 
 if [ ! -d "./tests/temptesting" ]

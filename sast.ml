@@ -11,11 +11,13 @@ and sx =
 
 
 type sstmt =
-     SExpr of sexpr
+    SExpr of sexpr
+  | SReturn of sexpr
+  | SBlock of sstmt list
 
 type sdecl = 
-     SStatement of sstmt
-   | SBindAssign of typ * string * sexpr
+    SStatement of sstmt
+  | SBindAssign of typ * string * sexpr
 
 type sfunc_decl = {
   styp : typ;
@@ -41,7 +43,10 @@ let rec string_of_sexpr (t, e) =
     ) ^ ")"
 
 let rec string_of_sstmt stmt = match stmt with
-    SExpr(expr) -> string_of_sexpr expr ^ ";\n"
+    SExpr(expr)   -> string_of_sexpr expr ^ ";\n"
+  | SReturn(expr) -> "return " ^ string_of_sexpr expr ^ ";\n"
+  | SBlock(stmts) -> "{\n" ^ String.concat "" 
+                          (List.map string_of_sstmt stmts) ^ "}\n"
 
 let rec string_of_sprogram = function 
     [] -> ""
