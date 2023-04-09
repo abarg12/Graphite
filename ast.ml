@@ -35,25 +35,25 @@ type expr =
 type bind_assign = typ * string * expr
 
 type stmt =
-    Block of stmt list
+    Block of block_body
   | Expr of expr
   | Return of expr
   | If of expr * stmt * stmt
   | For of expr * expr * expr * stmt
   | While of expr * stmt
-
-type f_line = 
+and
+b_line = 
     LocalBind of bind
   | LocalBindAssign of bind_assign
   | LocalStatement of stmt
-
-type func_body = f_line list
+and
+block_body = b_line list
 
 type func_decl = {
     typ : typ;
     fname : string;
     formals : bind list;
-    body : func_body;
+    body : stmt;
   }
   
 type decl = 
@@ -133,8 +133,8 @@ string_of_expr = function
   | Noexpr -> ""
 
 let rec string_of_stmt stmt = match stmt with
-    Block(stmt) ->
-      "{\n" ^  String.concat "" (List.map string_of_stmt stmt) ^ "}\n"
+    Block(bs) ->
+      "{\n" ^  string_of_blines bs ^ "}\n"
   | Expr(expr) -> string_of_expr expr ^ ";\n"
   | Return(expr) -> "return " ^ string_of_expr expr ^ ";\n"
   | If(e, s, Block([])) -> "if (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
@@ -144,19 +144,17 @@ let rec string_of_stmt stmt = match stmt with
       "for (" ^ string_of_expr e1  ^ string_of_expr e2 ^ " ; " ^
       string_of_expr e3  ^ ") " ^ string_of_stmt s
   | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
-
-let rec string_of_fline = function
+and 
+string_of_blines = function
     [] -> ""
-  | LocalBind b :: ds -> string_of_vdecl b ^ string_of_fline ds
-  | LocalBindAssign b :: ds -> string_of_bind_assign b ^ string_of_fline ds
-  | LocalStatement s :: ds -> string_of_stmt s ^ string_of_fline ds 
+  | LocalBind b :: ds -> string_of_vdecl b ^ string_of_blines ds
+  | LocalBindAssign b :: ds -> string_of_bind_assign b ^ string_of_blines ds
+  | LocalStatement s :: ds -> string_of_stmt s ^ string_of_blines ds 
 
 let string_of_fdecl fdecl =
   string_of_typ fdecl.typ ^ " " ^
   fdecl.fname ^ "(" ^ String.concat ", " (List.map (fun (t, id) -> string_of_typ t ^ " " ^ id) fdecl.formals) ^
-  ") \n{\n" ^
-  (string_of_fline fdecl.body) ^
-  "}\n"
+  ") \n" ^ string_of_stmt fdecl.body
 
 let rec string_of_program = function 
     [] -> ""

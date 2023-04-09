@@ -45,11 +45,11 @@ decls:
  | decls decl { $2 :: $1 }
 
 fdecl:
-   typ ID LPAREN formals_opt RPAREN LBRACE func_body RBRACE 
+   typ ID LPAREN formals_opt RPAREN stmt 
      { { typ = $1;
          fname = $2;
          formals = List.rev $4;
-         body = List.rev $7; } }
+         body = $6; } }
 
 formals_opt:
     /* nothing */ { [] }
@@ -73,14 +73,14 @@ typ:
 
 
 
-f_line:
+b_line:
     vdecl { LocalBind $1 }
   | bind_assign { LocalBindAssign $1 }
   | stmt { LocalStatement $1 }
 
-func_body:
-/* nothing */ { ([])               }
-  | func_body f_line { $2 :: $1 }
+block_body:
+/* nothing */              { [] }
+  | block_body b_line { $2 :: $1 }
 
 /* A list of declarations is a tuple of two lists:
      the first is the bind-assign declarations,
@@ -97,14 +97,16 @@ vdecl:
 bind_assign:
     typ ID ASSIGN expr SEMI { ($1, $2, $4) }
 
+/*
 stmt_list:
-    /* nothing */  { [] }
+     { [] }
   | stmt_list stmt { $2 :: $1 }
+  */
 
 stmt:
-    expr SEMI                            { Expr $1               }
-  | RETURN expr_opt SEMI                 { Return $2             }
-  | LBRACE stmt_list RBRACE                 { Block(List.rev $2)    }
+    expr SEMI                               { Expr $1               }
+  | RETURN expr_opt SEMI                    { Return $2             }
+  | LBRACE block_body RBRACE                { Block(List.rev $2)    }
   | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) }
   | IF LPAREN expr RPAREN stmt ELSE stmt    { If($3, $5, $7)        }
   | FOR LPAREN expr_opt SEMI expr SEMI expr_opt RPAREN stmt  
