@@ -26,6 +26,8 @@ HOW TO RUN TEST SCRIPT:
         ./compile.sh full_path
         where full_path is the full path to the test you want to run.
         For example, "/graphite_programs/prog1.gp", not just "prog1.gp".
+        This generates an executable in the folder tests/generatedfiles
+        that can be run with ./file_name.exe
 
 SYNTAX WE STILL NEED TO ADD:
     We may look into syntactic sugar for dictionaries, such as:

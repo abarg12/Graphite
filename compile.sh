@@ -11,6 +11,11 @@ then
     mkdir ./tests/generatedfiles
 fi
 
+if [ ! -d "./tests/temptesting" ]
+then
+    mkdir ./tests/temptesting
+fi
+
 gen_dir="./test/generatedfiles"
 
 if [ ! -f $1 ]; 
@@ -24,6 +29,7 @@ else
     ./toplevel.native < $1 > ./tests/generatedfiles/${base_name%%.*}.ll
 
     # Runs the LLVM interpreter with the previously generated LLVM code 
-    $LLC -filetype=obj ./tests/generatedfiles/${base_name%%.*}.ll -o ./tests/generatedfiles/${base_name%%.*}.o
-    cc ./tests/generatedfiles/${base_name%%.*}.o -o tests/generatedfiles/${base_name%%.*} 
+    $LLC < ./tests/generatedfiles/${base_name%%.*}.ll > ./tests/generatedfiles/${base_name%%.*}.s
+    cc -o ./tests/generatedfiles/${basename%%.*}.exe tests/generatedfiles/${base_name%%.*}.s 
+
 fi

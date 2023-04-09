@@ -69,10 +69,10 @@ running hello world tests...
 
 
 # Compiles Graphite code into LLVM
-./toplevel.native < tests/hello_world/helloworld.gp > tests/temptesting/helloworld.out2
+./toplevel.native < tests/hello_world/helloworld.gp > tests/temptesting/helloworld.out
 
 # Runs the LLVM interpreter with the previously generated LLVM code 
-$LLI < tests/hello_world/helloworld.out2 > tests/temptesting/helloworld_compiled.out
+$LLI < tests/temptesting/helloworld.out > tests/temptesting/helloworld_compiled.out
 
 # Compares the output of the print against the gold standard
 if ! cmp -s tests/temptesting/helloworld_compiled.out tests/hello_world/helloworld.gold;
