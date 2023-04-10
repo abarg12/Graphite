@@ -58,7 +58,38 @@ let check (decls) =
         let _ = check_stmt st s in
         check_binds st' rest
     | Fdecl(fdecl)::rest -> check_decls
-          
+  in   
+
+  (*********************************************)
+  (*********************************************)
+  (*********************************************)
+  (*********************************************)
+
+
+  let built_in_decls = 
+    let add_bind map (name, ty) = StringMap.add name {
+      typ = Void; fname = name; 
+      formals = [(ty, "x")];
+      locals = []; body = [] } map
+    in List.fold_left add_bind StringMap.empty [ ("print", Int); ]
+  in
+      (* Add function name to symbol table *)
+  let add_func map fd = 
+    let built_in_err = "function " ^ fd.fname ^ " may not be defined"
+    and dup_err = "duplicate function " ^ fd.fname
+    and make_err er = raise (Failure er)
+    and n = fd.fname (* Name of the function *)
+    in match fd with (* No duplicate functions or redefinitions of built-ins *)
+         _ when StringMap.mem n built_in_decls -> make_err built_in_err
+       | _ when StringMap.mem n map -> make_err dup_err  
+       | _ ->  StringMap.add n fd map 
+  in
+
+  (*********************************************)
+  (*********************************************)
+  (*********************************************)
+  (*********************************************)
+
 
   (* Return a semantically-checked expression, i.e., with a type *)
   let rec expr = function
