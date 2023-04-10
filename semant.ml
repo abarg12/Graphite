@@ -44,52 +44,30 @@ let check (decls) =
         Some(parent) -> find_variable parent name
       | _ -> raise Not_found
   in
+  (* check if binding is of void type, then add to symbol table *)
+  let bind_var (scope : symbol table) t x =
+    match t with
+      Void -> raise (Failure (x ^ " cannot be of void type"))
+      _ -> StringMap.add x t scope
+  in
   (* check for duplicates and check if bindings have void type *)
-  let check_decls st binds = function
+  let check_decls st binds =
+    match binds with
       Bind(t, x)::rest ->
-        try find_variable st x
-        with Not_found -> check_decls (StringMap.add name t st) rest
-        (* raise error if not found *)
+        try
+          let _ = find_variable st x in
+          raise (Failure (x ^ " already declared"))
+        with Not_found -> check_decls (bind_var st t x) rest
     | BindAssign(t, x, e)::rest ->
-        try find_variable scope x
-        with Not_found -> check_decls (StringMap.add name t st) rest
-        (* raise error if not found *)
-    | Statement(s)::rest ->
+        try
+          let _ = find_variable st x in
+          raise (Failure (x ^ " already declared"))
+        with Not_found -> check_decls (bind_var st t x) rest
+    | _ -> raise (Failure ("not implemented yet"))
+    (* | Statement(s)::rest ->
         let _ = check_stmt st s in
         check_binds st' rest
-    | Fdecl(fdecl)::rest -> check_decls
-  in   
-
-  (*********************************************)
-  (*********************************************)
-  (*********************************************)
-  (*********************************************)
-
-
-  let built_in_decls = 
-    let add_bind map (name, ty) = StringMap.add name {
-      typ = Void; fname = name; 
-      formals = [(ty, "x")];
-      locals = []; body = [] } map
-    in List.fold_left add_bind StringMap.empty [ ("print", Int); ]
-  in
-      (* Add function name to symbol table *)
-  let add_func map fd = 
-    let built_in_err = "function " ^ fd.fname ^ " may not be defined"
-    and dup_err = "duplicate function " ^ fd.fname
-    and make_err er = raise (Failure er)
-    and n = fd.fname (* Name of the function *)
-    in match fd with (* No duplicate functions or redefinitions of built-ins *)
-         _ when StringMap.mem n built_in_decls -> make_err built_in_err
-       | _ when StringMap.mem n map -> make_err dup_err  
-       | _ ->  StringMap.add n fd map 
-  in
-
-  (*********************************************)
-  (*********************************************)
-  (*********************************************)
-  (*********************************************)
-
+    | Fdecl(fdecl)::rest -> check_fdecls           *)
 
   (* Return a semantically-checked expression, i.e., with a type *)
   let rec expr = function
