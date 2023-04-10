@@ -44,21 +44,29 @@ let check (decls) =
         Some(parent) -> find_variable parent name
       | _ -> raise Not_found
   in
+  (* check if binding is of void type, then add to symbol table *)
+  let bind_var (scope : symbol table) t x =
+    match t with
+      Void -> raise (Failure (x ^ " cannot be of void type"))
+      _ -> StringMap.add x t scope
+  in
   (* check for duplicates and check if bindings have void type *)
   let check_decls st binds = function
       Bind(t, x)::rest ->
-        try find_variable st x
-        with Not_found -> check_decls (StringMap.add name t st) rest
-        (* raise error if not found *)
+        try
+          let _ = find_variable st x in
+          raise (Failure (x ^ " already declared"))
+        with Not_found -> check_decls (bind_var st t x) rest
     | BindAssign(t, x, e)::rest ->
-        try find_variable scope x
-        with Not_found -> check_decls (StringMap.add name t st) rest
-        (* raise error if not found *)
-    | Statement(s)::rest ->
+        try
+          let _ = find_variable st x in
+          raise (Failure (x ^ " already declared"))
+        with Not_found -> check_decls (bind_var st t x) rest
+    | _ -> raise (Failure ("not implemented yet"))
+    (* | Statement(s)::rest ->
         let _ = check_stmt st s in
         check_binds st' rest
-    | Fdecl(fdecl)::rest -> check_decls
-          
+    | Fdecl(fdecl)::rest -> check_fdecls           *)
 
   (* Return a semantically-checked expression, i.e., with a type *)
   let rec expr = function
