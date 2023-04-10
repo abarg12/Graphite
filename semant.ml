@@ -51,7 +51,8 @@ let check (decls) =
       _ -> StringMap.add x t scope
   in
   (* check for duplicates and check if bindings have void type *)
-  let check_decls st binds = function
+  let check_decls st binds =
+    match binds with
       Bind(t, x)::rest ->
         try
           let _ = find_variable st x in
