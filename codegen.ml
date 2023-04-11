@@ -55,7 +55,7 @@ let rec expr builder ((_, e) : sexpr) = match e with
     SLiteral i -> L.const_int i32_t i
   (*| SString s -> L.const_string context s*)
   | SString s -> L.build_global_stringptr s "" builder
-  | SBinop (e1, op, e2) ->
+  (* | SBinop (e1, op, e2) ->
       let (t, _) = e1
       and e1' = expr builder e1
       and e2' = expr builder e2 in
@@ -86,7 +86,7 @@ let rec expr builder ((_, e) : sexpr) = match e with
       | A.Leq     -> L.build_icmp L.Icmp.Sle
       | A.Greater -> L.build_icmp L.Icmp.Sgt
       | A.Geq     -> L.build_icmp L.Icmp.Sge
-      ) e1' e2' "tmp" builder 
+      ) e1' e2' "tmp" builder  *)
   | SCall ("printf", [e]) ->
     (* let (_, SString(the_str)) = e in 
     let s = L.build_global_stringptr (the_str ^ "\n") "" builder in
@@ -102,6 +102,14 @@ in
 (*** Statements go here ***)
 let rec stmt builder = function
   SExpr e -> let _ = expr builder e in builder
+    (*
+  temporary to ignore:
+  104 |   SExpr e -> let _ = expr builder e in builder
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(SReturn (_, _)|SBlock _)
+     *)
+     | _ -> builder
 in 
 
 (* Bind assignments are declaration-assignment one-liners *)
