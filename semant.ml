@@ -40,11 +40,31 @@ let check (decls) =
     | _ -> raise (Failure("expr: not implemented"))
   in
 
+
+  (*** confirm that expression evaluates to a boolean ***)
+  let check_bool_expr scope e = 
+    let (t', e') = expr scope e
+    and err = "expected Boolean expression in " ^ string_of_expr e
+    in if t' != Bool then raise (Failure err) else (t', e') 
+  in
+
   (* Return a semantically-checked statement i.e. containing sexprs *)
   let rec check_stmt scope s =
     match s with
       Expr e -> SExpr (expr scope e)
+    | If(p, b1, b2) ->
+          SIf(check_bool_expr scope p, check_stmt scope b1, check_stmt scope b2) 
+    | For(e1, e2, e3, st) ->
+	        SFor(expr scope e1, check_bool_expr scope e2, 
+               expr scope e3, check_stmt scope st)
+    | While(p, s) ->
+          SWhile(check_bool_expr scope p, check_stmt scope s)
+    | Return e -> SReturn (expr scope e) (** TODO: in the function body that holds 
+                                    this return, look at the type of
+                                    e returned and make sure it matches
+                                    function return type in func def **)
     | _ -> raise (Failure("stmt: not implemented"))
+        
   in 
 
   (* check for duplicates and check if bindings have void type *)
@@ -64,6 +84,9 @@ let check (decls) =
       let _ = check_stmt scope s in
       check_decls scope rest
     | _ -> raise (Failure ("not implemented yet"))
-  in let globals = { variables = StringMap.empty; parent = None; }
+  in 
+  
+  let globals = { variables = StringMap.empty; parent = None; }
+
 in
 check_decls globals decls
