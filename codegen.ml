@@ -26,6 +26,7 @@ let translate decls =
   let context = L.global_context () in
   let i32_t   = L.i32_type context
   and i8_t    = L.i8_type context
+  and i1_t    = L.i1_type context
   and string_t  = L.pointer_type (L.i8_type context)
   (* and void_t  = L.void_type context  *)
   and the_module = L.create_module context "Graphite" in 
@@ -35,6 +36,9 @@ let translate decls =
 (*** Define Graphite -> LLVM types here ***)
 let ltype_of_typ = function
     A.Int -> i32_t
+  | A.Bool  -> i1_t
+(*| A.Float -> float_t
+  | A.Void  -> void_t  *) 
   | A.String -> string_t 
   | _ -> raise (Unfinished "not all types implemented")
 in
@@ -46,13 +50,12 @@ let printf_t : L.lltype =
   L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
 let printf_func : L.llvalue = 
  L.declare_function "printf" printf_t the_module in
-(*| A.Bool  -> i1_t
-  | A.Float -> float_t
-  | A.Void  -> void_t*)
+  
 
 (*** Expressions go here ***)
 let rec expr builder ((_, e) : sexpr) = match e with
     SLiteral i -> L.const_int i32_t i
+  | SBoolLit b -> L.const_int i1_t (if b then 1 else 0) 
   (*| SString s -> L.const_string context s*)
   | SString s -> L.build_global_stringptr s "" builder
   (* | SBinop (e1, op, e2) ->
@@ -101,7 +104,8 @@ in
 
 (*** Statements go here ***)
 let rec stmt builder = function
-  SExpr e -> let _ = expr builder e in builder
+    SExpr e -> let _ = expr builder e in builder
+  
     (*
   temporary to ignore:
   104 |   SExpr e -> let _ = expr builder e in builder

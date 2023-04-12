@@ -33,6 +33,7 @@ let check (decls) =
   let rec expr scope e =
     match e with
       Literal l -> (Int, SLiteral l)
+    | BoolLit l -> (Bool, SBoolLit l)
     | String s -> (String, SString s)
     | Call(fname, args) ->
       let args' = List.map (expr scope) args in

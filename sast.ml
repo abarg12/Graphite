@@ -5,6 +5,7 @@ open Ast
 type sexpr = typ * sx
 and sx =
     SLiteral of int 
+  | SBoolLit of bool
   | SString of string
   | SBinop of sexpr * op * sexpr
   | SCall of string * sexpr list
@@ -36,6 +37,7 @@ type sprogram = sdecl list
 let rec string_of_sexpr (t, e) =
   "(" ^ string_of_typ t ^ " : " ^ (match e with
     SLiteral(l) -> string_of_int l
+  | SBoolLit(l) -> string_of_bool l
   | SString(s) -> s
   | SCall(f, el) ->
     f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
