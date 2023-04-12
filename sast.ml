@@ -18,12 +18,19 @@ type sstmt =
   | SIf of sexpr * sstmt * sstmt
   | SFor of sexpr * sexpr * sexpr * sstmt
   | SWhile of sexpr * sstmt
+and sb_line =
+    SLocalBind of bind
+  | SLocalBindAssign of bind_assign
+  | SLocalStatement of stmt
+  
 
 type sdecl = 
     SStatement of sstmt
   | SBindAssign of typ * string * sexpr
+  | SBind of bind 
+  (*| SFdecl of sfunc_decl*) 
 
-type sfunc_decl = {
+and sfunc_decl = {
   styp : typ;
   sfname : string;
   sformals : bind list;
@@ -63,7 +70,7 @@ let rec string_of_sprogram = function
     [] -> ""
   | SStatement s :: ds -> string_of_sstmt s ^ string_of_sprogram ds
   | SBindAssign(typ, s, e) :: ds -> s ^ " = " ^ string_of_sexpr e ^ ";\n" ^ string_of_sprogram ds
-
+  | SBind b :: ds -> string_of_vdecl b ^ string_of_sprogram ds
 (*
 
 open Ast

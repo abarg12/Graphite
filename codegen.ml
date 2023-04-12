@@ -128,7 +128,8 @@ in
 let rec build_decl builder decl = match decl with
     SStatement s -> stmt builder s
   | SBindAssign(typ, s, e) -> bindassign builder (typ, s, e)
-  (**TODO: add fdecl and vdecl*)
+  | SBind (typ, n) -> raise (Failure("vdecls not implemented")) (*TODO: implement vdecls (variable bindings)*)
+  (**TODO: add fdecl *)
 in
 (** to have func type have to build before you use it -- needed for line below it **)
 let ftype = L.function_type i32_t (Array.of_list []) in 
