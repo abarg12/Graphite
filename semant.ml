@@ -34,20 +34,20 @@ let check (decls) =
   let functions = built_in_decls in
 
 
-  let find_func s = 
-    try StringMap.find s functions
+  let find_func s funcs = 
+    try StringMap.find s funcs
     with Not_found -> raise (Failure ("unrecognized function " ^ s))
   in
   (* Add function name to symbol table *)
-  let add_func fd = 
+  let add_func fd funcs = 
     let built_in_err = "function " ^ fd.fname ^ " may not be defined"
     and dup_err = "duplicate function " ^ fd.fname
     and make_err er = raise (Failure er)
     and n = fd.fname (* Name of the function *)
     in match fd with (* No duplicate functions or redefinitions of built-ins *)
           _ when StringMap.mem n built_in_decls -> make_err built_in_err
-        | _ when StringMap.mem n functions -> make_err dup_err  
-        | _ -> functions = StringMap.add n fd functions 
+        | _ when StringMap.mem n funcs -> make_err dup_err  
+        | _ -> StringMap.add n fd funcs 
   in
 
   (* check if binding is of void type, then add to symbol table *)
@@ -59,7 +59,7 @@ let check (decls) =
   in
 
   (* Return a semantically-checked expression, i.e., with a type *)
-  let rec expr scope e =
+  let rec expr scope funcs e =
     match e with
       Literal l -> (Int, SLiteral l)
     | BoolLit l -> (Bool, SBoolLit l)
@@ -70,11 +70,11 @@ let check (decls) =
     | Assign(x, e) ->
       (* check if x \in scope *)
       let lt = find_variable scope x in
-      let (rt, e') = expr scope e in
+      let (rt, e') = expr scope funcs e in
       let err = "illegal assignment " ^ x ^ " : " ^ string_of_typ lt ^ " = " ^ string_of_typ rt in
       if lt = rt then (rt, SAssign(x, (rt, e'))) else raise (Failure err)
     | Unop(op, e) as ex -> 
-        let (t, e') = expr scope e in
+        let (t, e') = expr scope funcs e in
         let ty = match op with
           Neg when t = Int || t = Float -> t
         | Not when t = Bool -> Bool
@@ -83,8 +83,8 @@ let check (decls) =
                                 " in " ^ string_of_expr ex))
         in (ty, SUnop(op, (t, e')))
     | Binop(e1, op, e2) as e -> 
-        let (t1, e1') = expr scope e1 
-        and (t2, e2') = expr scope e2 in
+        let (t1, e1') = expr scope funcs e1 
+        and (t2, e2') = expr scope funcs e2 in
         (* All binary operators require operands of the same type *)
         let same = t1 = t2 in
         (* Determine expression type based on operator and operand types *)
@@ -102,54 +102,54 @@ let check (decls) =
                     string_of_typ t2 ^ " in " ^ string_of_expr e))
       in (ty, SBinop((t1, e1'), op, (t2, e2')))
     | Call(fname, args) ->
-      let args' = List.map (expr scope) args in 
+      let args' = List.map (expr scope funcs) args in 
       (* CHECK THAT IT EXISTS AND ARG TYPES ARE CORRECT *)
-      ((find_func fname).typ, SCall(fname, args')) 
+      ((find_func fname funcs).typ, SCall(fname, args')) 
     | _ -> raise (Failure("expr: not implemented"))
   in
 
 
   (*** confirm that expression evaluates to a boolean ***)
-  let check_bool_expr scope e = 
-    let (t', e') = expr scope e
+  let check_bool_expr scope funcs e = 
+    let (t', e') = expr scope funcs e
     and err = "expected Boolean expression in " ^ string_of_expr e
     in if t' != Bool then raise (Failure err) else (t', e') 
   in
 
   (* Return a semantically-checked statement i.e. containing sexprs *)
-  let rec check_stmt scope s =
+  let rec check_stmt scope funcs s =
     match s with
-      Expr e -> SExpr (expr scope e)
+      Expr e -> SExpr (expr scope funcs e)
     | If(p, b1, b2) ->
-          SIf(check_bool_expr scope p, check_stmt scope b1, check_stmt scope b2) 
+          SIf(check_bool_expr scope funcs p, check_stmt scope funcs b1, check_stmt scope funcs b2) 
     | For(e1, e2, e3, st) ->
-	        SFor(expr scope e1, check_bool_expr scope e2, 
-               expr scope e3, check_stmt scope st)
+	        SFor(expr scope funcs e1, check_bool_expr scope funcs e2, 
+               expr scope funcs e3, check_stmt scope funcs st)
     | While(p, s) ->
-          SWhile(check_bool_expr scope p, check_stmt scope s)
-    | Return e -> SReturn (expr scope e) (** TODO: in the function body that holds 
+          SWhile(check_bool_expr scope funcs p, check_stmt scope funcs s)
+    | Return e -> SReturn (expr scope funcs e) (** TODO: in the function body that holds 
                                     this return, look at the type of
                                     e returned and make sure it matches
                                     function return type in func def **)
       (** add another global to tell us which function nwe are in *)
     | Block(bs) -> 
-        SBlock(check_body scope bs)
+        SBlock(check_body scope funcs bs)
   
-  and check_body (scope : symbol_table) b_lines =
+  and check_body (scope : symbol_table) funcs b_lines =
   match b_lines with
   | LocalBind(t, x)::rest -> 
       (try
         let _ = find_variable scope x in
         raise (Failure (x ^ " already declared"))
-      with Not_found -> SLocalBind(t, x)::check_body (bind_var scope x t) rest)
+      with Not_found -> SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest)
   | LocalBindAssign(t, x, e)::rest -> 
       (try
         let _ = find_variable scope x in
         raise (Failure (x ^ " already declared"))
-      with Not_found -> SLocalBindAssign(t, x, e)::check_body (bind_var scope x t) rest )
+      with Not_found -> SLocalBindAssign(t, x, e)::check_body (bind_var scope x t) funcs rest )
   | LocalStatement(s)::rest -> 
-      let ss = check_stmt scope s in
-      SLocalStatement(ss)::check_body scope rest
+      let ss = check_stmt scope funcs s in
+      SLocalStatement(ss)::check_body scope funcs rest
   | [] -> []
 in 
 
@@ -161,27 +161,27 @@ in
       | [] -> map 
   in 
 
-  let rec check_decls (scope : symbol_table) decls =
+  let rec check_decls (scope : symbol_table) funcs decls =
     match decls with
       [] -> []
     | Bind(t, x)::rest ->
         (try
           let _ = find_variable scope x in
           raise (Failure (x ^ " already declared"))
-        with Not_found -> SBind(t, x)::check_decls (bind_var scope x t) rest)
+        with Not_found -> SBind(t, x)::check_decls (bind_var scope x t) funcs rest)
     | BindAssign(t, x, e)::rest ->
         (try
           let _ = find_variable scope x in
           raise (Failure (x ^ " already declared"))
-        with Not_found -> SBindAssign(t,x , expr scope e)::check_decls (bind_var scope x t) rest)
+        with Not_found -> SBindAssign(t,x , expr scope funcs e)::check_decls (bind_var scope x t) funcs rest)
     | Statement(s)::rest ->
-      let ss = check_stmt scope s in
-      SStatement(ss)::check_decls scope rest
+      let ss = check_stmt scope funcs s in
+      SStatement(ss)::check_decls scope funcs rest
     | Fdecl(b)::rest -> 
-      let _ = add_func b in 
+      let updated_funcs = add_func b funcs in 
       let temp_scope = add_formals StringMap.empty b.formals in
       let new_scope = { variables = temp_scope ; parent = Some scope; } in
-      let sstmt = check_stmt new_scope b.body in
+      let sstmt = check_stmt new_scope updated_funcs b.body in
       (* make sure type is of block *)
       (* add formals to scope too!!!  -- have to add return for functions *)
       SFdecl({
@@ -189,10 +189,10 @@ in
         sfname = b.fname;
         sformals = b.formals;
         sbody = sstmt;
-      })::check_decls scope rest (* have to add fdecl*)
+      })::check_decls scope updated_funcs rest (* have to add fdecl*)
       (* you have to add a new scope for this functions local variables *)
   in 
 
   let globals = { variables = StringMap.empty; parent = None; } in
   
-check_decls globals decls
+check_decls globals functions decls
