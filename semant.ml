@@ -18,7 +18,7 @@ let check (decls) =
     with Not_found ->
       match scope.parent with
         Some(parent) -> find_variable parent name
-      | _ -> raise (Failure ("unrecognized variable ")) 
+      | _ -> raise Not_found
   in
 
   (* Collect function declarations for built-in functions: no bodies *)
