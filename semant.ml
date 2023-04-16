@@ -18,7 +18,7 @@ let check (decls) =
     with Not_found ->
       match scope.parent with
         Some(parent) -> find_variable parent name
-      | _ -> raise Not_found
+      | _ -> raise (Failure ("unrecognized variable ")) 
   in
 
   (* Collect function declarations for built-in functions: no bodies *)
@@ -149,12 +149,17 @@ let check (decls) =
   | LocalStatement(s)::rest -> 
       let ss = check_stmt scope s in
       SLocalStatement(ss)::check_body scope rest
-  |_ -> raise (Failure ("not implemented yet"))
-   
+  | [] -> []
 in 
 
   (* add built in func here *)
   (* check for duplicates and check if bindings have void type *)
+
+  let rec add_formals map formals = match formals with
+        (t, str)::rest -> add_formals (StringMap.add str t map) rest
+      | [] -> map 
+  in 
+
   let rec check_decls (scope : symbol_table) decls =
     match decls with
       [] -> []
@@ -173,7 +178,8 @@ in
       SStatement(ss)::check_decls scope rest
     | Fdecl(b)::rest -> 
       let _ = add_func b in 
-      let new_scope = { variables = StringMap.empty; parent = Some scope; } in
+      let temp_scope = add_formals StringMap.empty b.formals in
+      let new_scope = { variables = temp_scope ; parent = Some scope; } in
       let sstmt = check_stmt new_scope b.body in
       (* make sure type is of block *)
       (* add formals to scope too!!!  -- have to add return for functions *)
@@ -188,4 +194,4 @@ in
 
   let globals = { variables = StringMap.empty; parent = None; } in
   
-check_decls globals  decls
+check_decls globals decls

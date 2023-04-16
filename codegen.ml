@@ -58,7 +58,7 @@ let rec expr builder ((_, e) : sexpr) = match e with
   | SBoolLit b -> L.const_int i1_t (if b then 1 else 0) 
   (*| SString s -> L.const_string context s*)
   | SString s -> L.build_global_stringptr s "" builder
-  (* | SBinop (e1, op, e2) ->
+  | SBinop (e1, op, e2) ->
       let (t, _) = e1
       and e1' = expr builder e1
       and e2' = expr builder e2 in
@@ -89,7 +89,7 @@ let rec expr builder ((_, e) : sexpr) = match e with
       | A.Leq     -> L.build_icmp L.Icmp.Sle
       | A.Greater -> L.build_icmp L.Icmp.Sgt
       | A.Geq     -> L.build_icmp L.Icmp.Sge
-      ) e1' e2' "tmp" builder  *)
+      ) e1' e2' "tmp" builder 
   | SCall ("printf", [e]) ->
     (* let (_, SString(the_str)) = e in 
     let s = L.build_global_stringptr (the_str ^ "\n") "" builder in

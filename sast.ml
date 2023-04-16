@@ -97,8 +97,14 @@ and string_of_sblines = function
   | SLocalBindAssign b :: ds -> string_of_bind_assign b ^ string_of_sblines ds
   | SLocalStatement s :: ds -> string_of_sstmt s ^ string_of_sblines ds 
 
+let string_of_sfdecl sfdecl =
+  string_of_typ sfdecl.styp ^ " " ^
+  sfdecl.sfname ^ "(" ^ String.concat ", " (List.map (fun (t, id) -> string_of_typ t ^ " " ^ id) sfdecl.sformals) ^
+  ") \n" ^ string_of_sstmt sfdecl.sbody
+
 let rec string_of_sprogram = function 
     [] -> ""
   | SStatement s :: ds -> string_of_sstmt s ^ string_of_sprogram ds
   | SBindAssign(typ, s, e) :: ds -> s ^ " = " ^ string_of_sexpr e ^ ";\n" ^ string_of_sprogram ds
   | SBind b :: ds -> string_of_vdecl b ^ string_of_sprogram ds
+  | SFdecl f :: ds -> string_of_sfdecl f ^ string_of_sprogram ds
