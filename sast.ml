@@ -1,7 +1,7 @@
 (* Semantically-checked Abstract Syntax Tree and functions for printing it *)
 
 open Ast
-
+(*binop, uniop, dotcall*)
 type sexpr = typ * sx
 and sx =
     SLiteral of int 
@@ -10,6 +10,7 @@ and sx =
   | SFliteral of string 
   | SId of string
   | SBinop of sexpr * op * sexpr
+  | SSetop of sexpr * setop * sexpr
   | SCall of string * sexpr list
   | SUnop of uop * sexpr
   | SAssign of string * sexpr
@@ -32,7 +33,7 @@ type sstmt =
   | SWhile of sexpr * sstmt
 and sb_line =
   | SLocalBind of bind
-  | SLocalBindAssign of bind_assign
+  | SLocalBindAssign of typ * string * sexpr (*CHANGED HERE ASK ABBY*)
   | SLocalStatement of sstmt
 (*and sblock_body = sb_line list*)
 
@@ -66,6 +67,8 @@ string_of_sexpr (t, e) =
     f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
   | SBinop(e1, o, e2) ->
       string_of_sexpr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_sexpr e2 
+  | SSetop(e1, setop, e2) ->
+      string_of_sexpr e1 ^ " " ^ string_of_setop setop ^ " " ^ string_of_sexpr e2 
   | SId(s) -> s
   | SUnop(o, e) -> string_of_uop o ^ string_of_sexpr e
   | SAssign(n, e) -> n ^ " = " ^ string_of_sexpr e
@@ -95,7 +98,7 @@ let rec string_of_sstmt stmt = match stmt with
 and string_of_sblines = function
     [] -> "" 
   | SLocalBind b :: ds -> string_of_vdecl b ^ string_of_sblines ds
-  | SLocalBindAssign b :: ds -> string_of_bind_assign b ^ string_of_sblines ds
+  | SLocalBindAssign(typ, s, e) :: ds -> s ^ " = " ^ string_of_sexpr e ^ ";\n" ^ string_of_sblines ds (*CHANGEED HERE ASK ABBY*)
   | SLocalStatement s :: ds -> string_of_sstmt s ^ string_of_sblines ds 
 
 let string_of_sfdecl sfdecl =

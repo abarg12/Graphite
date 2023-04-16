@@ -34,6 +34,16 @@ let check (decls) =
     in List.fold_left add_bind StringMap.empty [ ("print", Int);]
   in
 
+  let invariants = ["tree"; "connected"]  in
+
+  (* make sure that an invariant is a valid invariant *)
+  let find_invar x = 
+    let rec find_elt x lst = match lst with 
+      y::rest when x = y -> true  
+    | y::rest -> find_elt x rest
+    | [] -> raise (Failure ("invariant '" ^ x ^ "' does not exist"))
+    in find_elt x invariants 
+  in 
   (* THE ONE MAP OF FUNCTIONS *)
   let functions = built_in_decls in
 
@@ -98,13 +108,35 @@ let check (decls) =
         (* | Add | Sub | Mult | Div when same && t1 = Float -> Float *)
         | Equal | Neq            when same               -> Bool
         | Less | Leq | Greater | Geq
-                    when same && (t1 = Int (*|| t1 = Float*)) -> Bool
+                    when same && (t1 = Int (*|| t1 = Float*)) -> Bool (* CHANGE HERE *)
         | And | Or when same && t1 = Bool -> Bool
         | _ -> raise (
       Failure ("illegal binary operator " ^
                     string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^
                     string_of_typ t2 ^ " in " ^ string_of_expr e))
       in (ty, SBinop((t1, e1'), op, (t2, e2')))
+    | Setop(e1, setop, e2) as e -> 
+        let (t1, e1') = expr scope funcs e1 
+        and (t2, e2') = expr scope funcs e2 in
+
+        let same = t1 = t2 in
+
+        let fields = match t1 with 
+          Graph(fields) -> fields
+          | _ -> raise (
+            Failure ("illegal set operator " ^
+                          string_of_typ t1 ^ " " ^ string_of_setop setop ^ " " ^
+                          string_of_typ t2 ^ " in " ^ string_of_expr e))
+        in 
+
+        let ty = match setop with
+          Union | Inter | Xor | Diff when same && t1 = Graph(fields) -> Graph(fields)
+        | _ -> raise (
+          Failure ("illegal binary operator " ^
+                    string_of_typ t1 ^ " " ^ string_of_setop setop ^ " " ^
+                    string_of_typ t2 ^ " in " ^ string_of_expr e))
+        in 
+        (ty, SSetop((t1, e1'), setop, (t2, e2')))
     | Call(fname, args) ->
       let args' = List.map (expr scope funcs) args in 
       (* CHECK THAT IT EXISTS AND ARG TYPES ARE CORRECT *)
@@ -146,12 +178,22 @@ let check (decls) =
       (try
         let _ = find_loc_variable scope x in
         raise (Failure (x ^ " already declared in current scope"))
-    with Not_found -> SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest)
+      with Not_found -> 
+        match t with 
+           Graph(fields) ->
+              let _ = List.map find_invar fields in  
+              SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest
+          | _ -> SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest)
   | LocalBindAssign(t, x, e)::rest -> 
       (try
         let _ = find_loc_variable scope x in
         raise (Failure (x ^ " already declared in current scope"))
-    with Not_found -> SLocalBindAssign(t, x, e)::check_body (bind_var scope x t) funcs rest )
+      with Not_found -> 
+        match t with 
+          Graph(fields) ->
+              let _ = List.map find_invar fields in  
+              SLocalBindAssign(t, x, expr scope funcs e)::check_body (bind_var scope x t) funcs rest (*CHANGEED HERE ASK ABBY*)
+          | _ -> SLocalBindAssign(t, x, expr scope funcs e)::check_body (bind_var scope x t) funcs rest)
   | LocalStatement(s)::rest -> 
       let ss = check_stmt scope funcs s in
       SLocalStatement(ss)::check_body scope funcs rest
@@ -173,12 +215,22 @@ in
         (try
           let _ = find_loc_variable scope x in
           raise (Failure (x ^ " already declared in current scope"))
-        with Not_found -> SBind(t, x)::check_decls (bind_var scope x t) funcs rest)
+        with Not_found -> 
+          match t with 
+             Graph(fields) ->
+                let _ = List.map find_invar fields in  
+                SBind(t, x)::check_decls (bind_var scope x t) funcs rest
+            | _ -> SBind(t, x)::check_decls (bind_var scope x t) funcs rest)
     | BindAssign(t, x, e)::rest ->
         (try
           let _ = find_loc_variable scope x in
           raise (Failure (x ^ " already declared in current scope"))
-        with Not_found -> SBindAssign(t,x , expr scope funcs e)::check_decls (bind_var scope x t) funcs rest)
+        with Not_found -> 
+          match t with 
+            Graph(fields) ->
+                let _ = List.map find_invar fields in  
+                SBindAssign(t,x , expr scope funcs e)::check_decls (bind_var scope x t) funcs rest
+            | _ -> SBindAssign(t,x , expr scope funcs e)::check_decls (bind_var scope x t) funcs rest)
     | Statement(s)::rest ->
       let ss = check_stmt scope funcs s in
       SStatement(ss)::check_decls scope funcs rest
