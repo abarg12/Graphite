@@ -137,7 +137,8 @@ let check (decls) =
                                     function return type in func def **)
       (** add another global to tell us which function nwe are in *)
     | Block(bs) -> 
-        SBlock(check_body scope funcs bs)
+        let new_scope = { variables = StringMap.empty ; parent = Some scope; } in
+        SBlock(check_body new_scope funcs bs)
   
   and check_body (scope : symbol_table) funcs b_lines =
   match b_lines with
