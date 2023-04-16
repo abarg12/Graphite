@@ -147,12 +147,26 @@ let rec bindassign (builder, stable) = function
 in
 
 (* add to symbol table *)
-let bind_var (scope : symbol_table) x t fs f =
+let bind_var (scope : symbol_table) x t  =
   { variables = StringMap.add x t scope.variables;
               parent = scope.parent;
-              funcs = fs;
-              curr_func = f; }
+              funcs = scope.funcs;
+              curr_func = scope.curr_func; }
 in
+
+(* trickle up blocks to find nearest variable instance *)
+let rec find_variable (scope : symbol_table) (name : string) =
+  try StringMap.find name scope.variables
+  with Not_found ->
+    match scope.parent with
+      Some(parent) -> find_variable parent name
+    | _ -> raise Not_found
+in
+
+let rec find_loc_variable (scope : symbol_table) (name : string) =
+    StringMap.find name scope.variables
+in
+
 
 let find_func s stable = 
   try StringMap.find s stable.funcs
