@@ -50,13 +50,47 @@ let ltype_of_typ = function
   | _ -> raise (Unfinished "not all types implemented")
 in
 
-(*** Workaround to silence error about never using ltype_of_typ ***)
-let _ = ltype_of_typ A.Int in 
+
+(* add to symbol table *)
+let bind_var (scope : symbol_table) x t  =
+  { variables = StringMap.add x t scope.variables;
+              parent = scope.parent;
+              funcs = scope.funcs;
+              curr_func = scope.curr_func; }
+in
+
+(* trickle up blocks to find nearest variable instance *)
+let rec find_variable (scope : symbol_table) (name : string) =
+  try StringMap.find name scope.variables
+  with Not_found ->
+    match scope.parent with
+      Some(parent) -> find_variable parent name
+    | _ -> raise Not_found
+in
+
+let rec find_loc_variable (scope : symbol_table) (name : string) =
+    StringMap.find name scope.variables
+in
+
+
+let find_func s stable = 
+  try StringMap.find s stable.funcs
+  with Not_found -> raise (Failure ("unrecognized function " ^ s))
+in
+(* Add function name to symbol table *)
+(* func is the llvm func type *)
+let add_func s func stable = 
+    { variables = stable.variables;
+      parent = stable.parent; 
+      funcs = StringMap.add s func stable.funcs;
+      curr_func = stable.curr_func; }
+in
+  
 
 let printf_t : L.lltype = 
   L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
 let printf_func : L.llvalue = 
- L.declare_function "printf" printf_t the_module in  
+  L.declare_function "printf" printf_t the_module in  
 
 let to_string (e : sx) = match e with
     SLiteral i -> SString(string_of_int i)
@@ -140,47 +174,16 @@ in *)
 
 (* Bind assignments are declaration-assignment one-liners *)
 let rec bindassign (builder, stable) = function 
-  (typ, s, e) -> let e' = expr (builder, stable) e in
+  (typ, s, e) -> 
+        let e' = expr (builder, stable) e in
                  (*let StringMap.add s (L.define_global s e the_module) global_vars*)
-                 let _  = L.build_store e' (L.define_global s e' the_module) builder
-                 in (builder, stable)
+                 (* let _  = L.build_store e' (L.define_global s e' the_module) builder *)
+        let () = L.set_value_name s e' in
+        let new_var = L.build_alloca (ltype_of_typ typ) s builder in
+        let _ = L.build_store e' new_var builder in
+        let stable' = bind_var stable s new_var
+        in (builder, stable')
 in
-
-(* add to symbol table *)
-let bind_var (scope : symbol_table) x t  =
-  { variables = StringMap.add x t scope.variables;
-              parent = scope.parent;
-              funcs = scope.funcs;
-              curr_func = scope.curr_func; }
-in
-
-(* trickle up blocks to find nearest variable instance *)
-let rec find_variable (scope : symbol_table) (name : string) =
-  try StringMap.find name scope.variables
-  with Not_found ->
-    match scope.parent with
-      Some(parent) -> find_variable parent name
-    | _ -> raise Not_found
-in
-
-let rec find_loc_variable (scope : symbol_table) (name : string) =
-    StringMap.find name scope.variables
-in
-
-
-let find_func s stable = 
-  try StringMap.find s stable.funcs
-  with Not_found -> raise (Failure ("unrecognized function " ^ s))
-in
-(* Add function name to symbol table *)
-(* func is the llvm func type *)
-let add_func s func stable = 
-    { variables = stable.variables;
-      parent = stable.parent; 
-      funcs = StringMap.add s func stable.funcs;
-      curr_func = stable.curr_func; }
-in
-  
 
 (*** Analyze all the declarations in program ***) 
 let rec build_decl (builder, stable) decl = match decl with
@@ -208,6 +211,7 @@ let empty_stable = {
   curr_func = "main";
 } in
 let init_stable = add_func "main" global_main empty_stable in 
+let init_stable = add_func "printf" printf_func init_stable in
 let _ = program (builder, init_stable) decls in 
 (* let _ = L.build_ret_int builder in  *)
 let _ = L.build_ret (L.const_int i32_t 0) builder in
