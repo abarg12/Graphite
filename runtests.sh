@@ -2,10 +2,10 @@
 
 
 # Path to the LLVM interpreter
-LLI="lli"
-
+LLI=LLI
 # Path to the LLVM compiler
-LLC="llc"
+LLC=LLC
+
 
 
 if [ ! -d "./tests/temptesting" ]
@@ -115,6 +115,18 @@ else
         else 
             echo ${base_name} "PASSED"
         fi 
+    elif [ "$parentdir" = "tests/extended_test_suite" ];
+    then 
+         # if we cannot even run the test, something went wrong :(
+        ./toplevel.native < $1 > ./tests/temptesting/${base_name%%.*}.out 2>&1
+
+        # diff
+        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/extended_test_suite/goldStandards/${base_name%%.*}.Gold;
+        then 
+            echo ${base_name} "FAILED"
+        else 
+            echo ${base_name} "PASSED"
+        fi  
     else 
 
         # Compiles Graphite code into LLVM

@@ -25,27 +25,27 @@ and sx =
 type sstmt =
     SExpr of sexpr
   | SReturn of sexpr
-  | SBlock of sstmt list
+  | SBlock of sb_line list
   | SIf of sexpr * sstmt * sstmt
   | SFor of sexpr * sexpr * sexpr * sstmt
   | SWhile of sexpr * sstmt
 and sb_line =
-    SLocalBind of bind
+  | SLocalBind of bind
   | SLocalBindAssign of bind_assign
-  | SLocalStatement of stmt
-and sblock_body = sb_line list
+  | SLocalStatement of sstmt
+(*and sblock_body = sb_line list*)
 
 type sdecl = 
     SStatement of sstmt
   | SBindAssign of typ * string * sexpr
   | SBind of bind 
-  (*| SFdecl of sfunc_decl*) 
+  | SFdecl of sfunc_decl 
 
 and sfunc_decl = {
   styp : typ;
   sfname : string;
   sformals : bind list;
-  sbody : sstmt list;
+  sbody : sstmt;
 }
 
 type sprogram = sdecl list
@@ -82,8 +82,7 @@ string_of_sexpr (t, e) =
 let rec string_of_sstmt stmt = match stmt with
     SExpr(expr)   -> string_of_sexpr expr ^ ";\n"
   | SReturn(expr) -> "return " ^ string_of_sexpr expr ^ ";\n"
-  | SBlock(stmts) -> "{\n" ^ String.concat "" 
-                          (List.map string_of_sstmt stmts) ^ "}\n"
+  | SBlock(sbs) -> "{\n" ^  string_of_sblines sbs ^ "}\n"
   | SIf(e, s, SBlock([])) ->
       "if (" ^ string_of_sexpr e ^ ")\n" ^ string_of_sstmt s
   | SIf(e, s1, s2) ->  "if (" ^ string_of_sexpr e ^ ")\n" ^
@@ -92,6 +91,11 @@ let rec string_of_sstmt stmt = match stmt with
       "for (" ^ string_of_sexpr e1  ^ " ; " ^ string_of_sexpr e2 ^ " ; " ^
       string_of_sexpr e3  ^ ") " ^ string_of_sstmt s
   | SWhile(e, s) -> "while (" ^ string_of_sexpr e ^ ") " ^ string_of_sstmt s
+and string_of_sblines = function
+    [] -> "" 
+  | SLocalBind b :: ds -> string_of_vdecl b ^ string_of_sblines ds
+  | SLocalBindAssign b :: ds -> string_of_bind_assign b ^ string_of_sblines ds
+  | SLocalStatement s :: ds -> string_of_sstmt s ^ string_of_sblines ds 
 
 let rec string_of_sprogram = function 
     [] -> ""
