@@ -21,6 +21,12 @@ module StringMap = Map.Make(String)
 
 exception Unfinished of string
 
+type symbol_table = {
+  variables : L.llvalue StringMap.t;
+  parent : symbol_table option;
+  curr_func : string;
+}
+
 (*** Declare all the LLVM types we'll use ***)
 let translate decls = 
   let context  = L.global_context () in
@@ -54,7 +60,7 @@ let printf_func : L.llvalue =
   
 
 (*** Expressions go here ***)
-let rec expr builder ((_, e) : sexpr) = match e with
+let rec expr (builder, stable) ((_, e) : sexpr) = match e with
     SLiteral i -> L.const_int i32_t i
   | SBoolLit b -> L.const_int i1_t (if b then 1 else 0) 
   (*| SString s -> L.const_string context s*)
@@ -62,8 +68,8 @@ let rec expr builder ((_, e) : sexpr) = match e with
   | SString s -> L.build_global_stringptr s "" builder
   | SBinop (e1, op, e2) ->
       let (t, _) = e1
-      and e1' = expr builder e1
-      and e2' = expr builder e2 in
+      and e1' = expr (builder, stable) e1
+      and e2' = expr (builder, stable) e2 in
       if t = A.Float then (match op with 
         A.Add     -> L.build_fadd
       | A.Sub     -> L.build_fsub
@@ -96,7 +102,7 @@ let rec expr builder ((_, e) : sexpr) = match e with
     (* let (_, SString(the_str)) = e in 
     let s = L.build_global_stringptr (the_str ^ "\n") "" builder in
     L.build_call printf_func [| s |] "" builder *)
-    L.build_call printf_func [| (expr builder e) |] "printf" builder
+    L.build_call printf_func [| (expr (builder, stable) e) |] "printf" builder
         (* let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
         L.build_call printf_func [|  ( int_format_str ; expr builder e) |]
            "printf" builder  *)
@@ -105,8 +111,8 @@ in
 
 
 (*** Statements go here ***)
-let rec stmt builder = function
-    SExpr e -> let _ = expr builder e in builder
+let rec stmt (builder, stable) = function
+    SExpr e -> let _ = expr (builder, stable) e in (builder, stable)
   
     (*
   temporary to ignore:
@@ -115,37 +121,61 @@ Warning 8 [partial-match]: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (SReturn (_, _)|SBlock _)
      *)
-     | _ -> builder
+     | _ -> (builder, stable)
 in 
 
+(*
+let rec bind (builder, stable) = function
+  (typ, s) -> let _ = L.build_store 
+in *)
+
 (* Bind assignments are declaration-assignment one-liners *)
-let rec bindassign builder = function 
-  (typ, s, e) -> let e' = expr builder e in
+let rec bindassign (builder, stable) = function 
+  (typ, s, e) -> let e' = expr (builder, stable) e in
                  (*let StringMap.add s (L.define_global s e the_module) global_vars*)
                  let _  = L.build_store e' (L.define_global s e' the_module) builder
-                 in builder  
+                 in (builder, stable)
 in
 
+(* add to symbol table *)
+let bind_var (scope : symbol_table) x t f =
+  { variables = StringMap.add x t scope.variables;
+              parent = scope.parent;
+              curr_func = f; }
+in
+
+let find_func s funcs = 
+  try StringMap.find s funcs
+  with Not_found -> raise (Failure ("unrecognized function " ^ s))
+in
+(* Add function name to symbol table *)
+(* func_pair is a tuple of the sast sfdecl and the llvm func type *)
+let add_func s func_pair funcs = 
+  StringMap.add s func_pair funcs 
+in
+  
+
 (*** Analyze all the declarations in program ***) 
-let rec build_decl builder decl = match decl with
-    SStatement s -> stmt builder s
-  | SBindAssign(typ, s, e) -> bindassign builder (typ, s, e)
+let rec build_decl (builder, stable) decl = match decl with
+    SStatement s -> stmt (builder, stable) s
+  | SBindAssign(typ, s, e) -> bindassign (builder, stable) (typ, s, e)
   | SBind (typ, n) -> raise (Failure("vdecls not implemented")) (*TODO: implement vdecls (variable bindings)*)
-  (**TODO: add fdecl *)
+  | SFdecl (b) -> raise (Failure("fdecls not implemented"))
 in
 (** to have func type have to build before you use it -- needed for line below it **)
 let ftype = L.function_type i32_t (Array.of_list []) in 
 let global_scope = L.define_function "main" ftype the_module in (*CHANGED TO MAIN -- Abby *)
 (** builder initialized at the first line of global main -- where you want to put next llvm instruction **)
 let builder = L.builder_at_end context (L.entry_block global_scope) in
+
 (** uses builder from above -- every line is a decl **)
-let rec program builder = function
-    decl :: ds -> program (build_decl builder decl) ds 
-  | [] -> builder
+let rec program (builder, stable) = function
+    decl :: ds -> program (build_decl (builder, stable) decl) ds 
+  | [] -> builder, stable
 in
 
 
-let _ = program builder decls in 
+let _ = program (builder, StringMap.empty) decls in 
 (* let _ = L.build_ret_int builder in  *)
 let _ = L.build_ret (L.const_int i32_t 0) builder in
 the_module
