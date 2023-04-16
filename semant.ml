@@ -31,7 +31,7 @@ let check (decls) =
       typ = Void; fname = name; 
       formals = [(ty, "x")];
       body = Block[] } map
-    in List.fold_left add_bind StringMap.empty [ ("print", Int);]
+    in List.fold_left add_bind StringMap.empty [ ("printf", Int);]
   in
 
   (* THE ONE MAP OF FUNCTIONS *)

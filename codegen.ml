@@ -33,7 +33,6 @@ let translate decls =
   and the_module = L.create_module context "Graphite" in 
   (*and global_vars : L.llvalue StringMap.t = StringMap.empty in *)
 
-
 (*** Define Graphite -> LLVM types here ***)
 let ltype_of_typ = function
     A.Int -> i32_t
@@ -50,9 +49,15 @@ let _ = ltype_of_typ A.Int in
 let printf_t : L.lltype = 
   L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
 let printf_func : L.llvalue = 
- L.declare_function "printf" printf_t the_module in
-  
+ L.declare_function "printf" printf_t the_module in  
 
+let to_string (e : sx) = match e with
+    SLiteral i -> SString(string_of_int i)
+  (* | SBoolLit b -> match b with
+      true -> SString("true")
+    | _ -> SString("false") *)
+  | _ -> raise (Failure("type to string not implemented"))
+in
 (*** Expressions go here ***)
 let rec expr builder ((_, e) : sexpr) = match e with
     SLiteral i -> L.const_int i32_t i
@@ -92,11 +97,14 @@ let rec expr builder ((_, e) : sexpr) = match e with
       | A.Greater -> L.build_icmp L.Icmp.Sgt
       | A.Geq     -> L.build_icmp L.Icmp.Sge
       ) e1' e2' "tmp" builder 
-  | SCall ("print", [e]) ->
+  | SCall ("printf", [e]) ->
     (* let (_, SString(the_str)) = e in 
     let s = L.build_global_stringptr (the_str ^ "\n") "" builder in
     L.build_call printf_func [| s |] "" builder *)
-    L.build_call printf_func [| (expr builder e) |] "print" builder
+
+    (* why tf did you parse e from above from sexpr but you gotta parse here again? it works?*)
+    let (_, e') = e in
+    L.build_call printf_func [| (expr builder (A.String, (to_string e'))) |] "printf" builder
         (* let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
         L.build_call printf_func [|  ( int_format_str ; expr builder e) |]
            "printf" builder  *)
