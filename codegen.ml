@@ -24,6 +24,7 @@ exception Unfinished of string
 type symbol_table = {
   variables : L.llvalue StringMap.t;
   parent : symbol_table option;
+  funcs : L.llvalue StringMap.t;
   curr_func : string;
 }
 
@@ -146,20 +147,24 @@ let rec bindassign (builder, stable) = function
 in
 
 (* add to symbol table *)
-let bind_var (scope : symbol_table) x t f =
+let bind_var (scope : symbol_table) x t fs f =
   { variables = StringMap.add x t scope.variables;
               parent = scope.parent;
+              funcs = fs;
               curr_func = f; }
 in
 
-let find_func s funcs = 
-  try StringMap.find s funcs
+let find_func s stable = 
+  try StringMap.find s stable.funcs
   with Not_found -> raise (Failure ("unrecognized function " ^ s))
 in
 (* Add function name to symbol table *)
-(* func_pair is a tuple of the sast sfdecl and the llvm func type *)
-let add_func s func_pair funcs = 
-  StringMap.add s func_pair funcs 
+(* func is the llvm func type *)
+let add_func s func stable = 
+    { variables = stable.variables;
+      parent = stable.parent; 
+      funcs = StringMap.add s func stable.funcs;
+      curr_func = stable.curr_func; }
 in
   
 
@@ -172,9 +177,9 @@ let rec build_decl (builder, stable) decl = match decl with
 in
 (** to have func type have to build before you use it -- needed for line below it **)
 let ftype = L.function_type i32_t (Array.of_list []) in 
-let global_scope = L.define_function "main" ftype the_module in (*CHANGED TO MAIN -- Abby *)
+let global_main = L.define_function "main" ftype the_module in (*CHANGED TO MAIN -- Abby *)
 (** builder initialized at the first line of global main -- where you want to put next llvm instruction **)
-let builder = L.builder_at_end context (L.entry_block global_scope) in
+let builder = L.builder_at_end context (L.entry_block global_main) in
 
 (** uses builder from above -- every line is a decl **)
 let rec program (builder, stable) = function
@@ -182,8 +187,14 @@ let rec program (builder, stable) = function
   | [] -> builder, stable
 in
 
-
-let _ = program (builder, StringMap.empty) decls in 
+let empty_stable = {
+  variables = StringMap.empty;
+  parent = None;
+  funcs = StringMap.empty;
+  curr_func = "main";
+} in
+let init_stable = add_func "main" global_main empty_stable in 
+let _ = program (builder, init_stable) decls in 
 (* let _ = L.build_ret_int builder in  *)
 let _ = L.build_ret (L.const_int i32_t 0) builder in
 the_module
