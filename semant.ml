@@ -21,6 +21,10 @@ let check (decls) =
       | _ -> raise Not_found
   in
 
+  let rec find_loc_variable (scope : symbol_table) (name : string) =
+     StringMap.find name scope.variables
+  in
+
   (* Collect function declarations for built-in functions: no bodies *)
   let built_in_decls = 
     let add_bind map (name, ty) = StringMap.add name {
@@ -139,14 +143,14 @@ let check (decls) =
   match b_lines with
   | LocalBind(t, x)::rest -> 
       (try
-        let _ = find_variable scope x in
-        raise (Failure (x ^ " already declared"))
-      with Not_found -> SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest)
+        let _ = find_loc_variable scope x in
+        raise (Failure (x ^ " already declared in current scope"))
+    with Not_found -> SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest)
   | LocalBindAssign(t, x, e)::rest -> 
       (try
-        let _ = find_variable scope x in
-        raise (Failure (x ^ " already declared"))
-      with Not_found -> SLocalBindAssign(t, x, e)::check_body (bind_var scope x t) funcs rest )
+        let _ = find_loc_variable scope x in
+        raise (Failure (x ^ " already declared in current scope"))
+    with Not_found -> SLocalBindAssign(t, x, e)::check_body (bind_var scope x t) funcs rest )
   | LocalStatement(s)::rest -> 
       let ss = check_stmt scope funcs s in
       SLocalStatement(ss)::check_body scope funcs rest
@@ -166,13 +170,13 @@ in
       [] -> []
     | Bind(t, x)::rest ->
         (try
-          let _ = find_variable scope x in
-          raise (Failure (x ^ " already declared"))
+          let _ = find_loc_variable scope x in
+          raise (Failure (x ^ " already declared in current scope"))
         with Not_found -> SBind(t, x)::check_decls (bind_var scope x t) funcs rest)
     | BindAssign(t, x, e)::rest ->
         (try
-          let _ = find_variable scope x in
-          raise (Failure (x ^ " already declared"))
+          let _ = find_loc_variable scope x in
+          raise (Failure (x ^ " already declared in current scope"))
         with Not_found -> SBindAssign(t,x , expr scope funcs e)::check_decls (bind_var scope x t) funcs rest)
     | Statement(s)::rest ->
       let ss = check_stmt scope funcs s in
