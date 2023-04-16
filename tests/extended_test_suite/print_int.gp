@@ -1,1 +1,1 @@
-print(3);
+printf(3);
