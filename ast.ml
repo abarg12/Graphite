@@ -35,7 +35,7 @@ type expr =
 type bind_assign = typ * string * expr
 
 type stmt =
-    Block of block_body
+    Block of b_line list
   | Expr of expr
   | Return of expr
   | If of expr * stmt * stmt
@@ -46,8 +46,8 @@ b_line =
     LocalBind of bind
   | LocalBindAssign of bind_assign
   | LocalStatement of stmt
-and
-block_body = b_line list
+(*and
+block_body = b_line list*)
 
 type func_decl = {
     typ : typ;

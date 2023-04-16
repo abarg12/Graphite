@@ -91,7 +91,7 @@ let rec expr builder ((_, e) : sexpr) = match e with
       | A.Leq     -> L.build_icmp L.Icmp.Sle
       | A.Greater -> L.build_icmp L.Icmp.Sgt
       | A.Geq     -> L.build_icmp L.Icmp.Sge
-      ) e1' e2' "tmp" builder  
+      ) e1' e2' "tmp" builder 
   | SCall ("printf", [e]) ->
     (* let (_, SString(the_str)) = e in 
     let s = L.build_global_stringptr (the_str ^ "\n") "" builder in
