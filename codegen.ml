@@ -40,6 +40,7 @@ let translate decls =
   and the_module = L.create_module context "Graphite" in 
   (*and global_vars : L.llvalue StringMap.t = StringMap.empty in *)
 
+
 (*** Define Graphite -> LLVM types here ***)
 let ltype_of_typ = function
     A.Int -> i32_t
@@ -56,8 +57,9 @@ let _ = ltype_of_typ A.Int in
 let printf_t : L.lltype = 
   L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
 let printf_func : L.llvalue = 
- L.declare_function "printf" printf_t the_module in  
-
+ L.declare_function "printf" printf_t the_module in
+  
+(* add a lookup function to find the vars *)
 let to_string (e : sx) = match e with
     SLiteral i -> SString(string_of_int i)
   (* | SBoolLit b -> match b with
@@ -72,6 +74,7 @@ let rec expr (builder, stable) ((_, e) : sexpr) = match e with
   (*| SString s -> L.const_string context s*)
   | SFliteral f -> L.const_float_of_string float_t f
   | SString s -> L.build_global_stringptr s "" builder
+  (* | SId s -> L.build_load (lookup s) s builder *) (* needs lookup for vars*)
   | SBinop (e1, op, e2) ->
       let (t, _) = e1
       and e1' = expr (builder, stable) e1
@@ -108,8 +111,6 @@ let rec expr (builder, stable) ((_, e) : sexpr) = match e with
     (* let (_, SString(the_str)) = e in 
     let s = L.build_global_stringptr (the_str ^ "\n") "" builder in
     L.build_call printf_func [| s |] "" builder *)
-
-    (* why tf did you parse e from above from sexpr but you gotta parse here again? it works?*)
     let (_, e') = e in
     L.build_call printf_func [| (expr (builder, stable) (A.String, (to_string e'))) |] "printf" builder
         (* let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
