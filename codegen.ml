@@ -110,7 +110,7 @@ let rec expr (builder, stable) ((_, e) : sexpr) = match e with
 
     (* why tf did you parse e from above from sexpr but you gotta parse here again? it works?*)
     let (_, e') = e in
-    L.build_call printf_func [| (expr builder (A.String, (to_string e'))) |] "printf" builder
+    L.build_call printf_func [| (expr (builder, stable) (A.String, (to_string e'))) |] "printf" builder
         (* let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
         L.build_call printf_func [|  ( int_format_str ; expr builder e) |]
            "printf" builder  *)
