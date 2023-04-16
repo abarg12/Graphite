@@ -21,6 +21,13 @@ module StringMap = Map.Make(String)
 
 exception Unfinished of string
 
+type symbol_table = {
+  variables : L.llvalue StringMap.t;
+  parent : symbol_table option;
+  funcs : L.llvalue StringMap.t;
+  curr_func : string;
+}
+
 (*** Declare all the LLVM types we'll use ***)
 let translate decls = 
   let context  = L.global_context () in
@@ -33,7 +40,6 @@ let translate decls =
   and the_module = L.create_module context "Graphite" in 
   (*and global_vars : L.llvalue StringMap.t = StringMap.empty in *)
 
-
 (*** Define Graphite -> LLVM types here ***)
 let ltype_of_typ = function
     A.Int -> i32_t
@@ -44,17 +50,57 @@ let ltype_of_typ = function
   | _ -> raise (Unfinished "not all types implemented")
 in
 
-(*** Workaround to silence error about never using ltype_of_typ ***)
-let _ = ltype_of_typ A.Int in 
+
+(* add to symbol table *)
+let bind_var (scope : symbol_table) x t  =
+  { variables = StringMap.add x t scope.variables;
+              parent = scope.parent;
+              funcs = scope.funcs;
+              curr_func = scope.curr_func; }
+in
+
+(* trickle up blocks to find nearest variable instance *)
+let rec find_variable (scope : symbol_table) (name : string) =
+  try StringMap.find name scope.variables
+  with Not_found ->
+    match scope.parent with
+      Some(parent) -> find_variable parent name
+    | _ -> raise Not_found
+in
+
+let rec find_loc_variable (scope : symbol_table) (name : string) =
+    StringMap.find name scope.variables
+in
+
+
+let find_func s stable = 
+  try StringMap.find s stable.funcs
+  with Not_found -> raise (Failure ("unrecognized function " ^ s))
+in
+(* Add function name to symbol table *)
+(* func is the llvm func type *)
+let add_func s func stable = 
+    { variables = stable.variables;
+      parent = stable.parent; 
+      funcs = StringMap.add s func stable.funcs;
+      curr_func = stable.curr_func; }
+in
+  
 
 let printf_t : L.lltype = 
   L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
 let printf_func : L.llvalue = 
- L.declare_function "printf" printf_t the_module in
-  
+  L.declare_function "printf" printf_t the_module in  
 
+let to_string (e : sx) = match e with
+    SLiteral i -> SString(string_of_int i)
+  (* | SBoolLit b -> match b with
+      true -> SString("true")
+    | _ -> SString("false") *)
+  | _ -> raise (Failure("type to string not implemented"))
+in
 (*** Expressions go here ***)
-let rec expr builder ((_, e) : sexpr) = match e with
+let rec expr (builder, stable) ((_, e) : sexpr) = match e with
     SLiteral i -> L.const_int i32_t i
   | SBoolLit b -> L.const_int i1_t (if b then 1 else 0) 
   (*| SString s -> L.const_string context s*)
@@ -62,8 +108,8 @@ let rec expr builder ((_, e) : sexpr) = match e with
   | SString s -> L.build_global_stringptr s "" builder
   | SBinop (e1, op, e2) ->
       let (t, _) = e1
-      and e1' = expr builder e1
-      and e2' = expr builder e2 in
+      and e1' = expr (builder, stable) e1
+      and e2' = expr (builder, stable) e2 in
       if t = A.Float then (match op with 
         A.Add     -> L.build_fadd
       | A.Sub     -> L.build_fsub
@@ -92,11 +138,14 @@ let rec expr builder ((_, e) : sexpr) = match e with
       | A.Greater -> L.build_icmp L.Icmp.Sgt
       | A.Geq     -> L.build_icmp L.Icmp.Sge
       ) e1' e2' "tmp" builder 
-  | SCall ("print", [e]) ->
+  | SCall ("printf", [e]) ->
     (* let (_, SString(the_str)) = e in 
     let s = L.build_global_stringptr (the_str ^ "\n") "" builder in
     L.build_call printf_func [| s |] "" builder *)
-    L.build_call printf_func [| (expr builder e) |] "print" builder
+
+    (* why tf did you parse e from above from sexpr but you gotta parse here again? it works?*)
+    let (_, e') = e in
+    L.build_call printf_func [| (expr (builder, stable) (A.String, (to_string e'))) |] "printf" builder
         (* let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
         L.build_call printf_func [|  ( int_format_str ; expr builder e) |]
            "printf" builder  *)
@@ -105,8 +154,8 @@ in
 
 
 (*** Statements go here ***)
-let rec stmt builder = function
-    SExpr e -> let _ = expr builder e in builder
+let rec stmt (builder, stable) = function
+    SExpr e -> let _ = expr (builder, stable) e in (builder, stable)
   
     (*
   temporary to ignore:
@@ -115,37 +164,55 @@ Warning 8 [partial-match]: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (SReturn (_, _)|SBlock _)
      *)
-     | _ -> builder
+     | _ -> (builder, stable)
 in 
 
+(*
+let rec bind (builder, stable) = function
+  (typ, s) -> let _ = L.build_store 
+in *)
+
 (* Bind assignments are declaration-assignment one-liners *)
-let rec bindassign builder = function 
-  (typ, s, e) -> let e' = expr builder e in
+let rec bindassign (builder, stable) = function 
+  (typ, s, e) -> 
+        let e' = expr (builder, stable) e in
                  (*let StringMap.add s (L.define_global s e the_module) global_vars*)
-                 let _  = L.build_store e' (L.define_global s e' the_module) builder
-                 in builder  
+                 (* let _  = L.build_store e' (L.define_global s e' the_module) builder *)
+        let () = L.set_value_name s e' in
+        let new_var = L.build_alloca (ltype_of_typ typ) s builder in
+        let _ = L.build_store e' new_var builder in
+        let stable' = bind_var stable s new_var
+        in (builder, stable')
 in
 
 (*** Analyze all the declarations in program ***) 
-let rec build_decl builder decl = match decl with
-    SStatement s -> stmt builder s
-  | SBindAssign(typ, s, e) -> bindassign builder (typ, s, e)
+let rec build_decl (builder, stable) decl = match decl with
+    SStatement s -> stmt (builder, stable) s
+  | SBindAssign(typ, s, e) -> bindassign (builder, stable) (typ, s, e)
   | SBind (typ, n) -> raise (Failure("vdecls not implemented")) (*TODO: implement vdecls (variable bindings)*)
-  (**TODO: add fdecl *)
+  | SFdecl (b) -> raise (Failure("fdecls not implemented"))
 in
 (** to have func type have to build before you use it -- needed for line below it **)
 let ftype = L.function_type i32_t (Array.of_list []) in 
-let global_scope = L.define_function "main" ftype the_module in (*CHANGED TO MAIN -- Abby *)
+let global_main = L.define_function "main" ftype the_module in (*CHANGED TO MAIN -- Abby *)
 (** builder initialized at the first line of global main -- where you want to put next llvm instruction **)
-let builder = L.builder_at_end context (L.entry_block global_scope) in
+let builder = L.builder_at_end context (L.entry_block global_main) in
+
 (** uses builder from above -- every line is a decl **)
-let rec program builder = function
-    decl :: ds -> program (build_decl builder decl) ds 
-  | [] -> builder
+let rec program (builder, stable) = function
+    decl :: ds -> program (build_decl (builder, stable) decl) ds 
+  | [] -> builder, stable
 in
 
-
-let _ = program builder decls in 
+let empty_stable = {
+  variables = StringMap.empty;
+  parent = None;
+  funcs = StringMap.empty;
+  curr_func = "main";
+} in
+let init_stable = add_func "main" global_main empty_stable in 
+let init_stable = add_func "printf" printf_func init_stable in
+let _ = program (builder, init_stable) decls in 
 (* let _ = L.build_ret_int builder in  *)
 let _ = L.build_ret (L.const_int i32_t 0) builder in
 the_module
