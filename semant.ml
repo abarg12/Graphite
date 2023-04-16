@@ -52,6 +52,7 @@ let check (decls) =
       Literal l -> (Int, SLiteral l)
     | BoolLit l -> (Bool, SBoolLit l)
     | String s -> (String, SString s)
+    | Fliteral f -> (Float, SFliteral f)
     | Call(fname, args) ->
       let args' = List.map (expr scope funcs) args in
       ((find_func fname funcs).typ, SCall(fname, args')) 
@@ -133,7 +134,7 @@ in
       let _ = check_stmt scope funcs s in
       check_decls scope funcs rest
     | Fdecl(b)::rest -> 
-      let update_funcs = add_func functions b in 
+      let update_funcs = add_func funcs b in 
       let new_scope = { variables = StringMap.empty; parent = Some scope; } in
       let _ = check_stmt new_scope update_funcs b.body in
       check_decls scope update_funcs rest
