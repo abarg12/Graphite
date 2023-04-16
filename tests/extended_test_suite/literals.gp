@@ -4,5 +4,6 @@
 #bool b = false;
 #print(false);
 
-#string c = "howdy folks";
-print("howdy folks");
+string c = "howdy folks";
+print(c);
+#print("howdy folks");
