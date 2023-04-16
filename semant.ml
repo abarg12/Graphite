@@ -64,6 +64,7 @@ let check (decls) =
       Literal l -> (Int, SLiteral l)
     | BoolLit l -> (Bool, SBoolLit l)
     | String s -> (String, SString s)
+    | Fliteral f -> (Float, SFliteral f)
     | Noexpr -> (Void, SNoexpr)
     | Id s -> (find_variable scope s, SId s)
     | Assign(x, e) ->

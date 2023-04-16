@@ -23,12 +23,13 @@ exception Unfinished of string
 
 (*** Declare all the LLVM types we'll use ***)
 let translate decls = 
-  let context = L.global_context () in
-  let i32_t   = L.i32_type context
-  and i8_t    = L.i8_type context
-  and i1_t    = L.i1_type context
-  and string_t  = L.pointer_type (L.i8_type context)
-  (* and void_t  = L.void_type context  *)
+  let context  = L.global_context () in
+  let i32_t    = L.i32_type context
+  and i8_t     = L.i8_type context
+  and i1_t     = L.i1_type context
+  and string_t = L.pointer_type (L.i8_type context)
+  and float_t  = L.float_type context
+  and void_t   = L.void_type context 
   and the_module = L.create_module context "Graphite" in 
   (*and global_vars : L.llvalue StringMap.t = StringMap.empty in *)
 
@@ -37,8 +38,8 @@ let translate decls =
 let ltype_of_typ = function
     A.Int -> i32_t
   | A.Bool  -> i1_t
-(*| A.Float -> float_t
-  | A.Void  -> void_t  *) 
+  | A.Float -> float_t
+  | A.Void  -> void_t   
   | A.String -> string_t 
   | _ -> raise (Unfinished "not all types implemented")
 in
@@ -57,6 +58,7 @@ let rec expr builder ((_, e) : sexpr) = match e with
     SLiteral i -> L.const_int i32_t i
   | SBoolLit b -> L.const_int i1_t (if b then 1 else 0) 
   (*| SString s -> L.const_string context s*)
+  | SFliteral f -> L.const_float_of_string float_t f
   | SString s -> L.build_global_stringptr s "" builder
   | SBinop (e1, op, e2) ->
       let (t, _) = e1
