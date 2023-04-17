@@ -138,6 +138,7 @@ let rec expr (builder, stable) ((_, e) : sexpr) = match e with
       | A.Greater -> L.build_icmp L.Icmp.Sgt
       | A.Geq     -> L.build_icmp L.Icmp.Sge
       ) e1' e2' "tmp" builder 
+  | SId s -> L.build_load (find_variable stable s) s builder
   | SCall ("printf", [e]) ->
     (* let (_, SString(the_str)) = e in 
     let s = L.build_global_stringptr (the_str ^ "\n") "" builder in
@@ -167,10 +168,14 @@ Here is an example of a case that is not matched:
      | _ -> (builder, stable)
 in 
 
-(*
+
 let rec bind (builder, stable) = function
-  (typ, s) -> let _ = L.build_store 
-in *)
+    (typ, s) -> 
+        let new_var = L.build_alloca (ltype_of_typ typ) s builder in
+        let stable' = bind_var stable s new_var in
+        (builder, stable')
+
+in 
 
 (* Bind assignments are declaration-assignment one-liners *)
 let rec bindassign (builder, stable) = function 
@@ -189,7 +194,7 @@ in
 let rec build_decl (builder, stable) decl = match decl with
     SStatement s -> stmt (builder, stable) s
   | SBindAssign(typ, s, e) -> bindassign (builder, stable) (typ, s, e)
-  | SBind (typ, n) -> raise (Failure("vdecls not implemented")) (*TODO: implement vdecls (variable bindings)*)
+  | SBind (typ, n) -> bind (builder, stable) (typ, n) 
   | SFdecl (b) -> raise (Failure("fdecls not implemented"))
 in
 (** to have func type have to build before you use it -- needed for line below it **)
