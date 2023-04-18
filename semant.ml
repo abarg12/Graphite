@@ -95,14 +95,15 @@ let check (decls) =
       let err = "illegal assignment " ^ x ^ " : " ^ string_of_typ lt ^ " = " ^ string_of_typ rt in
       if lt = rt then (rt, SAssign(x, (rt, e'))) else raise (Failure err)
     | DotOp(var, field) -> 
-      let _ = find_variable scope var in
       let _ = List.map find_field fields in
-      let (ty, sop)  = match field with 
-            "name" -> (find_variable scope (var ^ ".name"), SDotOp(var, field))
-          | "flag" -> (Bool, SDotOp(var, field))
-          | "data" -> (find_variable scope (var ^ ".data"), SDotOp(var, field))
-          | _ -> raise (Failure ("unexpected field"))
-      in (ty, sop)
+      let ty = find_variable scope (var ^ "." ^ field) in
+      (ty, SDotOp(var, field))
+    | DotAssign(var, field, e) -> 
+      let _ = List.map find_field fields in
+      let lt = find_variable scope (var ^ "." ^ field) in
+      let (rt, e') = expr scope funcs e in
+      let err = "illegal assignment " ^ var ^ "." ^ field ^ " : " ^ string_of_typ lt ^ " = " ^ string_of_typ rt in
+      if lt = rt then (rt, SDotAssign(var, field, (rt, e'))) else raise (Failure err)
     | Unop(op, e) as ex -> 
         let (t, e') = expr scope funcs e in
         let ty = match op with
@@ -168,6 +169,14 @@ let check (decls) =
     in if t' != Bool then raise (Failure err) else (t', e') 
   in
 
+  (*TODO: for abby *)
+  (*let node_scope x scope = 
+    let _ = find_loc_variable scope (x ^ ".name") in
+    let scope1 = bind_var scope (x ^ ".name") String in 
+    let scope2 = bind_var scope1 x t in
+    ()
+  in *)
+
   (* Return a semantically-checked statement i.e. containing sexprs *)
   let rec check_stmt scope funcs s =
     match s with
@@ -199,6 +208,9 @@ let check (decls) =
            Graph(fields) ->
               let _ = List.map find_invar fields in  
               SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest
+          (*TODO for abby | Node -> 
+              let new_scope = node_scope x scope in 
+              SLocalBind(t, x)::check_body new_scope funcs rest) *)
           | _ -> SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest)
   | LocalBindAssign(t, x, e)::rest -> 
       (try
