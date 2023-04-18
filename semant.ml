@@ -34,6 +34,7 @@ let check (decls) =
     in List.fold_left add_bind StringMap.empty [ ("printf", Int);]
   in
 
+  (* this is where we're gonna add more invariants later heeheehoohoo*)
   let invariants = ["tree"; "connected"]  in
 
   (* make sure that an invariant is a valid invariant *)
@@ -118,9 +119,7 @@ let check (decls) =
     | Setop(e1, setop, e2) as e -> 
         let (t1, e1') = expr scope funcs e1 
         and (t2, e2') = expr scope funcs e2 in
-
         let same = t1 = t2 in
-
         let fields = match t1 with 
           Graph(fields) -> fields
           | _ -> raise (
@@ -140,7 +139,13 @@ let check (decls) =
     | Call(fname, args) ->
       let args' = List.map (expr scope funcs) args in 
       (* CHECK THAT IT EXISTS AND ARG TYPES ARE CORRECT *)
-      ((find_func fname funcs).typ, SCall(fname, args')) 
+      ((find_func fname funcs).typ, SCall(fname, args'))
+      (* ds for data structure, even though dot calls are mostly going happen within graphs i think *)
+    | DotCall(ds, fname, args) -> (* find_method takes a data structure and a fname and throws error if not there*)
+      let _ = List.map find_method ds fname in 
+        let
+        in
+      (, SDotCall())
     | _ -> raise (Failure("expr: not implemented"))
   in
 
