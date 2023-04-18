@@ -35,14 +35,21 @@ let check (decls) =
   in
 
   let invariants = ["tree"; "connected"]  in
+  let fields = ["flag"; "data"; "name"] in 
+
+  let rec find_elt x lst message = match lst with 
+      y::rest when x = y -> true  
+    | y::rest -> find_elt x rest message
+    | [] -> raise (Failure (message ^ " '" ^ x ^ "' does not exist"))
+  in 
 
   (* make sure that an invariant is a valid invariant *)
   let find_invar x = 
-    let rec find_elt x lst = match lst with 
-      y::rest when x = y -> true  
-    | y::rest -> find_elt x rest
-    | [] -> raise (Failure ("invariant '" ^ x ^ "' does not exist"))
-    in find_elt x invariants 
+    find_elt x invariants "invariant"
+  in 
+
+  let find_field x = 
+    find_elt x fields "node field" 
   in 
   (* THE ONE MAP OF FUNCTIONS *)
   let functions = built_in_decls in
@@ -87,6 +94,16 @@ let check (decls) =
       let (rt, e') = expr scope funcs e in
       let err = "illegal assignment " ^ x ^ " : " ^ string_of_typ lt ^ " = " ^ string_of_typ rt in
       if lt = rt then (rt, SAssign(x, (rt, e'))) else raise (Failure err)
+    | DotOp(var, field) -> 
+      let _ = List.map find_field fields in
+      let ty = find_variable scope (var ^ "." ^ field) in
+      (ty, SDotOp(var, field))
+    | DotAssign(var, field, e) -> 
+      let _ = List.map find_field fields in
+      let lt = find_variable scope (var ^ "." ^ field) in
+      let (rt, e') = expr scope funcs e in
+      let err = "illegal assignment " ^ var ^ "." ^ field ^ " : " ^ string_of_typ lt ^ " = " ^ string_of_typ rt in
+      if lt = rt then (rt, SDotAssign(var, field, (rt, e'))) else raise (Failure err)
     | Unop(op, e) as ex -> 
         let (t, e') = expr scope funcs e in
         let ty = match op with
@@ -152,6 +169,18 @@ let check (decls) =
     in if t' != Bool then raise (Failure err) else (t', e') 
   in
 
+  (*TODO: for abby *)
+  let node_scope x scope = 
+    (try 
+      let _ = find_loc_variable scope (x ^ ".name") in
+      raise (Failure (x ^ " already declared in current scope"))
+     with Not_found -> 
+      let scope1 = bind_var scope (x ^ ".name") String in 
+      let scope2 = bind_var scope1 (x ^ ".flag") Bool in
+      let new_scope = bind_var scope2 (x ^ ".data") Temp in
+      new_scope )
+  in 
+
   (* Return a semantically-checked statement i.e. containing sexprs *)
   let rec check_stmt scope funcs s =
     match s with
@@ -183,6 +212,9 @@ let check (decls) =
            Graph(fields) ->
               let _ = List.map find_invar fields in  
               SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest
+          | Node -> 
+              let new_scope = node_scope x scope in 
+              SLocalBind(t, x)::check_body new_scope funcs rest 
           | _ -> SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest)
   | LocalBindAssign(t, x, e)::rest -> 
       (try
@@ -193,7 +225,10 @@ let check (decls) =
           Graph(fields) ->
               let _ = List.map find_invar fields in  
               SLocalBindAssign(t, x, expr scope funcs e)::check_body (bind_var scope x t) funcs rest (*CHANGEED HERE ASK ABBY*)
-          | _ -> SLocalBindAssign(t, x, expr scope funcs e)::check_body (bind_var scope x t) funcs rest)
+              | Node -> 
+                let new_scope = node_scope x scope in 
+                SLocalBindAssign(t, x, expr scope funcs e)::check_body new_scope funcs rest 
+              | _ -> SLocalBindAssign(t, x, expr scope funcs e)::check_body (bind_var scope x t) funcs rest) (*should this be the new scope?*)
   | LocalStatement(s)::rest -> 
       let ss = check_stmt scope funcs s in
       SLocalStatement(ss)::check_body scope funcs rest
@@ -220,6 +255,9 @@ in
              Graph(fields) ->
                 let _ = List.map find_invar fields in  
                 SBind(t, x)::check_decls (bind_var scope x t) funcs rest
+            | Node -> 
+              let new_scope = node_scope x scope in 
+              SBind(t, x)::check_decls new_scope funcs rest 
             | _ -> SBind(t, x)::check_decls (bind_var scope x t) funcs rest)
     | BindAssign(t, x, e)::rest ->
         (try
