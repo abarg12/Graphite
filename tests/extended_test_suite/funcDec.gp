@@ -2,9 +2,8 @@ int thisFunc(int z, int y) {
     return z + y;
 }
 
-int first; 
-first = 2; 
-int second;
-second = 2;
+int first = 2; 
+int second = 3;
 
-thisFunc(first, second);
+int result = thisFunc(first, second);
+printf(result);

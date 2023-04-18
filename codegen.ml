@@ -24,7 +24,7 @@ exception Unfinished of string
 type symbol_table = {
   variables : L.llvalue StringMap.t;
   parent : symbol_table option;
-  funcs : L.llvalue StringMap.t;
+  funcs : (sfunc_decl option * L.llvalue) StringMap.t;
   curr_func : string;
 }
 
@@ -169,6 +169,8 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       | A.Geq     -> L.build_icmp L.Icmp.Sge
       ) e1' e2' "tmp" builder 
   | SId s -> L.build_load (find_variable stable s) s builder
+  | SAssign (s, e) -> let e' = expr (builder, stable) e in
+                      L.build_store e' (find_variable stable s) builder
   | SCall ("printf", [e]) ->
     (*let (_, SString(the_str)) = e in 
     let s = L.build_global_stringptr (the_str ^ "\n") "" builder in
@@ -182,12 +184,16 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
     | (Bool, SId s) -> L.build_call printf_func [| bool_format_str builder ; (expr (builder, stable) e) |] "printf" builder
     | _ -> L.build_call printf_func [| (expr (builder, stable) (A.String, (to_string e))) |] "printf" builder )
   | SCall (name, args) -> 
-        let fdecl = find_func stable name in
+        let (fdecl_opt, llvm_decl) = find_func stable name in
+        let sfdecl = (match fdecl_opt with
+                        Some(f) -> f
+                      | _ -> raise (Failure "No function definition found"))
+        in 
         let llargs = List.rev (List.map (expr (builder, stable)) (List.rev args)) in
-        let result = (match A.Void with (***TODO: add sfdecl to function map so that we can access it here ****)
+        let result = (match sfdecl.styp with (***TODO: add sfdecl to function map so that we can access it here ****)
                         A.Void -> ""
                       | _ -> name ^ "_result") in
-                  L.build_call fdecl (Array.of_list llargs) result builder
+                  L.build_call llvm_decl (Array.of_list llargs) result builder
   | _ -> raise (Failure("decl: not implemented"))
 in
 
@@ -208,6 +214,16 @@ and stmt (builder, stable) = function
         } in
       let _ = sb_lines (builder, stable') ls in
       (builder, stable)
+  | SReturn e ->  let (fdecl_opt, llvm_decl) = find_func stable stable.curr_func in 
+                  let fdecl = (match fdecl_opt with
+                                Some(f) -> f
+                              | _ -> raise (Failure "No function definition found"))
+                  in
+                  let _ = (match fdecl.styp with
+                      A.Void -> L.build_ret_void builder 
+                    | _ -> L.build_ret (expr (builder, stable) e) builder)
+                  in 
+                  (builder, stable)
   
     (*
   temporary to ignore:
@@ -241,10 +257,16 @@ and fdecl (builder, stable) f =
         let formal_types = Array.of_list (List.map (fun (t, _) -> ltype_of_typ t) f.sformals) in
         let ftype = L.function_type (ltype_of_typ f.styp) formal_types in
         let llvm_func = L.define_function name ftype the_module in
-        let stable' = add_func name llvm_func stable in
-        let stable'' = List.fold_left (fun stable_accum (t, x) -> bind_var stable_accum x (L.build_alloca (ltype_of_typ t) x builder)) 
+        let stable' = add_func name (Some f, llvm_func) stable in
+        let builder' = L.builder_at_end context (L.entry_block llvm_func) in 
+        let stable'' = List.fold_left (fun stable_accum (t, x) -> bind_var stable_accum x (L.build_alloca (ltype_of_typ t) x builder')) 
                                       stable' f.sformals in
-        let _ = stmt (builder, stable'') f.sbody in 
+        let stable''' = { variables = stable''.variables;
+                          parent = stable''.parent; 
+                          funcs = stable''.funcs;
+                          curr_func = name; }
+        in  
+        let _ = stmt (builder', stable''') f.sbody in 
         (builder, stable')
 in
 
@@ -273,8 +295,8 @@ let empty_stable = {
   funcs = StringMap.empty;
   curr_func = "main";
 } in
-let init_stable = add_func "main" global_main empty_stable in 
-let init_stable = add_func "printf" printf_func init_stable in (* hmmm is this ok? *)
+let init_stable = add_func "main" (None, global_main) empty_stable in 
+let init_stable = add_func "printf" (None, printf_func) init_stable in (* hmmm is this ok? *)
 let _ = program (builder, init_stable) decls in 
 (* let _ = L.build_ret_int builder in  *)
 let _ = L.build_ret (L.const_int i32_t 0) builder in
