@@ -1,9 +1,8 @@
-#int a = 5;
-#print(5);
+int a = 5;
+printf(5);
 
 #bool b = false;
-#print(false);
+#printf(false);
 
-string c = "howdy folks";
-print(c);
-#print("howdy folks");
+#string c = "howdy folks";
+#printf(c);
