@@ -77,15 +77,20 @@ let rec find_variable (scope : symbol_table) (name : string) =
     | None -> raise Not_found
 in
 
+
 let rec find_loc_variable (scope : symbol_table) (name : string) =
     StringMap.find name scope.variables
 in
 
 
-let find_func s stable = 
-  try StringMap.find s stable.funcs
-  with Not_found -> raise (Failure ("unrecognized function " ^ s))
+let rec find_func (scope : symbol_table) (name : string) =
+  try StringMap.find name scope.funcs
+  with Not_found ->
+    match scope.parent with
+      Some p -> find_func p name
+    | None -> raise Not_found
 in
+
 (* Add function name to symbol table *)
 (* func is the llvm func type *)
 let add_func s func stable = 
@@ -107,6 +112,7 @@ let to_string e = match e with
   | (_, SBoolLit b) -> (match b with
       true -> SString("true")
     | _ -> SString("false") )
+  | (_, SFliteral f) -> SString f
   | _ -> raise (Failure("type to string not implemented for non-literals"))
 in
 
@@ -215,6 +221,17 @@ and bindassign (builder, stable) = function
         let _ = L.build_store e' new_var builder in
         let stable' = bind_var stable s new_var
         in (builder, stable')
+
+and fdecl (builder, stable) f =
+        let name = f.sfname in 
+        let formal_types = Array.of_list (List.map (fun (t, _) -> ltype_of_typ t) f.sformals) in
+        let ftype = L.function_type (ltype_of_typ f.styp) formal_types in
+        let llvm_func = L.define_function name ftype the_module in
+        let stable' = add_func name llvm_func stable in
+        let stable'' = List.fold_left (fun stable_accum (t, x) -> bind_var stable_accum x (L.build_alloca (ltype_of_typ t) x builder)) 
+                                      stable' f.sformals in
+        let _ = stmt (builder, stable'') f.sbody in 
+        (builder, stable')
 in
 
 (*** Analyze all the declarations in program ***) 
@@ -222,7 +239,7 @@ let rec build_decl (builder, stable) decl = match decl with
     SStatement s -> stmt (builder, stable) s
   | SBindAssign(typ, s, e) -> bindassign (builder, stable) (typ, s, e)
   | SBind (typ, n) -> bind (builder, stable) (typ, n) 
-  | SFdecl (b) -> raise (Failure("fdecls not implemented"))
+  | SFdecl f -> fdecl (builder, stable) f
 in
 (** to have func type have to build before you use it -- needed for line below it **)
 let ftype = L.function_type i32_t (Array.of_list []) in 
