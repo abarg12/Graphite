@@ -216,7 +216,7 @@ let empty_stable = {
   curr_func = "main";
 } in
 let init_stable = add_func "main" global_main empty_stable in 
-let init_stable = add_func "printf" printf_func init_stable in
+let init_stable = add_func "printf" printf_func init_stable in (* hmmm is this ok? *)
 let _ = program (builder, init_stable) decls in 
 (* let _ = L.build_ret_int builder in  *)
 let _ = L.build_ret (L.const_int i32_t 0) builder in
