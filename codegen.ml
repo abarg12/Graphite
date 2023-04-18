@@ -60,13 +60,22 @@ let bind_var (scope : symbol_table) x t  =
               curr_func = scope.curr_func; }
 in
 
-(* trickle up blocks to find nearest variable instance *)
+(* trickle up blocks to find nearest variable instance 
 let rec find_variable (scope : symbol_table) (name : string) =
   try StringMap.find name scope.variables
   with Not_found ->
     match scope.parent with
       Some(parent) -> find_variable parent name
     | _ -> raise Not_found
+in
+*)
+
+let rec find_variable (scope : symbol_table) (name : string) =
+  try StringMap.find name scope.variables
+  with Not_found ->
+    match scope.parent with
+      Some p -> find_variable p name
+    | None -> raise Not_found
 in
 
 let rec find_loc_variable (scope : symbol_table) (name : string) =
@@ -101,6 +110,7 @@ let printf_func : L.llvalue =
 >>>>>>> 1c9d4b80e212769e1eb51b1754889f078bd90bf4
 let to_string (e : sx) = match e with
     SLiteral i -> SString(string_of_int i)
+  | SString s -> SString s 
   (* | SBoolLit b -> match b with
       true -> SString("true")
     | _ -> SString("false") *)
@@ -146,22 +156,36 @@ let rec expr (builder, stable) ((_, e) : sexpr) = match e with
       | A.Greater -> L.build_icmp L.Icmp.Sgt
       | A.Geq     -> L.build_icmp L.Icmp.Sge
       ) e1' e2' "tmp" builder 
+  | SId s -> L.build_load (find_variable stable s) s builder
   | SCall ("printf", [e]) ->
     (* let (_, SString(the_str)) = e in 
     let s = L.build_global_stringptr (the_str ^ "\n") "" builder in
     L.build_call printf_func [| s |] "" builder *)
     let (_, e') = e in
-    L.build_call printf_func [| (expr (builder, stable) (A.String, (to_string e'))) |] "printf" builder
+    L.build_call printf_func [| (expr (builder, stable) (A.String, (to_string e'))) |] "" builder
         (* let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
         L.build_call printf_func [|  ( int_format_str ; expr builder e) |]
            "printf" builder  *)
   | _ -> raise (Failure("decl: not implemented"))
 in
 
+let rec sb_lines (builder, stable) (ls : sb_line list) = match ls with
+    (SLocalBind (typ, s)) :: ls -> bind (builder, stable) (typ, s)
+  | (SLocalBindAssign (typ, s, e)) :: ls -> bindassign (builder, stable) (typ, s, e)
+  | (SLocalStatement sstmt) :: ls -> stmt (builder, stable) sstmt
+  | [] -> (builder, stable)
 
 (*** Statements go here ***)
-let rec stmt (builder, stable) = function
+and stmt (builder, stable) = function
     SExpr e -> let _ = expr (builder, stable) e in (builder, stable)
+  | SBlock ls -> let stable' ={
+          variables = StringMap.empty;
+          parent = Some stable;
+          funcs = StringMap.empty;
+          curr_func = stable.curr_func;
+        } in
+      let _ = sb_lines (builder, stable') ls in
+      (builder, stable)
   
     (*
   temporary to ignore:
@@ -171,15 +195,15 @@ Here is an example of a case that is not matched:
 (SReturn (_, _)|SBlock _)
      *)
      | _ -> (builder, stable)
-in 
 
-(*
-let rec bind (builder, stable) = function
-  (typ, s) -> let _ = L.build_store 
-in *)
+and  bind (builder, stable) = function
+    (typ, s) -> 
+        let new_var = L.build_alloca (ltype_of_typ typ) s builder in
+        let stable' = bind_var stable s new_var in
+        (builder, stable')
 
 (* Bind assignments are declaration-assignment one-liners *)
-let rec bindassign (builder, stable) = function 
+and bindassign (builder, stable) = function 
   (typ, s, e) -> 
         let e' = expr (builder, stable) e in
                  (*let StringMap.add s (L.define_global s e the_module) global_vars*)
@@ -195,7 +219,7 @@ in
 let rec build_decl (builder, stable) decl = match decl with
     SStatement s -> stmt (builder, stable) s
   | SBindAssign(typ, s, e) -> bindassign (builder, stable) (typ, s, e)
-  | SBind (typ, n) -> raise (Failure("vdecls not implemented")) (*TODO: implement vdecls (variable bindings)*)
+  | SBind (typ, n) -> bind (builder, stable) (typ, n) 
   | SFdecl (b) -> raise (Failure("fdecls not implemented"))
 in
 (** to have func type have to build before you use it -- needed for line below it **)
@@ -217,7 +241,7 @@ let empty_stable = {
   curr_func = "main";
 } in
 let init_stable = add_func "main" global_main empty_stable in 
-let init_stable = add_func "printf" printf_func init_stable in
+let init_stable = add_func "printf" printf_func init_stable in (* hmmm is this ok? *)
 let _ = program (builder, init_stable) decls in 
 (* let _ = L.build_ret_int builder in  *)
 let _ = L.build_ret (L.const_int i32_t 0) builder in

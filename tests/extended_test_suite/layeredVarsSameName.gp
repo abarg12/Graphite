@@ -1,8 +1,9 @@
-string z; 
-z = "plz work"; 
+string z = "plz work"; 
 
-int thisFunc(int z, int y) {
-    int z; 
-    z = 3;
-    return z + y;
+{
+    int y = 4;
+    int z = 3;
+    printf(z + y);
 }
+
+printf("test");
