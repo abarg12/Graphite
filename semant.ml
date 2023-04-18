@@ -170,12 +170,16 @@ let check (decls) =
   in
 
   (*TODO: for abby *)
-  (*let node_scope x scope = 
-    let _ = find_loc_variable scope (x ^ ".name") in
-    let scope1 = bind_var scope (x ^ ".name") String in 
-    let scope2 = bind_var scope1 x t in
-    ()
-  in *)
+  let node_scope x scope = 
+    (try 
+      let _ = find_loc_variable scope (x ^ ".name") in
+      raise (Failure (x ^ " already declared in current scope"))
+     with Not_found -> 
+      let scope1 = bind_var scope (x ^ ".name") String in 
+      let scope2 = bind_var scope1 (x ^ ".flag") Bool in
+      let new_scope = bind_var scope2 (x ^ ".data") Temp in
+      new_scope )
+  in 
 
   (* Return a semantically-checked statement i.e. containing sexprs *)
   let rec check_stmt scope funcs s =
@@ -208,9 +212,9 @@ let check (decls) =
            Graph(fields) ->
               let _ = List.map find_invar fields in  
               SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest
-          (*TODO for abby | Node -> 
+          | Node -> 
               let new_scope = node_scope x scope in 
-              SLocalBind(t, x)::check_body new_scope funcs rest) *)
+              SLocalBind(t, x)::check_body new_scope funcs rest 
           | _ -> SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest)
   | LocalBindAssign(t, x, e)::rest -> 
       (try
@@ -221,7 +225,10 @@ let check (decls) =
           Graph(fields) ->
               let _ = List.map find_invar fields in  
               SLocalBindAssign(t, x, expr scope funcs e)::check_body (bind_var scope x t) funcs rest (*CHANGEED HERE ASK ABBY*)
-          | _ -> SLocalBindAssign(t, x, expr scope funcs e)::check_body (bind_var scope x t) funcs rest)
+              | Node -> 
+                let new_scope = node_scope x scope in 
+                SLocalBindAssign(t, x, expr scope funcs e)::check_body new_scope funcs rest 
+              | _ -> SLocalBindAssign(t, x, expr scope funcs e)::check_body (bind_var scope x t) funcs rest) (*should this be the new scope?*)
   | LocalStatement(s)::rest -> 
       let ss = check_stmt scope funcs s in
       SLocalStatement(ss)::check_body scope funcs rest
@@ -248,6 +255,9 @@ in
              Graph(fields) ->
                 let _ = List.map find_invar fields in  
                 SBind(t, x)::check_decls (bind_var scope x t) funcs rest
+            | Node -> 
+              let new_scope = node_scope x scope in 
+              SBind(t, x)::check_decls new_scope funcs rest 
             | _ -> SBind(t, x)::check_decls (bind_var scope x t) funcs rest)
     | BindAssign(t, x, e)::rest ->
         (try
