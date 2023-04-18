@@ -181,6 +181,13 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
     | (String, SId s) -> L.build_call printf_func [| string_format_str builder ; (expr (builder, stable) e) |] "printf" builder
     | (Bool, SId s) -> L.build_call printf_func [| bool_format_str builder ; (expr (builder, stable) e) |] "printf" builder
     | _ -> L.build_call printf_func [| (expr (builder, stable) (A.String, (to_string e))) |] "printf" builder )
+  | SCall (name, args) -> 
+        let fdecl = find_func stable name in
+        let llargs = List.rev (List.map (expr (builder, stable)) (List.rev args)) in
+        let result = (match A.Void with (***TODO: add sfdecl to function map so that we can access it here ****)
+                        A.Void -> ""
+                      | _ -> name ^ "_result") in
+                  L.build_call fdecl (Array.of_list llargs) result builder
   | _ -> raise (Failure("decl: not implemented"))
 in
 
