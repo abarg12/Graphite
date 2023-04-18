@@ -218,6 +218,9 @@ let check (decls) =
         let _ = find_loc_variable scope x in
         raise (Failure (x ^ " already declared in current scope"))
       with Not_found -> 
+        let (t', _) = expr scope funcs e in
+        if t != t' then raise (Failure("local bind assign"))
+        else
         match t with 
           Graph(fields) ->
               let _ = List.map find_invar fields in  
@@ -255,6 +258,9 @@ in
           let _ = find_loc_variable scope x in
           raise (Failure (x ^ " already declared in current scope"))
         with Not_found -> 
+          let (t', _) = expr scope funcs e in
+          if t != t' then raise (Failure("bind assign"))
+          else
           match t with 
             Graph(fields) ->
                 let _ = List.map find_invar fields in  
