@@ -30,7 +30,13 @@ type symbol_table = {
 
 (*** Declare all the LLVM types we'll use ***)
 let translate decls = 
-  let context  = L.global_context () in
+  let context  = L.global_context () in 
+  let node_t = Llvm.named_struct_type context "node_t" in
+  let _ = Llvm.struct_set_body node_t
+      [| Llvm.pointer_type (L.i8_type context); 
+      Llvm.i1_type context; 
+      Llvm.pointer_type (L.i8_type context); |]
+  in
   let i32_t    = L.i32_type context
   and i8_t     = L.i8_type context
   and i1_t     = L.i1_type context
@@ -47,6 +53,7 @@ let ltype_of_typ = function
   | A.Float -> float_t
   | A.Void  -> void_t   
   | A.String -> string_t 
+  | A.Node -> node_t
   | _ -> raise (Unfinished "not all types implemented")
 in
 

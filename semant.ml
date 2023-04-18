@@ -35,14 +35,21 @@ let check (decls) =
   in
 
   let invariants = ["tree"; "connected"]  in
+  let fields = ["flag"; "data"; "name"] in 
+
+  let rec find_elt x lst message = match lst with 
+      y::rest when x = y -> true  
+    | y::rest -> find_elt x rest message
+    | [] -> raise (Failure (message ^ " '" ^ x ^ "' does not exist"))
+  in 
 
   (* make sure that an invariant is a valid invariant *)
   let find_invar x = 
-    let rec find_elt x lst = match lst with 
-      y::rest when x = y -> true  
-    | y::rest -> find_elt x rest
-    | [] -> raise (Failure ("invariant '" ^ x ^ "' does not exist"))
-    in find_elt x invariants 
+    find_elt x invariants "invariant"
+  in 
+
+  let find_field x = 
+    find_elt x fields "node field" 
   in 
   (* THE ONE MAP OF FUNCTIONS *)
   let functions = built_in_decls in
@@ -87,6 +94,15 @@ let check (decls) =
       let (rt, e') = expr scope funcs e in
       let err = "illegal assignment " ^ x ^ " : " ^ string_of_typ lt ^ " = " ^ string_of_typ rt in
       if lt = rt then (rt, SAssign(x, (rt, e'))) else raise (Failure err)
+    | DotOp(var, field) -> 
+      let _ = find_variable scope var in
+      let _ = List.map find_field fields in
+      let (ty, sop)  = match field with 
+            "name" -> (find_variable scope (var ^ ".name"), SDotOp(var, field))
+          | "flag" -> (Bool, SDotOp(var, field))
+          | "data" -> (find_variable scope (var ^ ".data"), SDotOp(var, field))
+          | _ -> raise (Failure ("unexpected field"))
+      in (ty, sop)
     | Unop(op, e) as ex -> 
         let (t, e') = expr scope funcs e in
         let ty = match op with
