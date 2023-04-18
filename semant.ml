@@ -10,6 +10,23 @@ type symbol_table = {
   parent : symbol_table option;
 }
 
+(*type node_data_typ = {
+  changed : bool;
+  type_of : typ;
+}*)
+
+(*type 'a pointer = Null | Pointer of 'a ref
+
+let ( !^ ) = function
+    | Null -> invalid_arg "Attempt to dereference the null pointer"
+    | Pointer r -> !r 
+
+let ( ^:= ) p v =
+    match p with
+     | Null -> invalid_arg "Attempt to assign the null pointer"
+     | Pointer r -> r := v 
+*)
+
 let check (decls) =
 
   (* trickle up blocks to find nearest variable instance *)
@@ -96,14 +113,33 @@ let check (decls) =
       if lt = rt then (rt, SAssign(x, (rt, e'))) else raise (Failure err)
     | DotOp(var, field) -> 
       let _ = List.map find_field fields in
-      let ty = find_variable scope (var ^ "." ^ field) in
+      let _ = 
+        match find_variable scope var with 
+            Node -> Node
+          | _ -> raise (Failure (var ^ " is not a node"))
+      in 
+      let ty = match field with 
+            "flag" -> Bool  
+          | "name" -> String 
+          | "data" -> find_variable scope (var ^ "." ^ field)
+          (* maybe check to make sure its not temp *)
+      in 
       (ty, SDotOp(var, field))
     | DotAssign(var, field, e) -> 
-      let _ = List.map find_field fields in
-      let lt = find_variable scope (var ^ "." ^ field) in
-      let (rt, e') = expr scope funcs e in
-      let err = "illegal assignment " ^ var ^ "." ^ field ^ " : " ^ string_of_typ lt ^ " = " ^ string_of_typ rt in
-      if lt = rt then (rt, SDotAssign(var, field, (rt, e'))) else raise (Failure err)
+        let _ = List.map find_field fields in
+        let _ = 
+          match find_variable scope var with 
+              Node -> Node
+            | _ -> raise (Failure (var ^ " is not a node"))
+        in 
+        let lt = match field with 
+              "flag" -> Bool
+            | "name" -> String 
+            | "data" -> find_variable scope (var ^ "." ^ field)
+        in
+        let (rt, e') = expr scope funcs e in
+        let err = "illegal assignment " ^ var ^ "." ^ field ^ " : " ^ string_of_typ lt ^ " = " ^ string_of_typ rt in
+        if lt = rt then (rt, SDotAssign(var, field, (rt, e'))) else raise (Failure err)
     | Unop(op, e) as ex -> 
         let (t, e') = expr scope funcs e in
         let ty = match op with
@@ -170,16 +206,16 @@ let check (decls) =
   in
 
   (*TODO: for abby *)
-  let node_scope x scope = 
+  (* let node_scope x scope = 
     (try 
       let _ = find_loc_variable scope (x ^ ".name") in
       raise (Failure (x ^ " already declared in current scope"))
      with Not_found -> 
-      let scope1 = bind_var scope (x ^ ".name") String in 
-      let scope2 = bind_var scope1 (x ^ ".flag") Bool in
+      (* let scope1 = bind_var scope (x ^ ".name") String in 
+      let scope2 = bind_var scope1 (x ^ ".flag") Bool in *)
       let new_scope = bind_var scope2 (x ^ ".data") Richard in
       new_scope )
-  in 
+  in  *)
 
   (* Return a semantically-checked statement i.e. containing sexprs *)
   let rec check_stmt scope funcs s =
@@ -267,7 +303,20 @@ in
                 SBindAssign(t,x , expr scope funcs e)::check_decls (bind_var scope x t) funcs rest
             | _ -> SBindAssign(t,x , expr scope funcs e)::check_decls (bind_var scope x t) funcs rest)
     | Statement(s)::rest ->
-      let ss = check_stmt scope funcs s in
+      (*let node_data_typ = { changed = false; type_of = Richard } in 
+      let node_data_typ_ptr node_data_typ = Pointer (ref node_data_typ) in *)
+      let ss = check_stmt scope funcs s in   
+      (*let (t, e') = match s with 
+         Expr e -> 
+            match e with 
+               DotAssign(var, field, e) -> expr scope funcs e
+      in 
+      let new_scope = match node_data_typ.changed with    
+            true -> 
+              match s with 
+              bind_var scope x node_data_typ.type_of
+          | false -> scope 
+      in *)
       SStatement(ss)::check_decls scope funcs rest
     | Fdecl(b)::rest -> 
       let updated_funcs = add_func b funcs in 
@@ -284,7 +333,6 @@ in
       })::check_decls scope updated_funcs rest (* have to add fdecl*)
       (* you have to add a new scope for this functions local variables *)
   in 
-
   let globals = { variables = StringMap.empty; parent = None; } in
-  
-check_decls globals functions decls
+
+ check_decls globals functions decls 
