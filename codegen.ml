@@ -35,7 +35,7 @@ let translate decls =
   let _ = Llvm.struct_set_body node_t
       [| Llvm.pointer_type (L.i8_type context); 
       Llvm.i1_type context; 
-      Llvm.pointer_type (L.i8_type context); |]
+      Llvm.pointer_type (L.i8_type context); |] false 
   in
   let i32_t    = L.i32_type context
   and i8_t     = L.i8_type context
@@ -188,7 +188,9 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
                         A.Void -> ""
                       | _ -> name ^ "_result") in
                   L.build_call fdecl (Array.of_list llargs) result builder
-  | _ -> raise (Failure("decl: not implemented"))
+  | SDotOp(var, field) -> raise (Failure("dotop: not implemented"))
+  | SDotAssign(var, field, e) -> raise (Failure("dotassign: not implemented"))
+  | _ -> raise (Failure("expr: not implemented"))
 in
 
 let rec sb_lines (builder, stable) (ls : sb_line list) = match ls with
