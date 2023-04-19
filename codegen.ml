@@ -186,8 +186,16 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
                       | _ -> name ^ "_result") in
                   L.build_call llvm_decl (Array.of_list llargs) result builder
   | SDotOp(var, field) -> raise (Failure("dotop: not implemented"))
-  | SDotAssign(var, field, e) -> raise (Failure("dotassign: not implemented"))
-  | _ -> raise (Failure("expr: not implemented"))
+  | SDotAssign(var, field, e) -> 
+        let e' = expr (builder, stable) e in
+        let lvar = find_variable stable var in 
+        let node' = match field with 
+              "flag" -> [|e'; e'; e'|] 
+            | "name" -> [|e'; e'; e'|] 
+            | "data" -> [|e'; e'; e'|] 
+        in 
+
+      | _ -> raise (Failure("expr: not implemented"))
 in
 
 let rec sb_lines (builder, stable) (ls : sb_line list) = match ls with
