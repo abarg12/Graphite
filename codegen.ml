@@ -31,11 +31,11 @@ type symbol_table = {
 (*** Declare all the LLVM types we'll use ***)
 let translate decls = 
   let context  = L.global_context () in 
-  let node_t = L.named_struct_type context "node_t" in
-  let _ = L.struct_set_body node_t
-      [| L.pointer_type (L.i8_type context); 
-      L.i1_type context; 
-      L.pointer_type (L.i8_type context); |] false
+  let node_t = Llvm.named_struct_type context "node_t" in
+  let _ = Llvm.struct_set_body node_t
+      [| Llvm.pointer_type (L.i8_type context); 
+      Llvm.i1_type context; 
+      Llvm.pointer_type (L.i8_type context); |] false 
   in
   let i32_t    = L.i32_type context
   and i8_t     = L.i8_type context
@@ -184,7 +184,9 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
                         A.Void -> ""
                       | _ -> name ^ "_result") in
                   L.build_call llvm_decl (Array.of_list llargs) result builder
-  | _ -> raise (Failure("decl: not implemented"))
+  | SDotOp(var, field) -> raise (Failure("dotop: not implemented"))
+  | SDotAssign(var, field, e) -> raise (Failure("dotassign: not implemented"))
+  | _ -> raise (Failure("expr: not implemented"))
 in
 
 let rec sb_lines (builder, stable) (ls : sb_line list) = match ls with
