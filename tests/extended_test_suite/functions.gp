@@ -1,26 +1,42 @@
 ###### Testing functions (definitions and calls)
 ### [positive test]
 
-int addThings(int z, int y) {
-    int x = z + y;
-    printf(x);
+float addThings(float z, float y) {
+    float x = z + y;
     return x;
 }
 
-int first = 2; 
-int second = 3;
+float first = 2.5; 
+float second = 3.5;
+float result = addThings(first, second);
 
-int result = addThings(first, second);
+printf("");
+printf("addThings function result: ");
 printf(result);
 
 
-bool testThings(int x, int y, bool b) {
+bool testThings(float x, float y, bool b) {
     bool a = x < y;
-    printf(a);
     bool res = a or b;
-    printf(res);
     return res;
 }
 
-bool result2 = testThings(result, 10, true);
+bool result2 = testThings(result, 10.0, true);
+
+printf("");
+printf("testThings function result: ");
 printf(result2);
+
+int x = 1;
+int y = 2;
+int scopeTester(int x, int y) {
+    int x = 80;
+    int y = 20;
+    return x + y;
+}
+
+int result3 = scopeTester(3, 4);
+
+printf("");
+printf("scopeTester function result: ");
+printf(result3);
