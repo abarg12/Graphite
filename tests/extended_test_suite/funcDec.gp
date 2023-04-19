@@ -5,5 +5,5 @@ int thisFunc(int z, int y) {
 int first = 2; 
 int second = 3;
 
-int result = thisFunc(first, second);
+int result = thisFunc(first, second, third);
 printf(result);

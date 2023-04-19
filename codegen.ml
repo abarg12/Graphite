@@ -66,7 +66,7 @@ let bind_var (scope : symbol_table) x t  =
               curr_func = scope.curr_func; }
 in
 
- 
+
 let rec find_variable (scope : symbol_table) (name : string) =
   try StringMap.find name scope.variables
   with Not_found ->
@@ -105,12 +105,12 @@ let printf_func : L.llvalue =
   L.declare_function "printf" printf_t the_module in  
 
 let to_string e = match e with
-    (_, SLiteral i) -> SString(string_of_int i)
-  | (_, SString s) -> SString s 
+    (_, SLiteral i) -> SString((string_of_int i) ^ "\n")
+  | (_, SString s) -> SString (s ^ "\n")
   | (_, SBoolLit b) -> (match b with
-      true -> SString("true")
-    | _ -> SString("false") )
-  | (_, SFliteral f) -> SString f
+      true -> SString("true\n")
+    | _ -> SString("false\n") )
+  | (_, SFliteral f) -> SString (f ^ "\n")
   | _ -> raise (Failure("type to string not implemented for non-literals"))
 in
 
