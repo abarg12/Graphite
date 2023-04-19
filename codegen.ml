@@ -106,10 +106,10 @@ let printf_func : L.llvalue =
 
 let to_string e = match e with
     (_, SLiteral i) -> SString((string_of_int i) ^ "\n")
-  | (_, SString s) -> SString (s ^ "\n")
+  | (_, SString s) -> SString ((String.sub s 1 ((String.length s) - 2)) ^ "\n")
   | (_, SBoolLit b) -> (match b with
-      true -> SString("true\n")
-    | _ -> SString("false\n") )
+      true -> SString("1\n")
+    | _ -> SString("0\n") )
   | (_, SFliteral f) -> SString (f ^ "\n")
   | _ -> raise (Failure("type to string not implemented for non-literals"))
 in
@@ -124,7 +124,6 @@ and string_format_str = L.build_global_stringptr "%s\n" "fmt" in
 let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
     SLiteral i -> L.const_int i32_t i
   | SBoolLit b -> L.const_int i1_t (if b then 1 else 0) 
-  (*| SString s -> L.const_string context s*)
   | SFliteral f -> L.const_float_of_string float_t f
   | SString s -> L.build_global_stringptr s "" builder
   | SBinop (e1, op, e2) ->
@@ -181,7 +180,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
                       | _ -> raise (Failure "No function definition found"))
         in 
         let llargs = List.rev (List.map (expr (builder, stable)) (List.rev args)) in
-        let result = (match sfdecl.styp with (***TODO: add sfdecl to function map so that we can access it here ****)
+        let result = (match sfdecl.styp with 
                         A.Void -> ""
                       | _ -> name ^ "_result") in
                   L.build_call llvm_decl (Array.of_list llargs) result builder
@@ -250,8 +249,12 @@ and fdecl (builder, stable) f =
         let llvm_func = L.define_function name ftype the_module in
         let stable' = add_func name (Some f, llvm_func) stable in
         let builder' = L.builder_at_end context (L.entry_block llvm_func) in 
-        let stable'' = List.fold_left (fun stable_accum (t, x) -> bind_var stable_accum x (L.build_alloca (ltype_of_typ t) x builder')) 
-                                      stable' f.sformals in
+        let stable'' = List.fold_left2 (fun stable_accum (t, x) p -> 
+                                          let local = L.build_alloca (ltype_of_typ t) x builder' in
+                                          let _ = L.build_store p local builder' in
+                                          let _ = L.set_value_name x p in
+                                          bind_var stable_accum x local) 
+                                      stable' f.sformals (Array.to_list (L.params llvm_func)) in
         let stable''' = { variables = stable''.variables;
                           parent = stable''.parent; 
                           funcs = stable''.funcs;

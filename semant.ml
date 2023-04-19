@@ -158,10 +158,10 @@ let check (decls) =
         let ty = match op with
         (* floats not implemented yet *)
           Add | Sub | Mult | Div when same && t1 = Int   -> Int
-        (* | Add | Sub | Mult | Div when same && t1 = Float -> Float *)
+        | Add | Sub | Mult | Div when same && t1 = Float -> Float
         | Equal | Neq            when same               -> Bool
         | Less | Leq | Greater | Geq
-                    when same && (t1 = Int (*|| t1 = Float*)) -> Bool (* CHANGE HERE *)
+                    when same && (t1 = Int || t1 = Float) -> Bool (* CHANGE HERE *)
         | And | Or when same && t1 = Bool -> Bool
         | _ -> raise (
       Failure ("illegal binary operator " ^
