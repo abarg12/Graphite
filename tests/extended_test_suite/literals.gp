@@ -1,4 +1,5 @@
 ###### test the 3 micro-c literals (int, bool, float)
+### [positive test]
 
 printf(5);
 printf(532905);

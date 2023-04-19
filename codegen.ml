@@ -76,11 +76,6 @@ let rec find_variable (scope : symbol_table) (name : string) =
 in
 
 
-let rec find_loc_variable (scope : symbol_table) (name : string) =
-    StringMap.find name scope.variables
-in
-
-
 let rec find_func (scope : symbol_table) (name : string) =
   try StringMap.find name scope.funcs
   with Not_found ->
@@ -103,6 +98,16 @@ let printf_t : L.lltype =
   L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
 let printf_func : L.llvalue = 
   L.declare_function "printf" printf_t the_module in  
+
+
+let add_node_t : L.lltype = 
+  L.var_arg_function_type void_t [| L.pointer_type i8_t ; L.pointer_type i8_t |] in
+let add_node_func : L.llvalue = 
+  L.declare_function "add_node" add_node_t the_module in
+
+(*** will have to cast the pointer types to the actual types when being called
+     L.pointer_type i8_t is LLVM's equivalent of void pointers in C ***)
+
 
 let to_string e = match e with
     (_, SLiteral i) -> SString((string_of_int i) ^ "\n")
@@ -148,7 +153,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       | A.Add     -> L.build_add
       | A.Sub     -> L.build_sub
       | A.Mult    -> L.build_mul
-            | A.Div     -> L.build_sdiv
+      | A.Div     -> L.build_sdiv
       | A.And     -> L.build_and
       | A.Or      -> L.build_or
       | A.Equal   -> L.build_icmp L.Icmp.Eq
