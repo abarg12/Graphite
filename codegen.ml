@@ -100,10 +100,10 @@ let printf_func : L.llvalue =
   L.declare_function "printf" printf_t the_module in  
 
 
-let add_node_t : L.lltype = 
-  L.var_arg_function_type void_t [| L.pointer_type i8_t ; L.pointer_type i8_t |] in
-let add_node_func : L.llvalue = 
-  L.declare_function "add_node" add_node_t the_module in
+(* let add_node_t : L.lltype = 
+  L.var_arg_function_type void_t [| L.pointer_type i8_t ; L.pointer_type i8_t |] in *)
+(* let add_node_func : L.llvalue = 
+  L.declare_function "add_node" add_node_t the_module in *) 
 
 (*** will have to cast the pointer types to the actual types when being called
      L.pointer_type i8_t is LLVM's equivalent of void pointers in C ***)
@@ -195,6 +195,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
               "flag" -> Llvm.build_struct_gep lvar 1 "temp" builder
             | "name" -> Llvm.build_struct_gep lvar 0 "temp" builder
             | "data" -> Llvm.build_struct_gep lvar 2 "temp" builder
+            | _ -> raise (Failure ("syntax error caught post parsing. Nonexistant field " ^ field))
         in 
         L.build_load steven (var ^ "." ^ field) builder 
   | SDotAssign(var, field, e) -> 
@@ -204,6 +205,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
               "flag" -> Llvm.build_struct_gep lvar 1 "temp" builder
             | "name" -> Llvm.build_struct_gep lvar 0 "temp" builder
             | "data" -> Llvm.build_struct_gep lvar 2 "temp" builder
+            | _ -> raise (Failure ("syntax error caught post parsing. Nonexistant field " ^ field))
         in 
         L.build_store e' steven builder
       | _ -> raise (Failure("expr: not implemented"))
