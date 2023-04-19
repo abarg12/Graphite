@@ -184,16 +184,23 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
                         A.Void -> ""
                       | _ -> name ^ "_result") in
                   L.build_call llvm_decl (Array.of_list llargs) result builder
-  | SDotOp(var, field) -> raise (Failure("dotop: not implemented"))
+  | SDotOp(var, field) -> 
+        let lvar = find_variable stable var in 
+        let steven = match field with 
+              "flag" -> Llvm.build_struct_gep lvar 1 "temp" builder
+            | "name" -> Llvm.build_struct_gep lvar 0 "temp" builder
+            | "data" -> Llvm.build_struct_gep lvar 2 "temp" builder
+        in 
+        L.build_load steven (var ^ "." ^ field) builder 
   | SDotAssign(var, field, e) -> 
         let e' = expr (builder, stable) e in
         let lvar = find_variable stable var in 
-        let node' = match field with 
-              "flag" -> [|e'; e'; e'|] 
-            | "name" -> [|e'; e'; e'|] 
-            | "data" -> [|e'; e'; e'|] 
+        let steven = match field with 
+              "flag" -> Llvm.build_struct_gep lvar 1 "temp" builder
+            | "name" -> Llvm.build_struct_gep lvar 0 "temp" builder
+            | "data" -> Llvm.build_struct_gep lvar 2 "temp" builder
         in 
-
+        L.build_store e' steven builder
       | _ -> raise (Failure("expr: not implemented"))
 in
 
