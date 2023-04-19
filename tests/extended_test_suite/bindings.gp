@@ -26,6 +26,7 @@ printf(e);
 
 float f = 999.999;
 printf(f);
+printf(99.9999);
 
 
 ### bool

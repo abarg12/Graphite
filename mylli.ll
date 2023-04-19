@@ -9,6 +9,7 @@ source_filename = "Graphite"
 @fmt.3 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
 @fmt.4 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
 @fmt.5 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
+@2 = private unnamed_addr constant [8 x i8] c"99.9999\00", align 1
 @fmt.6 = private unnamed_addr constant [4 x i8] c"%B\0A\00", align 1
 @fmt.7 = private unnamed_addr constant [4 x i8] c"%B\0A\00", align 1
 
@@ -32,21 +33,22 @@ entry:
   store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0), i8** %d, align 8
   %d6 = load i8*, i8** %d, align 8
   %printf7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.3, i32 0, i32 0), i8* %d6)
-  %e = alloca float, align 4
-  store float 0x3FF1C71C60000000, float* %e, align 4
-  %e8 = load float, float* %e, align 4
-  %printf9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.4, i32 0, i32 0), float %e8)
-  %f = alloca float, align 4
-  store float 0x408F3FFE00000000, float* %f, align 4
-  %f10 = load float, float* %f, align 4
-  %printf11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.5, i32 0, i32 0), float %f10)
+  %e = alloca double, align 8
+  store double 0x3FF1C71C53F39D1B, double* %e, align 8
+  %e8 = load double, double* %e, align 8
+  %printf9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.4, i32 0, i32 0), double %e8)
+  %f = alloca double, align 8
+  store double 9.999990e+02, double* %f, align 8
+  %f10 = load double, double* %f, align 8
+  %printf11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.5, i32 0, i32 0), double %f10)
+  %printf12 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @2, i32 0, i32 0))
   %g = alloca i1, align 1
   store i1 false, i1* %g, align 1
-  %g12 = load i1, i1* %g, align 1
-  %printf13 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.6, i32 0, i32 0), i1 %g12)
+  %g13 = load i1, i1* %g, align 1
+  %printf14 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.6, i32 0, i32 0), i1 %g13)
   %h = alloca i1, align 1
   store i1 true, i1* %h, align 1
-  %h14 = load i1, i1* %h, align 1
-  %printf15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.7, i32 0, i32 0), i1 %h14)
+  %h15 = load i1, i1* %h, align 1
+  %printf16 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.7, i32 0, i32 0), i1 %h15)
   ret i32 0
 }
