@@ -79,7 +79,8 @@ INTEGRATION TESTS
             example: (a : float) + (x : int)
         
         neg_binops2.gp
-            
+            Graphite does not support int + boolean
+            this tests for that
 
 
 SYNTAX WE STILL NEED TO ADD:
