@@ -215,7 +215,7 @@ let check (decls) =
                     string_of_typ t1 ^ " " ^ string_of_setop setop ^ " " ^
                     string_of_typ t2 ^ " in " ^ string_of_expr e))
         in 
-        (ty, SSetop((t1, e1'), setop, (t2, e2')))
+        (new_scope2, (ty, SSetop((t1, e1'), setop, (t2, e2'))))
     | Call(fname, args) -> (* TODO: fix call and dotcall*)
       let fd = find_func fname funcs in
       let param_length = List.length fd.formals in
