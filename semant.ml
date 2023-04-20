@@ -298,7 +298,7 @@ let check (decls) =
       (try
         let _ = find_loc_variable scope x in
         raise (Failure (x ^ " already declared in current scope"))
-      with -> 
+      with Not_found -> 
         match t with 
            Graph(fields) ->
               let _ = List.map find_invar fields in  
