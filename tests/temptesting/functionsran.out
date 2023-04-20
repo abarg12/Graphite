@@ -1,8 +1,16 @@
 addThings function result:
 6
 
+<<<<<<< HEAD
 testThings function result:
 1
+=======
+addThings function result: 
+6
+
+testThings function result: 
+B
+>>>>>>> ffd804af92cdea6e43abb3422e0e3f519bb7972f
 
 scopeTester function result:
 100

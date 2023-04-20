@@ -4,5 +4,10 @@ three point one four one five
 1
 10
 123.456
+<<<<<<< HEAD
 string
 1
+=======
+"string"
+B
+>>>>>>> ffd804af92cdea6e43abb3422e0e3f519bb7972f
