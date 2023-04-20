@@ -30,7 +30,13 @@ type symbol_table = {
 
 (*** Declare all the LLVM types we'll use ***)
 let translate decls = 
-  let context  = L.global_context () in
+  let context  = L.global_context () in 
+  let node_t = Llvm.named_struct_type context "node_t" in
+  let _ = Llvm.struct_set_body node_t
+      [| Llvm.pointer_type (L.i8_type context); 
+      Llvm.i1_type context; 
+      Llvm.pointer_type (L.i8_type context); |]
+  in
   let i32_t    = L.i32_type context
   and i8_t     = L.i8_type context
   and i1_t     = L.i1_type context
@@ -48,6 +54,7 @@ let ltype_of_typ = function
   | A.Float -> float_t
   | A.Void  -> void_t   
   | A.String -> string_t 
+  | A.Node -> node_t
   | _ -> raise (Unfinished "not all types implemented")
 in
 
@@ -95,29 +102,31 @@ let add_func s func stable =
       funcs = StringMap.add s func stable.funcs;
       curr_func = stable.curr_func; }
 in
-  
+
 
 let printf_t : L.lltype = 
   L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
 let printf_func : L.llvalue = 
-<<<<<<< HEAD
  L.declare_function "printf" printf_t the_module in
   
 (* add a lookup function to find the vars *)
-=======
-  L.declare_function "printf" printf_t the_module in  
-
->>>>>>> 1c9d4b80e212769e1eb51b1754889f078bd90bf4
-let to_string (e : sx) = match e with
-    SLiteral i -> SString(string_of_int i)
-  | SString s -> SString s 
-  (* | SBoolLit b -> match b with
+let to_string e = match e with
+    (_, SLiteral i) -> SString(string_of_int i)
+  | (_, SString s) -> SString s 
+  | (_, SBoolLit b) -> (match b with
       true -> SString("true")
-    | _ -> SString("false") *)
-  | _ -> raise (Failure("type to string not implemented"))
+    | _ -> SString("false") )
+  | _ -> raise (Failure("type to string not implemented for non-literals"))
 in
+
+  
+let int_format_str = L.build_global_stringptr "%d\n" "fmt" 
+and float_format_str = L.build_global_stringptr "%g\n" "fmt"  
+and bool_format_str = L.build_global_stringptr "%B\n" "fmt" 
+and string_format_str = L.build_global_stringptr "%s\n" "fmt" in
+
 (*** Expressions go here ***)
-let rec expr (builder, stable) ((_, e) : sexpr) = match e with
+let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
     SLiteral i -> L.const_int i32_t i
   | SBoolLit b -> L.const_int i1_t (if b then 1 else 0) 
   (*| SString s -> L.const_string context s*)
@@ -158,21 +167,24 @@ let rec expr (builder, stable) ((_, e) : sexpr) = match e with
       ) e1' e2' "tmp" builder 
   | SId s -> L.build_load (find_variable stable s) s builder
   | SCall ("printf", [e]) ->
-    (* let (_, SString(the_str)) = e in 
+    (*let (_, SString(the_str)) = e in 
     let s = L.build_global_stringptr (the_str ^ "\n") "" builder in
     L.build_call printf_func [| s |] "" builder *)
-    let (_, e') = e in
-    L.build_call printf_func [| (expr (builder, stable) (A.String, (to_string e'))) |] "" builder
-        (* let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
-        L.build_call printf_func [|  ( int_format_str ; expr builder e) |]
-           "printf" builder  *)
+
+    (* why tf did you parse e from above from sexpr but you gotta parse here again? it works?*)
+    (match e with 
+      (Int, SId s) -> L.build_call printf_func [| int_format_str builder ; (expr (builder, stable) e) |] "printf" builder
+    | (Float, SId s) -> L.build_call printf_func [| float_format_str builder ; (expr (builder, stable) e) |] "printf" builder
+    | (String, SId s) -> L.build_call printf_func [| string_format_str builder ; (expr (builder, stable) e) |] "printf" builder
+    | (Bool, SId s) -> L.build_call printf_func [| bool_format_str builder ; (expr (builder, stable) e) |] "printf" builder
+    | _ -> L.build_call printf_func [| (expr (builder, stable) (A.String, (to_string e))) |] "printf" builder )
   | _ -> raise (Failure("decl: not implemented"))
 in
 
 let rec sb_lines (builder, stable) (ls : sb_line list) = match ls with
-    (SLocalBind (typ, s)) :: ls -> bind (builder, stable) (typ, s)
-  | (SLocalBindAssign (typ, s, e)) :: ls -> bindassign (builder, stable) (typ, s, e)
-  | (SLocalStatement sstmt) :: ls -> stmt (builder, stable) sstmt
+    (SLocalBind (typ, s)) :: ls -> sb_lines (bind (builder, stable) (typ, s)) ls
+  | (SLocalBindAssign (typ, s, e)) :: ls -> sb_lines (bindassign (builder, stable) (typ, s, e)) ls
+  | (SLocalStatement sstmt) :: ls -> sb_lines (stmt (builder, stable) sstmt) ls
   | [] -> (builder, stable)
 
 (*** Statements go here ***)

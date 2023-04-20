@@ -14,7 +14,7 @@ and sx =
   | SCall of string * sexpr list
   | SUnop of uop * sexpr
   | SAssign of string * sexpr
-  | SDotCall of string * string * sexpr
+  | SDotCall of string * string * sexpr list
   | SDotOp of string * string
   | SDotAssign of string * string * sexpr
   | SList of sexpr list
@@ -72,7 +72,7 @@ string_of_sexpr (t, e) =
   | SId(s) -> s
   | SUnop(o, e) -> string_of_uop o ^ string_of_sexpr e
   | SAssign(n, e) -> n ^ " = " ^ string_of_sexpr e
-  | SDotCall(n1, n2, e) -> n1 ^ "." ^ n2 ^ "(" ^ string_of_sexpr e ^ ")"
+  | SDotCall(n1, n2, el) -> n1 ^ "." ^ n2 ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
   | SDotOp(n1, n2) -> n1 ^ "." ^ n2
   | SDotAssign(n1, n2, e) -> n1 ^ "." ^ n2 ^ " = " ^ string_of_sexpr e
   | SList(es) -> "[" ^ String.concat ", " (List.map string_of_sexpr es) ^ "]"

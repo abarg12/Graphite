@@ -3,7 +3,9 @@ string z = "plz work";
 {
     int y = 4;
     int z = 3;
-    printf(z + y);
+    int a = y + z;
+    printf(a);
+
 }
 
-printf("test");
+printf(z);

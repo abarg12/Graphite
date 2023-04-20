@@ -34,17 +34,44 @@ let check (decls) =
     in List.fold_left add_bind StringMap.empty [ ("printf", Int);]
   in
 
+  (* TODO: make it so that you can search built in methods for graphs, etc. *)
+  let built_in_graph_meths =
+    let add_bind map (name, ty) = StringMap.add name {
+      typ = Graph(["none"]);
+      fname = name;
+      formals = [(ty, "x")];
+      body = Block[] } map
+    in List.fold_left add_bind StringMap.empty [ ("add", Node); ]
+  in
+    
+
   (* this is where we're gonna add more invariants later heeheehoohoo*)
   let invariants = ["tree"; "connected"]  in
+  let fields = ["flag"; "data"; "name"] in
+  let graph_meths = built_in_graph_meths in 
+
+  let rec find_elt x lst message = match lst with 
+      y::rest when x = y -> true  
+    | y::rest -> find_elt x rest message
+    | [] -> raise (Failure (message ^ " '" ^ x ^ "' does not exist"))
+  in 
 
   (* make sure that an invariant is a valid invariant *)
   let find_invar x = 
-    let rec find_elt x lst = match lst with 
-      y::rest when x = y -> true  
-    | y::rest -> find_elt x rest
-    | [] -> raise (Failure ("invariant '" ^ x ^ "' does not exist"))
-    in find_elt x invariants 
+    find_elt x invariants "invariant"
   in 
+
+  let find_field x = 
+    find_elt x fields "node field" 
+  in
+  
+  let find_method m data_structs = (* needs to  *)
+    let meths = graph_meths (* instead of hard coding graph meths, make it so that you can pattern match and find which ds you want*)
+    in  
+    try StringMap.find m meths
+    with Not_found -> raise (Failure ("method " ^ m ^ " not found in data struct")) 
+  in
+  
   (* THE ONE MAP OF FUNCTIONS *)
   let functions = built_in_decls in
 
@@ -88,6 +115,15 @@ let check (decls) =
       let (rt, e') = expr scope funcs e in
       let err = "illegal assignment " ^ x ^ " : " ^ string_of_typ lt ^ " = " ^ string_of_typ rt in
       if lt = rt then (rt, SAssign(x, (rt, e'))) else raise (Failure err)
+    | DotOp(var, field) -> 
+      let _ = find_variable scope var in
+      let _ = List.map find_field fields in
+      let (ty, sop)  = match field with 
+            "name" -> (find_variable scope (var ^ ".name"), SDotOp(var, field))
+          | "flag" -> (Bool, SDotOp(var, field))
+          | "data" -> (find_variable scope (var ^ ".data"), SDotOp(var, field))
+          | _ -> raise (Failure ("unexpected field"))
+      in (ty, sop)
     | Unop(op, e) as ex -> 
         let (t, e') = expr scope funcs e in
         let ty = match op with
@@ -136,16 +172,28 @@ let check (decls) =
                     string_of_typ t2 ^ " in " ^ string_of_expr e))
         in 
         (ty, SSetop((t1, e1'), setop, (t2, e2')))
-    | Call(fname, args) ->
-      let args' = List.map (expr scope funcs) args in 
-      (* CHECK THAT IT EXISTS AND ARG TYPES ARE CORRECT *)
-      ((find_func fname funcs).typ, SCall(fname, args'))
-      (* ds for data structure, even though dot calls are mostly going happen within graphs i think *)
-    | DotCall(ds, fname, args) -> (* find_method takes a data structure and a fname and throws error if not there*)
-      let _ = List.map find_method ds fname in 
-        let
-        in
-      (, SDotCall())
+    | Call(fname, args) -> (* TODO: fix call and dotcall*)
+      let fd = find_func fname funcs in
+      let param_length = List.length fd.formals in
+        if List.length args != param_length then raise (Failure ("wrong arg num"))
+        else let check_call (ft, _) e =
+          let (et, e') = expr scope funcs e in
+            if ft = et then (ft, e') 
+            else raise (Failure ("wrong formal type"))
+      in 
+      let args' = List.map2 check_call fd.formals args 
+      in (fd.typ, SCall(fname, args'))
+    | DotCall(ds, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
+      let md = find_method mname ds in 
+      let param_length = List.length md.formals in
+        if List.length args != param_length then raise (Failure ("wrong arg num"))
+        else let check_call (mt, _) e =
+          let (et, e') = expr scope funcs e in
+            if mt = et then (mt, e')
+            else raise (Failure ("wrong formal type"))
+      in let args' = List.map2 check_call md.formals args
+      in
+      (md.typ, SDotCall(ds, mname, args'))
     | _ -> raise (Failure("expr: not implemented"))
   in
 
@@ -183,7 +231,7 @@ let check (decls) =
       (try
         let _ = find_loc_variable scope x in
         raise (Failure (x ^ " already declared in current scope"))
-      with Not_found -> 
+      with -> 
         match t with 
            Graph(fields) ->
               let _ = List.map find_invar fields in  

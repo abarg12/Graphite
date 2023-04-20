@@ -23,7 +23,7 @@ type expr =
   | Setop of expr * setop * expr
   | Assign of string * expr
   | Call of string * expr list
-  | DotCall of string * string * expr
+  | DotCall of string * string * expr list
   | DotOp of string * string 
   | DotAssign of string * string * expr
   | List of expr list
@@ -124,7 +124,7 @@ string_of_expr = function
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | DotOp(i1, i2) -> i1 ^ "." ^ i2
   | DotAssign(i1, i2, e1) -> i1 ^ "." ^ i2 ^ " = " ^ string_of_expr e1
-  | DotCall(i1, i2, el) -> i1 ^ "." ^ i2 ^ "(" ^ string_of_expr el ^ ")"
+  | DotCall(i1, i2, el) -> i1 ^ "." ^ i2 ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | List(e) -> "[" ^ String.concat ", " (List.map string_of_expr e) ^ "]"
   | Dict(id, init_binds, binds) -> "dict " ^ id ^ " = " ^ "{\n" ^ 
                    String.concat "" (List.map string_of_bind_assign init_binds) ^ 
