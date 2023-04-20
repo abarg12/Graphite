@@ -30,6 +30,6 @@ else
 
     # Runs the LLVM interpreter with the previously generated LLVM code 
     $LLC "-relocation-model=pic"  < ./tests/generatedfiles/${base_name%%.*}.ll > ./tests/generatedfiles/${base_name%%.*}.s
-    cc -o ./tests/generatedfiles/${basename%%.*}.exe tests/generatedfiles/${base_name%%.*}.s 
+    cc -o ./tests/generatedfiles/${base_name%%.*}.exe tests/generatedfiles/${base_name%%.*}.s 
 
 fi

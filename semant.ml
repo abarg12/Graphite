@@ -200,20 +200,6 @@ let check (decls) =
         in 
         (new_scope2, (ty, SSetop((t1, e1'), setop, (t2, e2'))))
     | Call(fname, args) ->
-    
-    (*  (* need to update/fix scoping here *)
-      let fd = find_func fname funcs in
-      let param_length = List.length fd.formals in
-        if List.length args != param_length then raise (Failure ("wrong arg num"))
-        else let check_call (ft, _) e =
-          let (new_scope, (et, e')) = expr scope funcs e in
-              if ft = et  then (ft, e') 
-              else raise (Failure ("wrong formal type"))
-      in 
-      let args' = List.map2 check_call fd.formals args 
-      in (scope, (fd.typ, SCall(fname, args')))*) (* TODO: figure out way to make scope here is new_scope*)
-      (* args : expr list
-      formals : bind list *)
       let f = find_func fname funcs in
       if fname = "printf"
       then

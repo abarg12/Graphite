@@ -56,16 +56,19 @@ INTEGRATION TESTS
         literals.gp
             tests printing some literals (ints, floats, booleans)
             
+        printing.gp
+            tests the built-in print function
+
         strings.gp (NEW IN GRAPHITE)
             tests string declaration, assignment, and printing
+            
+        nodefield.gp 
+            this tests the ability to set a node field (specifically the flag) 
+            value and then retrieve the set value (ex. node.flag = true)  
 
 
     NEGATIVE TESTS:
-        nononode.gp 
-            This node text exhibits a node with a big 'no no'. The data field of
-            the node is assiged first to a value of one type and then to a value
-            of another (eg. n.data = 1 and then n.data = "hello")  
-        
+
         graphOps.gp
             This tests graph declarations (with flags). It ensures that improper 
             invariant flags are rejected. 
@@ -81,6 +84,17 @@ INTEGRATION TESTS
         neg_binops2.gp
             Graphite does not support int + boolean
             this tests for that
+
+        nononode.gp 
+            This node text exhibits a node with a big 'no no'. The data field of
+            the node is assiged first to a value of one type and then to a value
+            of another (eg. n.data = 1 and then n.data = "hello") 
+
+        rebind_vars.gp 
+            Testing semantic checking of rebind errors; in this test we declare the
+            same variable with two different variables, which is not allowed (you 
+            can instead redefine the value, you can't redeclare it)
+             
 
 
 SYNTAX WE STILL NEED TO ADD:
