@@ -10,6 +10,23 @@ type symbol_table = {
   parent : symbol_table option;
 }
 
+(*type node_data_typ = {
+  changed : bool;
+  type_of : typ;
+}*)
+
+(*type 'a pointer = Null | Pointer of 'a ref
+
+let ( !^ ) = function
+    | Null -> invalid_arg "Attempt to dereference the null pointer"
+    | Pointer r -> !r 
+
+let ( ^:= ) p v =
+    match p with
+     | Null -> invalid_arg "Attempt to assign the null pointer"
+     | Pointer r -> r := v 
+*)
+
 let check (decls) =
 
   (* trickle up blocks to find nearest variable instance *)
@@ -51,7 +68,7 @@ let check (decls) =
   let graph_meths = built_in_graph_meths in 
 
   let rec find_elt x lst message = match lst with 
-      y::rest when x = y -> true  
+      y::rest when x = y -> x  
     | y::rest -> find_elt x rest message
     | [] -> raise (Failure (message ^ " '" ^ x ^ "' does not exist"))
   in 
@@ -103,58 +120,85 @@ let check (decls) =
   (* Return a semantically-checked expression, i.e., with a type *)
   let rec expr scope funcs e =
     match e with
-      Literal l -> (Int, SLiteral l)
-    | BoolLit l -> (Bool, SBoolLit l)
-    | String s -> (String, SString s)
-    | Fliteral f -> (Float, SFliteral f)
-    | Noexpr -> (Void, SNoexpr)
-    | Id s -> (find_variable scope s, SId s)
+      Literal l -> (scope, (Int, SLiteral l))
+    | BoolLit l -> (scope, (Bool, SBoolLit l))
+    | String s -> (scope, (String, SString s))
+    | Fliteral f -> (scope, (Float, SFliteral f))
+    | Noexpr -> (scope, (Void, SNoexpr))
+    | Id s -> (scope, (find_variable scope s, SId s))
     | Assign(x, e) ->
       (* check if x \in scope *)
       let lt = find_variable scope x in
-      let (rt, e') = expr scope funcs e in
+      let (new_scope, (rt, e')) = expr scope funcs e in
       let err = "illegal assignment " ^ x ^ " : " ^ string_of_typ lt ^ " = " ^ string_of_typ rt in
-      if lt = rt then (rt, SAssign(x, (rt, e'))) else raise (Failure err)
+      if lt = rt then (new_scope, (rt, SAssign(x, (rt, e')))) else raise (Failure err)
     | DotOp(var, field) -> 
-      let _ = find_variable scope var in
-      let _ = List.map find_field fields in
-      let (ty, sop)  = match field with 
-            "name" -> (find_variable scope (var ^ ".name"), SDotOp(var, field))
-          | "flag" -> (Bool, SDotOp(var, field))
-          | "data" -> (find_variable scope (var ^ ".data"), SDotOp(var, field))
-          | _ -> raise (Failure ("unexpected field"))
-      in (ty, sop)
+      let _ = find_field field in
+      let _ = 
+        match find_variable scope var with 
+            Node -> Node
+          | _ -> raise (Failure (var ^ " is not a node"))
+      in 
+      let ty = match field with 
+            "flag" -> Bool  
+          | "name" -> String 
+          | "data" -> find_variable scope (var ^ "." ^ field)
+          | _ -> raise (Failure ("nonexistant field call"))
+          (* maybe check to make sure its not temp *)
+      in 
+      (scope, (ty, SDotOp(var, field)))
+    | DotAssign(var, field, e) -> 
+        let _ = find_field field in
+        let _ = 
+          match find_variable scope var with 
+              Node -> Node
+            | _ -> raise (Failure (var ^ " is not a node"))
+        in 
+        let lt = match field with 
+              "flag" -> Bool
+            | "name" -> String 
+            | "data" -> find_variable scope (var ^ "." ^ field)
+            | x -> raise (Failure (x))
+        in          
+        let (_, (rt, e')) = expr scope funcs e in
+        let new_scope = match lt with 
+              Richard -> bind_var scope (var ^ ".data") rt
+            | _ -> scope 
+        in 
+        let err = "illegal assignment " ^ var ^ "." ^ field ^ " : " ^ string_of_typ lt ^ " = " ^ string_of_typ rt in
+        if lt = rt || lt = Richard then (new_scope, (rt, SDotAssign(var, field, (rt, e')))) else raise (Failure err)
     | Unop(op, e) as ex -> 
-        let (t, e') = expr scope funcs e in
+        let (new_scope, (t, e')) = expr scope funcs e in
         let ty = match op with
           Neg when t = Int || t = Float -> t
         | Not when t = Bool -> Bool
         | _ -> raise (Failure ("illegal unary operator " ^ 
                                 string_of_uop op ^ string_of_typ t ^
                                 " in " ^ string_of_expr ex))
-        in (ty, SUnop(op, (t, e')))
+        in (new_scope, (ty, SUnop(op, (t, e'))))
     | Binop(e1, op, e2) as e -> 
-        let (t1, e1') = expr scope funcs e1 
-        and (t2, e2') = expr scope funcs e2 in
+        let (new_scope, (t1, e1')) = expr scope funcs e1 in
+        let (new_scope2, (t2, e2')) = expr new_scope funcs e2 in
         (* All binary operators require operands of the same type *)
         let same = t1 = t2 in
         (* Determine expression type based on operator and operand types *)
         let ty = match op with
         (* floats not implemented yet *)
           Add | Sub | Mult | Div when same && t1 = Int   -> Int
-        (* | Add | Sub | Mult | Div when same && t1 = Float -> Float *)
+        | Add | Sub | Mult | Div when same && t1 = Float -> Float
         | Equal | Neq            when same               -> Bool
         | Less | Leq | Greater | Geq
-                    when same && (t1 = Int (*|| t1 = Float*)) -> Bool (* CHANGE HERE *)
+                    when same && (t1 = Int || t1 = Float) -> Bool (* CHANGE HERE *)
         | And | Or when same && t1 = Bool -> Bool
         | _ -> raise (
       Failure ("illegal binary operator " ^
                     string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^
                     string_of_typ t2 ^ " in " ^ string_of_expr e))
-      in (ty, SBinop((t1, e1'), op, (t2, e2')))
+      in (new_scope2, (ty, SBinop((t1, e1'), op, (t2, e2'))))
     | Setop(e1, setop, e2) as e -> 
-        let (t1, e1') = expr scope funcs e1 
-        and (t2, e2') = expr scope funcs e2 in
+        let (new_scope, (t1, e1')) = expr scope funcs e1 in
+        let (new_scope2, (t2, e2')) = expr new_scope funcs e2 in
+
         let same = t1 = t2 in
         let fields = match t1 with 
           Graph(fields) -> fields
@@ -195,35 +239,58 @@ let check (decls) =
       in
       (md.typ, SDotCall(ds, mname, args'))
     | _ -> raise (Failure("expr: not implemented"))
+  and sast_args scope funcs args = 
+      let rec get_sast_args scope args = 
+        match args with 
+              hd::tl -> 
+                let (new_scope, arg') = expr scope funcs hd in 
+                let (return_scope, args') = get_sast_args new_scope tl in 
+              (return_scope, arg'::args') 
+            | [] -> (scope, [])
+      in 
+      get_sast_args scope args
   in
 
 
   (*** confirm that expression evaluates to a boolean ***)
   let check_bool_expr scope funcs e = 
-    let (t', e') = expr scope funcs e
+    let (new_scope, (t', e')) = expr scope funcs e
     and err = "expected Boolean expression in " ^ string_of_expr e
-    in if t' != Bool then raise (Failure err) else (t', e') 
+    in if t' != Bool then raise (Failure err) else (new_scope, (t', e'))
   in
+
 
   (* Return a semantically-checked statement i.e. containing sexprs *)
   let rec check_stmt scope funcs s =
     match s with
-      Expr e -> SExpr (expr scope funcs e)
+      Expr e -> 
+        let (new_scope, exp) = expr scope funcs e in
+        (new_scope, SExpr (exp))
     | If(p, b1, b2) ->
-          SIf(check_bool_expr scope funcs p, check_stmt scope funcs b1, check_stmt scope funcs b2) 
+          let (new_scope1, stmt_p) = check_bool_expr scope funcs p in 
+          let (new_scope2, stmt_b1) = check_stmt new_scope1 funcs b1 in 
+          let (new_scope3, stmt_b2) = check_stmt new_scope2 funcs b1 in 
+          (new_scope3, SIf(stmt_p, stmt_b1, stmt_b2))
     | For(e1, e2, e3, st) ->
-	        SFor(expr scope funcs e1, check_bool_expr scope funcs e2, 
-               expr scope funcs e3, check_stmt scope funcs st)
+          let (new_scope1, stmt_st) = check_stmt scope funcs st in 
+          let (new_scope2, exp_e1) = expr new_scope1 funcs e1 in 
+          let (new_scope3, exp_e2) = check_bool_expr new_scope2 funcs e2 in 
+          let (new_scope4, exp_e3) = expr new_scope3 funcs e3 in 
+	        (new_scope4, SFor(exp_e1, exp_e2, exp_e3, stmt_st))
     | While(p, s) ->
-          SWhile(check_bool_expr scope funcs p, check_stmt scope funcs s)
-    | Return e -> SReturn (expr scope funcs e) (** TODO: in the function body that holds 
+          let (new_scope1, stmt_s) = check_stmt scope funcs s in 
+          let (new_scope2, exp_p) = check_bool_expr new_scope1 funcs p in 
+          (new_scope2, SWhile(exp_p, stmt_s))
+    | Return e -> 
+          let (new_scope1, sast) = expr scope funcs e in
+          (new_scope1, SReturn (sast)) (** TODO: in the function body that holds 
                                     this return, look at the type of
                                     e returned and make sure it matches
                                     function return type in func def **)
       (** add another global to tell us which function nwe are in *)
     | Block(bs) -> 
         let new_scope = { variables = StringMap.empty ; parent = Some scope; } in
-        SBlock(check_body new_scope funcs bs)
+        (scope, SBlock(check_body new_scope funcs bs))
   
   and check_body (scope : symbol_table) funcs b_lines =
   match b_lines with
@@ -236,20 +303,30 @@ let check (decls) =
            Graph(fields) ->
               let _ = List.map find_invar fields in  
               SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest
+          | Node -> 
+            let scope1 = (bind_var scope x t) in 
+            let scope2 = (bind_var scope1 (x ^ ".data") Richard) in 
+            SLocalBind(t, x)::check_body scope2 funcs rest
           | _ -> SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest)
   | LocalBindAssign(t, x, e)::rest -> 
       (try
         let _ = find_loc_variable scope x in
         raise (Failure (x ^ " already declared in current scope"))
       with Not_found -> 
+        let (_, (t', _)) = expr scope funcs e in
+        if t != t' then raise (Failure("local bind assign"))
+        else
         match t with 
           Graph(fields) ->
               let _ = List.map find_invar fields in  
-              SLocalBindAssign(t, x, expr scope funcs e)::check_body (bind_var scope x t) funcs rest (*CHANGEED HERE ASK ABBY*)
-          | _ -> SLocalBindAssign(t, x, expr scope funcs e)::check_body (bind_var scope x t) funcs rest)
+              let (_, sexp) = expr scope funcs e in
+              SLocalBindAssign(t, x, sexp)::check_body (bind_var scope x t) funcs rest (*CHANGEED HERE ASK ABBY*)
+          | _ -> 
+              let (_, sexp) = expr scope funcs e in
+              SLocalBindAssign(t, x, sexp)::check_body (bind_var scope x t) funcs rest) (*should this be the new scope?*)
   | LocalStatement(s)::rest -> 
-      let ss = check_stmt scope funcs s in
-      SLocalStatement(ss)::check_body scope funcs rest
+      let (scope2, ss) = check_stmt scope funcs s in
+      SLocalStatement(ss)::check_body scope2 funcs rest
   | [] -> []
 in 
 
@@ -273,25 +350,48 @@ in
              Graph(fields) ->
                 let _ = List.map find_invar fields in  
                 SBind(t, x)::check_decls (bind_var scope x t) funcs rest
+            | Node -> 
+              let scope1 = (bind_var scope x t) in 
+              let scope2 = (bind_var scope1 (x ^ ".data") Richard) in 
+              SBind(t, x)::check_decls scope2 funcs rest
             | _ -> SBind(t, x)::check_decls (bind_var scope x t) funcs rest)
     | BindAssign(t, x, e)::rest ->
         (try
           let _ = find_loc_variable scope x in
           raise (Failure (x ^ " already declared in current scope"))
         with Not_found -> 
+          let (_, (t', _)) = expr scope funcs e in
+          if t != t' then raise (Failure("bind assign"))
+          else
           match t with 
             Graph(fields) ->
                 let _ = List.map find_invar fields in  
-                SBindAssign(t,x , expr scope funcs e)::check_decls (bind_var scope x t) funcs rest
-            | _ -> SBindAssign(t,x , expr scope funcs e)::check_decls (bind_var scope x t) funcs rest)
+                let (_, sexp) = expr scope funcs e in 
+                SBindAssign(t,x , sexp)::check_decls (bind_var scope x t) funcs rest
+            | _ -> 
+                let (_, sexp) = expr scope funcs e in 
+                SBindAssign(t,x , sexp)::check_decls (bind_var scope x t) funcs rest)
     | Statement(s)::rest ->
-      let ss = check_stmt scope funcs s in
-      SStatement(ss)::check_decls scope funcs rest
+      (*let node_data_typ = { changed = false; type_of = Richard } in 
+      let node_data_typ_ptr node_data_typ = Pointer (ref node_data_typ) in *)
+      let (scope2, ss) = check_stmt scope funcs s in   
+      (*let (t, e') = match s with 
+         Expr e -> 
+            match e with 
+               DotAssign(var, field, e) -> expr scope funcs e
+      in 
+      let new_scope = match node_data_typ.changed with    
+            true -> 
+              match s with 
+              bind_var scope x node_data_typ.type_of
+          | false -> scope 
+      in *)
+      SStatement(ss)::check_decls scope2 funcs rest
     | Fdecl(b)::rest -> 
       let updated_funcs = add_func b funcs in 
       let temp_scope = add_formals StringMap.empty b.formals in
       let new_scope = { variables = temp_scope ; parent = Some scope; } in
-      let sstmt = check_stmt new_scope updated_funcs b.body in
+      let (_, sstmt) = check_stmt new_scope updated_funcs b.body in
       (* make sure type is of block *)
       (* add formals to scope too!!!  -- have to add return for functions *)
       SFdecl({
@@ -302,7 +402,6 @@ in
       })::check_decls scope updated_funcs rest (* have to add fdecl*)
       (* you have to add a new scope for this functions local variables *)
   in 
-
   let globals = { variables = StringMap.empty; parent = None; } in
-  
-check_decls globals functions decls
+
+ check_decls globals functions decls 

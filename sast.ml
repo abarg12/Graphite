@@ -63,6 +63,7 @@ string_of_sexpr (t, e) =
     SLiteral(l) -> string_of_int l
   | SBoolLit(l) -> string_of_bool l
   | SString(s) -> s
+  | SFliteral(f) -> f
   | SCall(f, el) ->
     f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
   | SBinop(e1, o, e2) ->

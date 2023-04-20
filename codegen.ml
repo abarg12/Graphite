@@ -24,7 +24,7 @@ exception Unfinished of string
 type symbol_table = {
   variables : L.llvalue StringMap.t;
   parent : symbol_table option;
-  funcs : L.llvalue StringMap.t;
+  funcs : (sfunc_decl option * L.llvalue) StringMap.t;
   curr_func : string;
 }
 
@@ -35,13 +35,13 @@ let translate decls =
   let _ = Llvm.struct_set_body node_t
       [| Llvm.pointer_type (L.i8_type context); 
       Llvm.i1_type context; 
-      Llvm.pointer_type (L.i8_type context); |]
+      Llvm.pointer_type (L.i8_type context); |] false 
   in
   let i32_t    = L.i32_type context
   and i8_t     = L.i8_type context
   and i1_t     = L.i1_type context
   and string_t = L.pointer_type (L.i8_type context)
-  and float_t  = L.float_type context
+  and float_t  = L.double_type context
   and void_t   = L.void_type context 
   and the_module = L.create_module context "Graphite" in 
   (*and global_vars : L.llvalue StringMap.t = StringMap.empty in *)
@@ -67,15 +67,6 @@ let bind_var (scope : symbol_table) x t  =
               curr_func = scope.curr_func; }
 in
 
-(* trickle up blocks to find nearest variable instance 
-let rec find_variable (scope : symbol_table) (name : string) =
-  try StringMap.find name scope.variables
-  with Not_found ->
-    match scope.parent with
-      Some(parent) -> find_variable parent name
-    | _ -> raise Not_found
-in
-*)
 
 let rec find_variable (scope : symbol_table) (name : string) =
   try StringMap.find name scope.variables
@@ -85,15 +76,15 @@ let rec find_variable (scope : symbol_table) (name : string) =
     | None -> raise Not_found
 in
 
-let rec find_loc_variable (scope : symbol_table) (name : string) =
-    StringMap.find name scope.variables
+
+let rec find_func (scope : symbol_table) (name : string) =
+  try StringMap.find name scope.funcs
+  with Not_found ->
+    match scope.parent with
+      Some p -> find_func p name
+    | None -> raise Not_found
 in
 
-
-let find_func s stable = 
-  try StringMap.find s stable.funcs
-  with Not_found -> raise (Failure ("unrecognized function " ^ s))
-in
 (* Add function name to symbol table *)
 (* func is the llvm func type *)
 let add_func s func stable = 
@@ -107,15 +98,25 @@ in
 let printf_t : L.lltype = 
   L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
 let printf_func : L.llvalue = 
- L.declare_function "printf" printf_t the_module in
-  
-(* add a lookup function to find the vars *)
+  L.declare_function "printf" printf_t the_module in  
+
+
+(* let add_node_t : L.lltype = 
+  L.var_arg_function_type void_t [| L.pointer_type i8_t ; L.pointer_type i8_t |] in *)
+(* let add_node_func : L.llvalue = 
+  L.declare_function "add_node" add_node_t the_module in *) 
+
+(*** will have to cast the pointer types to the actual types when being called
+     L.pointer_type i8_t is LLVM's equivalent of void pointers in C ***)
+
+
 let to_string e = match e with
-    (_, SLiteral i) -> SString(string_of_int i)
-  | (_, SString s) -> SString s 
+    (_, SLiteral i) -> SString((string_of_int i) ^ "\n")
+  | (_, SString s) -> SString ((String.sub s 1 ((String.length s) - 2)) ^ "\n")
   | (_, SBoolLit b) -> (match b with
-      true -> SString("true")
-    | _ -> SString("false") )
+      true -> SString("1\n")
+    | _ -> SString("0\n") )
+  | (_, SFliteral f) -> SString (f ^ "\n")
   | _ -> raise (Failure("type to string not implemented for non-literals"))
 in
 
@@ -129,7 +130,6 @@ and string_format_str = L.build_global_stringptr "%s\n" "fmt" in
 let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
     SLiteral i -> L.const_int i32_t i
   | SBoolLit b -> L.const_int i1_t (if b then 1 else 0) 
-  (*| SString s -> L.const_string context s*)
   | SFliteral f -> L.const_float_of_string float_t f
   | SString s -> L.build_global_stringptr s "" builder
   (* | SId s -> L.build_load (lookup s) s builder *) (* needs lookup for vars*)
@@ -155,7 +155,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       | A.Add     -> L.build_add
       | A.Sub     -> L.build_sub
       | A.Mult    -> L.build_mul
-            | A.Div     -> L.build_sdiv
+      | A.Div     -> L.build_sdiv
       | A.And     -> L.build_and
       | A.Or      -> L.build_or
       | A.Equal   -> L.build_icmp L.Icmp.Eq
@@ -166,6 +166,8 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       | A.Geq     -> L.build_icmp L.Icmp.Sge
       ) e1' e2' "tmp" builder 
   | SId s -> L.build_load (find_variable stable s) s builder
+  | SAssign (s, e) -> let e' = expr (builder, stable) e in
+                      L.build_store e' (find_variable stable s) builder
   | SCall ("printf", [e]) ->
     (*let (_, SString(the_str)) = e in 
     let s = L.build_global_stringptr (the_str ^ "\n") "" builder in
@@ -178,7 +180,37 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
     | (String, SId s) -> L.build_call printf_func [| string_format_str builder ; (expr (builder, stable) e) |] "printf" builder
     | (Bool, SId s) -> L.build_call printf_func [| bool_format_str builder ; (expr (builder, stable) e) |] "printf" builder
     | _ -> L.build_call printf_func [| (expr (builder, stable) (A.String, (to_string e))) |] "printf" builder )
-  | _ -> raise (Failure("decl: not implemented"))
+  | SCall (name, args) -> 
+        let (fdecl_opt, llvm_decl) = find_func stable name in
+        let sfdecl = (match fdecl_opt with
+                        Some(f) -> f
+                      | _ -> raise (Failure "No function definition found"))
+        in 
+        let llargs = List.rev (List.map (expr (builder, stable)) (List.rev args)) in
+        let result = (match sfdecl.styp with 
+                        A.Void -> ""
+                      | _ -> name ^ "_result") in
+                  L.build_call llvm_decl (Array.of_list llargs) result builder
+  | SDotOp(var, field) -> 
+        let lvar = find_variable stable var in 
+        let steven = match field with 
+              "flag" -> Llvm.build_struct_gep lvar 1 "temp" builder
+            | "name" -> Llvm.build_struct_gep lvar 0 "temp" builder
+            | "data" -> Llvm.build_struct_gep lvar 2 "temp" builder
+            | _ -> raise (Failure ("syntax error caught post parsing. Nonexistant field " ^ field))
+        in 
+        L.build_load steven (var ^ "." ^ field) builder 
+  | SDotAssign(var, field, e) -> 
+        let e' = expr (builder, stable) e in
+        let lvar = find_variable stable var in 
+        let steven = match field with 
+              "flag" -> Llvm.build_struct_gep lvar 1 "temp" builder
+            | "name" -> Llvm.build_struct_gep lvar 0 "temp" builder
+            | "data" -> Llvm.build_struct_gep lvar 2 "temp" builder
+            | _ -> raise (Failure ("syntax error caught post parsing. Nonexistant field " ^ field))
+        in 
+        L.build_store e' steven builder
+      | _ -> raise (Failure("expr: not implemented"))
 in
 
 let rec sb_lines (builder, stable) (ls : sb_line list) = match ls with
@@ -198,6 +230,16 @@ and stmt (builder, stable) = function
         } in
       let _ = sb_lines (builder, stable') ls in
       (builder, stable)
+  | SReturn e ->  let (fdecl_opt, llvm_decl) = find_func stable stable.curr_func in 
+                  let fdecl = (match fdecl_opt with
+                                Some(f) -> f
+                              | _ -> raise (Failure "No function definition found"))
+                  in
+                  let _ = (match fdecl.styp with
+                      A.Void -> L.build_ret_void builder 
+                    | _ -> L.build_ret (expr (builder, stable) e) builder)
+                  in 
+                  (builder, stable)
   
     (*
   temporary to ignore:
@@ -225,6 +267,27 @@ and bindassign (builder, stable) = function
         let _ = L.build_store e' new_var builder in
         let stable' = bind_var stable s new_var
         in (builder, stable')
+
+and fdecl (builder, stable) f =
+        let name = f.sfname in 
+        let formal_types = Array.of_list (List.map (fun (t, _) -> ltype_of_typ t) f.sformals) in
+        let ftype = L.function_type (ltype_of_typ f.styp) formal_types in
+        let llvm_func = L.define_function name ftype the_module in
+        let stable' = add_func name (Some f, llvm_func) stable in
+        let builder' = L.builder_at_end context (L.entry_block llvm_func) in 
+        let stable'' = List.fold_left2 (fun stable_accum (t, x) p -> 
+                                          let local = L.build_alloca (ltype_of_typ t) x builder' in
+                                          let _ = L.build_store p local builder' in
+                                          let _ = L.set_value_name x p in
+                                          bind_var stable_accum x local) 
+                                      stable' f.sformals (Array.to_list (L.params llvm_func)) in
+        let stable''' = { variables = stable''.variables;
+                          parent = stable''.parent; 
+                          funcs = stable''.funcs;
+                          curr_func = name; }
+        in  
+        let _ = stmt (builder', stable''') f.sbody in 
+        (builder, stable')
 in
 
 (*** Analyze all the declarations in program ***) 
@@ -232,7 +295,7 @@ let rec build_decl (builder, stable) decl = match decl with
     SStatement s -> stmt (builder, stable) s
   | SBindAssign(typ, s, e) -> bindassign (builder, stable) (typ, s, e)
   | SBind (typ, n) -> bind (builder, stable) (typ, n) 
-  | SFdecl (b) -> raise (Failure("fdecls not implemented"))
+  | SFdecl f -> fdecl (builder, stable) f
 in
 (** to have func type have to build before you use it -- needed for line below it **)
 let ftype = L.function_type i32_t (Array.of_list []) in 
@@ -252,8 +315,8 @@ let empty_stable = {
   funcs = StringMap.empty;
   curr_func = "main";
 } in
-let init_stable = add_func "main" global_main empty_stable in 
-let init_stable = add_func "printf" printf_func init_stable in (* hmmm is this ok? *)
+let init_stable = add_func "main" (None, global_main) empty_stable in 
+let init_stable = add_func "printf" (None, printf_func) init_stable in (* hmmm is this ok? *)
 let _ = program (builder, init_stable) decls in 
 (* let _ = L.build_ret_int builder in  *)
 let _ = L.build_ret (L.const_int i32_t 0) builder in

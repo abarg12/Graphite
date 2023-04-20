@@ -9,8 +9,6 @@ source_filename = "Graphite"
 
 declare i32 @printf(i8*, ...)
 
-declare void @add_node(i8*, i8*, ...)
-
 define i32 @main() {
 entry:
   %a = alloca i32, align 4

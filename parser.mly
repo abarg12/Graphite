@@ -68,7 +68,7 @@ typ:
   | EDGE     { Edge   }
   | STRING_T { String }
   | LIST     { List   }
-  | DICT   { Dict }
+  | DICT     { Dict   }
   | GRAPH LT flag_opt GT { Graph($3) }
 
 
