@@ -1,3 +1,3 @@
 node n;
-graph<foo> g;
+graph<> g;
 g.add(n);
