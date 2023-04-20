@@ -7,11 +7,7 @@ source_filename = "Graphite"
 @3 = private unnamed_addr constant [3 x i8] c"1\0A\00", align 1
 @fmt = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @fmt.1 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
-<<<<<<< HEAD
 @4 = private unnamed_addr constant [7 x i8] c"string\00", align 1
-=======
-@4 = private unnamed_addr constant [9 x i8] c"\22string\22\00", align 1
->>>>>>> ffd804af92cdea6e43abb3422e0e3f519bb7972f
 @fmt.2 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
 @fmt.3 = private unnamed_addr constant [4 x i8] c"%B\0A\00", align 1
 
