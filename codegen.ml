@@ -112,7 +112,7 @@ let printf_func : L.llvalue =
 
 let to_string e = match e with
     (_, SLiteral i) -> SString((string_of_int i) ^ "\n")
-  | (_, SString s) -> SString ((String.sub s 1 ((String.length s) - 2)) ^ "\n")
+  | (_, SString s) -> SString (s ^ "\n")
   | (_, SBoolLit b) -> (match b with
       true -> SString("1\n")
     | _ -> SString("0\n") )

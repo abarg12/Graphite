@@ -236,11 +236,10 @@ let check (decls) =
             else raise (Failure ("wrong formal type"))
       in let args' = List.map2 check_call md.formals args
       in
-      (scope, (md.typ, SDotCall(ds, mname, args'))) (*TODO: figure out way to make scope here is new_scope *)
-      (* args : expr list
-      formals : bind list*)
-      | _ -> raise (Failure("expr: not implemented"))
-    in
+      (scope, (md.typ, SDotCall(ds, mname, args'))) (* TODO: figure out way to make scope here is new_scope*)
+    | _ -> raise (Failure("expr: not implemented"))
+
+in
 
 
   (*** confirm that expression evaluates to a boolean ***)

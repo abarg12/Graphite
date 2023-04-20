@@ -2,7 +2,7 @@
 source_filename = "Graphite"
 
 @fmt = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-@0 = private unnamed_addr constant [6 x i8] c"\22abc\22\00", align 1
+@0 = private unnamed_addr constant [4 x i8] c"abc\00", align 1
 @fmt.1 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
 @fmt.2 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
 @fmt.3 = private unnamed_addr constant [4 x i8] c"%B\0A\00", align 1
@@ -16,7 +16,7 @@ entry:
   %a1 = load i32, i32* %a, align 4
   %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i32 %a1)
   %b = alloca i8*, align 8
-  store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @0, i32 0, i32 0), i8** %b, align 8
+  store i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i8** %b, align 8
   %b2 = load i8*, i8** %b, align 8
   %printf3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.1, i32 0, i32 0), i8* %b2)
   %c = alloca double, align 8

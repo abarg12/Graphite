@@ -1,7 +1,7 @@
 ; ModuleID = 'Graphite'
 source_filename = "Graphite"
 
-@0 = private unnamed_addr constant [6 x i8] c"\22one\22\00", align 1
+@0 = private unnamed_addr constant [4 x i8] c"one\00", align 1
 @fmt = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @fmt.1 = private unnamed_addr constant [4 x i8] c"%B\0A\00", align 1
 @fmt.2 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
@@ -18,7 +18,7 @@ entry:
   %c = alloca double, align 8
   store double 1.100000e+00, double* %c, align 8
   %d = alloca i8*, align 8
-  store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @0, i32 0, i32 0), i8** %d, align 8
+  store i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i8** %d, align 8
   %a1 = load i32, i32* %a, align 4
   %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i32 %a1)
   %b2 = load i1, i1* %b, align 1

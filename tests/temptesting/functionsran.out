@@ -1,9 +1,8 @@
-
-addThings function result: 
+addThings function result:
 6
 
-testThings function result: 
-B
+testThings function result:
+1
 
-scopeTester function result: 
+scopeTester function result:
 100

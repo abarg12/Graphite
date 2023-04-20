@@ -10,8 +10,8 @@ float first = 2.5;
 float second = 3.5;
 float result = addThings(first, second);
 
-printf("");
-printf("addThings function result: ");
+
+printf("addThings function result:");
 printf(result);
 
 
@@ -24,7 +24,7 @@ bool testThings(float x, float y, bool b) {
 bool result2 = testThings(result, 10.0, true);
 
 printf("");
-printf("testThings function result: ");
+printf("testThings function result:");
 printf(result2);
 
 int x = 1;
@@ -38,5 +38,5 @@ int scopeTester(int x, int y) {
 int result3 = scopeTester(3, 4);
 
 printf("");
-printf("scopeTester function result: ");
+printf("scopeTester function result:");
 printf(result3);
