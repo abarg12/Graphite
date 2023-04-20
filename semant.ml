@@ -215,7 +215,7 @@ let check (decls) =
                     string_of_typ t1 ^ " " ^ string_of_setop setop ^ " " ^
                     string_of_typ t2 ^ " in " ^ string_of_expr e))
         in 
-        (ty, SSetop((t1, e1'), setop, (t2, e2')))
+        (new_scope2, (ty, SSetop((t1, e1'), setop, (t2, e2'))))
     | Call(fname, args) -> (* TODO: fix call and dotcall*)
       let fd = find_func fname funcs in
       let param_length = List.length fd.formals in
@@ -298,7 +298,7 @@ let check (decls) =
       (try
         let _ = find_loc_variable scope x in
         raise (Failure (x ^ " already declared in current scope"))
-      with -> 
+      with Not_found -> 
         match t with 
            Graph(fields) ->
               let _ = List.map find_invar fields in  
