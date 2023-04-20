@@ -29,8 +29,7 @@ HOW TO RUN TEST SCRIPT:
         This generates an executable in the folder tests/generatedfiles
         that can be run with ./file_name.exe
 
-INTEGRATION TESTS: 
-
+INTEGRATION TESTS
     POSITIVE TESTS: 
     
         bindassign.gp (NEW IN GRAPHITE)
