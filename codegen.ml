@@ -169,11 +169,6 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
   | SAssign (s, e) -> let e' = expr (builder, stable) e in
                       L.build_store e' (find_variable stable s) builder
   | SCall ("printf", [e]) ->
-    (*let (_, SString(the_str)) = e in 
-    let s = L.build_global_stringptr (the_str ^ "\n") "" builder in
-    L.build_call printf_func [| s |] "" builder *)
-
-    (* why tf did you parse e from above from sexpr but you gotta parse here again? it works?*)
     (match e with 
       (Int, SId s) -> L.build_call printf_func [| int_format_str builder ; (expr (builder, stable) e) |] "printf" builder
     | (Float, SId s) -> L.build_call printf_func [| float_format_str builder ; (expr (builder, stable) e) |] "printf" builder
