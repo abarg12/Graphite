@@ -138,7 +138,7 @@ else
         else 
             echo ${base_name} "PASSED"
         fi 
-    elif [ "$parentdir" = "tests/positive" ];
+    elif [ "$parentdir" = "tests/negative" ];
     then 
         # if we cannot even run the test, something went wrong :(
         ./toplevel.native -a < $1 > ./tests/temptesting/${base_name%%.*}.out 2>&1
