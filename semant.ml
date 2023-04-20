@@ -10,23 +10,6 @@ type symbol_table = {
   parent : symbol_table option;
 }
 
-(*type node_data_typ = {
-  changed : bool;
-  type_of : typ;
-}*)
-
-(*type 'a pointer = Null | Pointer of 'a ref
-
-let ( !^ ) = function
-    | Null -> invalid_arg "Attempt to dereference the null pointer"
-    | Pointer r -> !r 
-
-let ( ^:= ) p v =
-    match p with
-     | Null -> invalid_arg "Attempt to assign the null pointer"
-     | Pointer r -> r := v 
-*)
-
 let check (decls) =
 
   (* trickle up blocks to find nearest variable instance *)
@@ -222,8 +205,8 @@ let check (decls) =
         if List.length args != param_length then raise (Failure ("wrong arg num"))
         else let check_call (ft, _) e =
           let (new_scope, (et, e')) = expr scope funcs e in
-            if ft = et then (ft, e') 
-            else raise (Failure ("wrong formal type"))
+              if ft = et || fname = "printf" then (ft, e') 
+              else raise (Failure ("wrong formal type"))
       in 
       let args' = List.map2 check_call fd.formals args 
       in (scope, (fd.typ, SCall(fname, args'))) (* TODO: figure out way to make scope here is new_scope*)
