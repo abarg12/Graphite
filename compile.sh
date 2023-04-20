@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Path to the LLVM compiler
-LLC=LLC
+LLC=llc
 CC="cc"
 
 make toplevel.native
