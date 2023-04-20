@@ -239,16 +239,6 @@ let check (decls) =
       in
       (scope, (md.typ, SDotCall(ds, mname, args'))) (* TODO: figure out way to make scope here is new_scope*)
     | _ -> raise (Failure("expr: not implemented"))
-  and sast_args scope funcs args = 
-      let rec get_sast_args scope args = 
-        match args with 
-              hd::tl -> 
-                let (new_scope, arg') = expr scope funcs hd in 
-                let (return_scope, args') = get_sast_args new_scope tl in 
-              (return_scope, arg'::args') 
-            | [] -> (scope, [])
-      in 
-      get_sast_args scope args
   in
 
 
