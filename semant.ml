@@ -200,11 +200,7 @@ let check (decls) =
         in 
         (new_scope2, (ty, SSetop((t1, e1'), setop, (t2, e2'))))
     | Call(fname, args) ->
-      let (new_scope, args') = sast_args scope funcs args in 
-      
-      (* TODO: CHECK THAT IT EXISTS AND ARG TYPES ARE CORRECT *)
-      (new_scope, ((find_func fname funcs).typ, SCall(fname, args')))
-
+    
     (*  (* need to update/fix scoping here *)
       let fd = find_func fname funcs in
       let param_length = List.length fd.formals in
@@ -216,6 +212,34 @@ let check (decls) =
       in 
       let args' = List.map2 check_call fd.formals args 
       in (scope, (fd.typ, SCall(fname, args')))*) (* TODO: figure out way to make scope here is new_scope*)
+      (* args : expr list
+      formals : bind list *)
+      let f = find_func fname funcs in
+      if fname = "printf"
+      then
+        let get_arg1 args = match args with
+            [] -> raise (Failure ("printf expects 1 arg"))
+          | [arg1] -> arg1
+          | _ -> raise (Failure("printf expects 1 arg"))
+        in
+        let arg1 = get_arg1 args in
+        let (scope', sexp) = expr scope funcs arg1 in
+        (scope', (f.typ, SCall(fname, [sexp])))
+      else
+        let rec check_args m (actuals, formals) = match (actuals, formals) with
+            ([], []) -> []
+          | (x::xs, y::ys) ->
+              let (rt, _) = y in
+              let (m', lsexpr) = expr m funcs x in
+              let (lt, le) = lsexpr in
+              if lt = rt
+                then
+                  lsexpr::check_args m' (xs, ys)
+              else raise (Failure("invalid args: " ^ string_of_typ lt ^ " != " ^ string_of_typ rt))
+          | _ -> raise (Failure("invalid number of args"))
+        in
+        let sexprs = check_args scope (args, f.formals) in
+        (scope, (f.typ, SCall(fname, sexprs)))
     | DotCall(ds, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
       let md = find_method mname ds in 
       let param_length = List.length md.formals in
@@ -226,19 +250,11 @@ let check (decls) =
             else raise (Failure ("wrong formal type"))
       in let args' = List.map2 check_call md.formals args
       in
-      (scope, (md.typ, SDotCall(ds, mname, args'))) (* TODO: figure out way to make scope here is new_scope*)
-    | _ -> raise (Failure("expr: not implemented"))
-    and sast_args scope funcs args = 
-    let rec get_sast_args scope args = 
-      match args with 
-            hd::tl -> 
-              let (new_scope, arg') = expr scope funcs hd in 
-              let (return_scope, args') = get_sast_args new_scope tl in 
-            (return_scope, arg'::args') 
-          | [] -> (scope, [])
-    in 
-    get_sast_args scope args
-in
+      (scope, (md.typ, SDotCall(ds, mname, args'))) (*TODO: figure out way to make scope here is new_scope *)
+      (* args : expr list
+      formals : bind list*)
+      | _ -> raise (Failure("expr: not implemented"))
+    in
 
 
   (*** confirm that expression evaluates to a boolean ***)
