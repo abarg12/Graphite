@@ -200,16 +200,22 @@ let check (decls) =
         in 
         (new_scope2, (ty, SSetop((t1, e1'), setop, (t2, e2'))))
     | Call(fname, args) ->
+      let (new_scope, args') = sast_args scope funcs args in 
+      
+      (* TODO: CHECK THAT IT EXISTS AND ARG TYPES ARE CORRECT *)
+      (new_scope, ((find_func fname funcs).typ, SCall(fname, args')))
+
+    (*  (* need to update/fix scoping here *)
       let fd = find_func fname funcs in
       let param_length = List.length fd.formals in
         if List.length args != param_length then raise (Failure ("wrong arg num"))
         else let check_call (ft, _) e =
           let (new_scope, (et, e')) = expr scope funcs e in
-              if ft = et || fname = "printf" then (ft, e') 
+              if ft = et  then (ft, e') 
               else raise (Failure ("wrong formal type"))
       in 
       let args' = List.map2 check_call fd.formals args 
-      in (scope, (fd.typ, SCall(fname, args'))) (* TODO: figure out way to make scope here is new_scope*)
+      in (scope, (fd.typ, SCall(fname, args')))*) (* TODO: figure out way to make scope here is new_scope*)
     | DotCall(ds, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
       let md = find_method mname ds in 
       let param_length = List.length md.formals in
@@ -222,7 +228,17 @@ let check (decls) =
       in
       (scope, (md.typ, SDotCall(ds, mname, args'))) (* TODO: figure out way to make scope here is new_scope*)
     | _ -> raise (Failure("expr: not implemented"))
-  in
+    and sast_args scope funcs args = 
+    let rec get_sast_args scope args = 
+      match args with 
+            hd::tl -> 
+              let (new_scope, arg') = expr scope funcs hd in 
+              let (return_scope, args') = get_sast_args new_scope tl in 
+            (return_scope, arg'::args') 
+          | [] -> (scope, [])
+    in 
+    get_sast_args scope args
+in
 
 
   (*** confirm that expression evaluates to a boolean ***)

@@ -2,9 +2,9 @@
 
 
 # Path to the LLVM interpreter
-LLI=LLI
+LLI=lli
 # Path to the LLVM compiler
-LLC=LLC
+LLC=llc
 
 
 
