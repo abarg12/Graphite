@@ -46,6 +46,7 @@ let translate decls =
   and the_module = L.create_module context "Graphite" in 
   (*and global_vars : L.llvalue StringMap.t = StringMap.empty in *)
 
+
 (*** Define Graphite -> LLVM types here ***)
 let ltype_of_typ = function
     A.Int -> i32_t
@@ -100,10 +101,10 @@ let printf_func : L.llvalue =
   L.declare_function "printf" printf_t the_module in  
 
 
-let add_node_t : L.lltype = 
-  L.var_arg_function_type void_t [| L.pointer_type i8_t ; L.pointer_type i8_t |] in
-let add_node_func : L.llvalue = 
-  L.declare_function "add_node" add_node_t the_module in
+(* let add_node_t : L.lltype = 
+  L.var_arg_function_type void_t [| L.pointer_type i8_t ; L.pointer_type i8_t |] in *)
+(* let add_node_func : L.llvalue = 
+  L.declare_function "add_node" add_node_t the_module in *) 
 
 (*** will have to cast the pointer types to the actual types when being called
      L.pointer_type i8_t is LLVM's equivalent of void pointers in C ***)
@@ -131,6 +132,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
   | SBoolLit b -> L.const_int i1_t (if b then 1 else 0) 
   | SFliteral f -> L.const_float_of_string float_t f
   | SString s -> L.build_global_stringptr s "" builder
+  (* | SId s -> L.build_load (lookup s) s builder *) (* needs lookup for vars*)
   | SBinop (e1, op, e2) ->
       let (t, _) = e1
       and e1' = expr (builder, stable) e1
@@ -195,6 +197,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
               "flag" -> Llvm.build_struct_gep lvar 1 "temp" builder
             | "name" -> Llvm.build_struct_gep lvar 0 "temp" builder
             | "data" -> Llvm.build_struct_gep lvar 2 "temp" builder
+            | _ -> raise (Failure ("syntax error caught post parsing. Nonexistant field " ^ field))
         in 
         L.build_load steven (var ^ "." ^ field) builder 
   | SDotAssign(var, field, e) -> 
@@ -204,6 +207,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
               "flag" -> Llvm.build_struct_gep lvar 1 "temp" builder
             | "name" -> Llvm.build_struct_gep lvar 0 "temp" builder
             | "data" -> Llvm.build_struct_gep lvar 2 "temp" builder
+            | _ -> raise (Failure ("syntax error caught post parsing. Nonexistant field " ^ field))
         in 
         L.build_store e' steven builder
       | _ -> raise (Failure("expr: not implemented"))

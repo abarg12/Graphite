@@ -64,9 +64,44 @@ for entry in ./tests/negative/*; do
 done
 
 echo "
-running hello world tests...
+running extended_test_suite tests...
                             "
 
+for entry in ./tests/extended_test_suite/positive/*; do
+    if [[ $entry == *.gp ]]       
+    then
+        base_name=$(basename ${entry})
+        # if we cannot even run the test, something went wrong :(
+        ./toplevel.native  < $entry > ./tests/temptesting/${base_name%%.*}.out 2>&1
+
+        $LLI < tests/temptesting/${base_name%%.*}.out > tests/temptesting/${base_name%%.*}ran.out
+
+        # diff
+        if ! cmp -s ./tests/temptesting/${base_name%%.*}ran.out ./tests/extended_test_suite/positive/goldStandards/${base_name%%.*}.Gold;
+        then 
+            echo ${base_name} "FAILED"
+        else 
+            echo ${base_name} "PASSED"
+        fi 
+    fi
+done
+
+for entry in ./tests/extended_test_suite/negative/*; do
+    if [[ $entry == *.gp ]]       
+    then
+        base_name=$(basename ${entry})
+        # if we cannot even run the test, something went wrong :(
+        ./toplevel.native  < $entry > ./tests/temptesting/${base_name%%.*}.out 2>&1
+
+        # diff
+        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/extended_test_suite/negative/goldStandards/${base_name%%.*}.Gold;
+        then 
+            echo ${base_name} "FAILED"
+        else 
+            echo ${base_name} "PASSED"
+        fi 
+    fi
+done
 
 # Compiles Graphite code into LLVM
 ./toplevel.native < tests/hello_world/helloworld.gp > tests/temptesting/helloworld.out
@@ -115,13 +150,25 @@ else
         else 
             echo ${base_name} "PASSED"
         fi 
-    elif [ "$parentdir" = "tests/extended_test_suite" ];
+    elif [ "$parentdir" = "tests/extended_test_suite/negative" ];
     then 
          # if we cannot even run the test, something went wrong :(
         ./toplevel.native < $1 > ./tests/temptesting/${base_name%%.*}.out 2>&1
 
         # diff
-        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/extended_test_suite/goldStandards/${base_name%%.*}.Gold;
+        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/extended_test_suite/negative/goldStandards/${base_name%%.*}.Gold;
+        then 
+            echo ${base_name} "FAILED"
+        else 
+            echo ${base_name} "PASSED"
+        fi  
+    elif [ "$parentdir" = "tests/extended_test_suite/positive" ];
+    then 
+         # if we cannot even run the test, something went wrong :(
+        ./toplevel.native < $1 > ./tests/temptesting/${base_name%%.*}.out 2>&1
+
+        # diff
+        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/extended_test_suite/positive/goldStandards/${base_name%%.*}.Gold;
         then 
             echo ${base_name} "FAILED"
         else 

@@ -3,7 +3,8 @@ node n;
 #n.data = 2; 
 n.flag = true; 
 
-bool i = n.flag;
+bool i;
+i = false;
 
 printf(i); 
 

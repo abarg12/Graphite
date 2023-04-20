@@ -51,8 +51,21 @@ let check (decls) =
     in List.fold_left add_bind StringMap.empty [ ("printf", Int);]
   in
 
+  (* TODO: make it so that you can search built in methods for graphs, etc. *)
+  let built_in_graph_meths =
+    let add_bind map (name, ty) = StringMap.add name {
+      typ = Graph(["none"]);
+      fname = name;
+      formals = [(ty, "x")];
+      body = Block[] } map
+    in List.fold_left add_bind StringMap.empty [ ("add", Node); ]
+  in
+    
+
+  (* this is where we're gonna add more invariants later heeheehoohoo*)
   let invariants = ["tree"; "connected"]  in
-  let fields = ["flag"; "data"; "name"] in 
+  let fields = ["flag"; "data"; "name"] in
+  let graph_meths = built_in_graph_meths in 
 
   let rec find_elt x lst message = match lst with 
       y::rest when x = y -> x  
@@ -67,7 +80,15 @@ let check (decls) =
 
   let find_field x = 
     find_elt x fields "node field" 
-  in 
+  in
+  
+  let find_method m data_structs = (* needs to  *)
+    let meths = graph_meths (* instead of hard coding graph meths, make it so that you can pattern match and find which ds you want*)
+    in  
+    try StringMap.find m meths
+    with Not_found -> raise (Failure ("method " ^ m ^ " not found in data struct")) 
+  in
+  
   (* THE ONE MAP OF FUNCTIONS *)
   let functions = built_in_decls in
 
@@ -179,7 +200,6 @@ let check (decls) =
         let (new_scope2, (t2, e2')) = expr new_scope funcs e2 in
 
         let same = t1 = t2 in
-
         let fields = match t1 with 
           Graph(fields) -> fields
           | _ -> raise (
@@ -196,10 +216,28 @@ let check (decls) =
                     string_of_typ t2 ^ " in " ^ string_of_expr e))
         in 
         (new_scope2, (ty, SSetop((t1, e1'), setop, (t2, e2'))))
-    | Call(fname, args) ->
-      let (new_scope, args') = sast_args scope funcs args in 
-      (* TODO: CHECK THAT IT EXISTS AND ARG TYPES ARE CORRECT *)
-      (new_scope, ((find_func fname funcs).typ, SCall(fname, args')))
+    | Call(fname, args) -> (* TODO: fix call and dotcall*)
+      let fd = find_func fname funcs in
+      let param_length = List.length fd.formals in
+        if List.length args != param_length then raise (Failure ("wrong arg num"))
+        else let check_call (ft, _) e =
+          let (et, e') = expr scope funcs e in
+            if ft = et then (ft, e') 
+            else raise (Failure ("wrong formal type"))
+      in 
+      let args' = List.map2 check_call fd.formals args 
+      in (fd.typ, SCall(fname, args'))
+    | DotCall(ds, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
+      let md = find_method mname ds in 
+      let param_length = List.length md.formals in
+        if List.length args != param_length then raise (Failure ("wrong arg num"))
+        else let check_call (mt, _) e =
+          let (et, e') = expr scope funcs e in
+            if mt = et then (mt, e')
+            else raise (Failure ("wrong formal type"))
+      in let args' = List.map2 check_call md.formals args
+      in
+      (md.typ, SDotCall(ds, mname, args'))
     | _ -> raise (Failure("expr: not implemented"))
   and sast_args scope funcs args = 
       let rec get_sast_args scope args = 

@@ -146,7 +146,7 @@ expr:
   | ID ASSIGN expr   { Assign($1, $3)         }
   | ID LPAREN args_opt RPAREN { Call($1, $3)  } 
   | LPAREN expr RPAREN { $2                   }
-  | ID DOT ID LPAREN expr RPAREN 
+  | ID DOT ID LPAREN args_opt RPAREN 
                        { DotCall($1, $3, $5)  }
   | ID DOT ID        { DotOp($1, $3)          }
   | ID DOT ID ASSIGN expr 
