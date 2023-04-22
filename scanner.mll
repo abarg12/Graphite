@@ -8,7 +8,11 @@ let digits = digit+
 rule token = parse
   [' ' '\t' '\r' '\n'] { token lexbuf } (* Whitespace *)
   | "#"      { comment lexbuf }           (* Comments *)
-  (* brackets *)
+ (* numbers *)
+  | '-'? digits as lxm { LITERAL(int_of_string lxm) }
+  | '-'? digits '.'  digit* as lxm { FLIT(lxm) }
+  | '-'? '.' digits as lxm { FLIT(lxm) }
+ (* brackets *)
   | '('      { LPAREN }
   | ')'      { RPAREN }
   | '['      { LBRAC  }
@@ -64,8 +68,6 @@ rule token = parse
   | "true"   { BLIT(true)  }
   | "false"  { BLIT(false) }
   (* other *)
-  | digits as lxm { LITERAL(int_of_string lxm) }
-  | digits '.'  digit* as lxm { FLIT(lxm) }
   | ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_']* as lxm { ID(lxm) }
   | '"'['a'-'z' 'A'-'Z' '0'-'9' '_' ' ' '\n' '!' '@' '$' '%' '^' '&' '*' '(' ')' '-' '+' '=' '\\' ':']*'"' as lxm { STRING((String.sub lxm 1 ((String.length lxm) - 2))) }
   | eof { EOF }

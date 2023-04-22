@@ -123,7 +123,9 @@ in
   
 let int_format_str = L.build_global_stringptr "%d\n" "fmt" 
 and float_format_str = L.build_global_stringptr "%g\n" "fmt"  
-and bool_format_str = L.build_global_stringptr "%B\n" "fmt" 
+(*** we treat booleans as integers when printing to avoid the 
+     mysterious B that was being printed otherwise ***)
+(* and bool_format_str = L.build_global_stringptr "%B\n" "fmt" *)
 and string_format_str = L.build_global_stringptr "%s\n" "fmt" in
 
 (*** Expressions go here ***)
@@ -132,7 +134,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
   | SBoolLit b -> L.const_int i1_t (if b then 1 else 0) 
   | SFliteral f -> L.const_float_of_string float_t f
   | SString s -> L.build_global_stringptr s "" builder
-  (* | SId s -> L.build_load (lookup s) s builder *) (* needs lookup for vars*)
+  | SNoexpr -> L.const_int i32_t 0
   | SBinop (e1, op, e2) ->
       let (t, _) = e1
       and e1' = expr (builder, stable) e1
@@ -165,6 +167,14 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       | A.Greater -> L.build_icmp L.Icmp.Sgt
       | A.Geq     -> L.build_icmp L.Icmp.Sge
       ) e1' e2' "tmp" builder 
+  | SUnop (op, e) ->
+      let (t, _) = e in
+      let e' = expr (builder, stable) e in
+      (match op with 
+          A.Neg when t = A.Float -> L.build_fneg
+        | A.Neg                  -> L.build_neg
+        | A.Not                  -> L.build_not)
+      e' "tmp" builder 
   | SId s -> L.build_load (find_variable stable s) s builder
   | SAssign (s, e) -> let e' = expr (builder, stable) e in
                       L.build_store e' (find_variable stable s) builder
@@ -173,7 +183,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       (Int, SId s) -> L.build_call printf_func [| int_format_str builder ; (expr (builder, stable) e) |] "printf" builder
     | (Float, SId s) -> L.build_call printf_func [| float_format_str builder ; (expr (builder, stable) e) |] "printf" builder
     | (String, SId s) -> L.build_call printf_func [| string_format_str builder ; (expr (builder, stable) e) |] "printf" builder
-    | (Bool, SId s) -> L.build_call printf_func [| bool_format_str builder ; (expr (builder, stable) e) |] "printf" builder
+    | (Bool, SId s) -> L.build_call printf_func [| int_format_str builder ; (expr (builder, stable) e) |] "printf" builder
     | _ -> L.build_call printf_func [| (expr (builder, stable) (A.String, (to_string e))) |] "printf" builder )
   | SCall (name, args) -> 
         let (fdecl_opt, llvm_decl) = find_func stable name in
