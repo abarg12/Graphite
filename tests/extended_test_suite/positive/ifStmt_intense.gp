@@ -16,8 +16,7 @@ int funky(int b) {
         }
     } else {
         printf("your number is too small");
-        int c = a;
-        return c;
+        return a;
     } 
     
     return 0;
@@ -27,4 +26,5 @@ if (a == 0) {
     int r = funky(5);
     int r2 = funky(2);
     int r3 = funky(4);
+    printf(r3);
 }

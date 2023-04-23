@@ -1,4 +1,9 @@
-int a = 2;
+int a;
+a = 2;
+printf(a);
+int b = 10;
+printf(b);
+
 
 int myFunc(int b) {
     int c = a + b;
