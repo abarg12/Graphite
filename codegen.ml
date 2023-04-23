@@ -273,6 +273,18 @@ and stmt (builder, stable) = function
       let () = add_terminal else_builder branch_instr in 
       let _ = L.build_cond_br bool_val then_bb else_bb builder in
       L.builder_at_end context merge_bb, stable
+  | SWhile (predicate, body) ->
+      let (_, currLLVMfunc) = find_func stable stable.curr_func in 
+      let pred_bb = L.append_block context "while" currLLVMfunc in
+      let _ = L.build_br pred_bb builder in
+      let body_bb = L.append_block context "while_body" currLLVMfunc in
+      let (while_builder, _) = stmt ((L.builder_at_end context body_bb), stable) body in
+      let () = add_terminal while_builder (L.build_br pred_bb) in
+      let pred_builder = L.builder_at_end context pred_bb in
+      let bool_val = expr (pred_builder, stable) predicate in
+      let merge_bb = L.append_block context "merge" currLLVMfunc in
+      let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
+      L.builder_at_end context merge_bb, stable
   | SReturn e ->  let (fdecl_opt, llvm_decl) = find_func stable stable.curr_func in 
                   let fdecl = (match fdecl_opt with
                                 Some(f) -> f
