@@ -1,30 +1,32 @@
 ; ModuleID = 'Graphite'
 source_filename = "Graphite"
 
-@0 = private unnamed_addr constant [9 x i8] c"cocacola\00", align 1
-@1 = private unnamed_addr constant [6 x i8] c"bepis\00", align 1
-@2 = private unnamed_addr constant [18 x i8] c"diet mountain dew\00", align 1
-@3 = private unnamed_addr constant [7 x i8] c"sodas\0A\00", align 1
-@fmt = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@fmt.1 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@fmt.2 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@fmt = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 
 declare i32 @printf(i8*, ...)
 
 define i32 @main() {
 entry:
-  %a = alloca i8*, align 8
-  store i8* getelementptr inbounds ([9 x i8], [9 x i8]* @0, i32 0, i32 0), i8** %a, align 8
-  %b = alloca i8*, align 8
-  store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0), i8** %b, align 8
-  %c = alloca i8*, align 8
-  store i8* getelementptr inbounds ([18 x i8], [18 x i8]* @2, i32 0, i32 0), i8** %c, align 8
-  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([7 x i8], [7 x i8]* @3, i32 0, i32 0))
-  %a1 = load i8*, i8** %a, align 8
-  %printf2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i8* %a1)
-  %b3 = load i8*, i8** %b, align 8
-  %printf4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.1, i32 0, i32 0), i8* %b3)
-  %c5 = load i8*, i8** %c, align 8
-  %printf6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.2, i32 0, i32 0), i8* %c5)
+  %a = alloca i32
+  store i32 0, i32* %a
+  %b = alloca i32
+  store i32 10, i32* %b
+  br label %while
+
+while:                                            ; preds = %while_body, %entry
+  %a3 = load i32, i32* %a
+  %b4 = load i32, i32* %b
+  %tmp5 = icmp slt i32 %a3, %b4
+  br i1 %tmp5, label %while_body, label %merge
+
+while_body:                                       ; preds = %while
+  %a1 = load i32, i32* %a
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i32 %a1)
+  %a2 = load i32, i32* %a
+  %tmp = add i32 %a2, 1
+  store i32 %tmp, i32* %a
+  br label %while
+
+merge:                                            ; preds = %while
   ret i32 0
 }
