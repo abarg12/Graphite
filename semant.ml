@@ -258,8 +258,16 @@ in
         (new_scope, SExpr (exp))
     | If(p, b1, b2) ->
           let (new_scope1, stmt_p) = check_bool_expr scope funcs p in 
+          let _ = (match b1 with
+                      Block bs -> []
+                    | _ -> raise(Failure "Then/Else sections of If statements must ^
+                                          be Blocks")) in
           let (new_scope2, stmt_b1) = check_stmt new_scope1 funcs b1 in 
-          let (new_scope3, stmt_b2) = check_stmt new_scope2 funcs b1 in 
+          let _ = (match b2 with
+                      Block bs -> []
+                    | _ -> raise(Failure "Then/Else sections of If statements must ^
+                                          be Blocks")) in
+          let (new_scope3, stmt_b2) = check_stmt new_scope2 funcs b2 in 
           (new_scope3, SIf(stmt_p, stmt_b1, stmt_b2))
     | For(e1, e2, e3, st) ->
           let (new_scope1, stmt_st) = check_stmt scope funcs st in 

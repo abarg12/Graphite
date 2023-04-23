@@ -32,11 +32,11 @@ type symbol_table = {
 let translate decls = 
   let context  = L.global_context () in 
   let node_t = Llvm.named_struct_type context "node_t" in
-  let _ = Llvm.struct_set_body node_t
+    let _ = Llvm.struct_set_body node_t
       [| Llvm.pointer_type (L.i8_type context); 
       Llvm.i1_type context; 
       Llvm.pointer_type (L.i8_type context); |] false 
-  in
+    in
   let i32_t    = L.i32_type context
   and i8_t     = L.i8_type context
   and i1_t     = L.i1_type context
@@ -60,8 +60,8 @@ in
 
 
 (* add to symbol table *)
-let bind_var (scope : symbol_table) x t  =
-  { variables = StringMap.add x t scope.variables;
+let bind_var (scope : symbol_table) x v  =
+  { variables = StringMap.add x v scope.variables;
               parent = scope.parent;
               funcs = scope.funcs;
               curr_func = scope.curr_func; }
@@ -177,7 +177,8 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       e' "tmp" builder 
   | SId s -> L.build_load (find_variable stable s) s builder
   | SAssign (s, e) -> let e' = expr (builder, stable) e in
-                      L.build_store e' (find_variable stable s) builder
+                      let _ = L.build_store e' (find_variable stable s) builder in 
+                      e'
   | SCall ("printf", [e]) ->
     (match e with 
       (Int, SId s) -> L.build_call printf_func [| int_format_str builder ; (expr (builder, stable) e) |] "printf" builder
@@ -218,6 +219,15 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       | _ -> raise (Failure("expr: not implemented"))
 in
 
+
+let add_terminal builder instr =
+                          (* The current block where we're inserting instr *)
+  match L.block_terminator (L.insertion_block builder) with
+       Some _ -> ()
+     | None -> ignore (instr builder)
+in
+
+
 let rec sb_lines (builder, stable) (ls : sb_line list) = match ls with
     (SLocalBind (typ, s)) :: ls -> sb_lines (bind (builder, stable) (typ, s)) ls
   | (SLocalBindAssign (typ, s, e)) :: ls -> sb_lines (bindassign (builder, stable) (typ, s, e)) ls
@@ -227,14 +237,28 @@ let rec sb_lines (builder, stable) (ls : sb_line list) = match ls with
 (*** Statements go here ***)
 and stmt (builder, stable) = function
     SExpr e -> let _ = expr (builder, stable) e in (builder, stable)
-  | SBlock ls -> let stable' ={
+  | SBlock ls -> let stable' = {
           variables = StringMap.empty;
           parent = Some stable;
           funcs = StringMap.empty;
           curr_func = stable.curr_func;
         } in
-      let _ = sb_lines (builder, stable') ls in
-      (builder, stable)
+      let (builder', _) = sb_lines (builder, stable') ls in
+      (builder', stable)
+  | SIf (predicate, then_stmt, else_stmt) ->
+      let (_, currLLVMfunc) = find_func stable stable.curr_func in 
+      (* let start_bb = L.insertion_block builder in *)
+      let bool_val = expr (builder, stable) predicate in
+      let merge_bb = L.append_block context "merge" currLLVMfunc in
+      let branch_instr = L.build_br merge_bb in
+      let then_bb = L.append_block context "then" currLLVMfunc in
+      let (then_builder, _) = stmt ((L.builder_at_end context then_bb), stable) then_stmt in
+      let () = add_terminal then_builder branch_instr in
+      let else_bb = L.append_block context "else" currLLVMfunc in
+      let (else_builder, _) = stmt ((L.builder_at_end context else_bb), stable) else_stmt in
+      let () = add_terminal else_builder branch_instr in 
+      let _ = L.build_cond_br bool_val then_bb else_bb builder in
+      L.builder_at_end context merge_bb, stable
   | SReturn e ->  let (fdecl_opt, llvm_decl) = find_func stable stable.curr_func in 
                   let fdecl = (match fdecl_opt with
                                 Some(f) -> f
@@ -255,11 +279,20 @@ Here is an example of a case that is not matched:
      *)
      | _ -> (builder, stable)
 
+
+(** TODO: figure out whether the L.build_alloca vs L.build_global is causing the
+          errors in returning globals in some tests; it could just be something about
+          return calls **)
 and  bind (builder, stable) = function
     (typ, s) -> 
-        let new_var = L.build_alloca (ltype_of_typ typ) s builder in
-        let stable' = bind_var stable s new_var in
-        (builder, stable')
+        (* if stable.curr_func = "main" then 
+          let new_glob = L.declare_global (ltype_of_typ typ) s the_module in
+          let stable' = bind_var stable s new_glob in
+          (builder, stable')
+        else  *)
+          let new_var = L.build_alloca (ltype_of_typ typ) s builder in
+          let stable' = bind_var stable s new_var in
+          (builder, stable')
 
 (* Bind assignments are declaration-assignment one-liners *)
 and bindassign (builder, stable) = function 
@@ -267,11 +300,11 @@ and bindassign (builder, stable) = function
         let e' = expr (builder, stable) e in
                  (*let StringMap.add s (L.define_global s e the_module) global_vars*)
                  (* let _  = L.build_store e' (L.define_global s e' the_module) builder *)
-        let () = L.set_value_name s e' in
+        (* let () = L.set_value_name s e' in *)
         let new_var = L.build_alloca (ltype_of_typ typ) s builder in
         let _ = L.build_store e' new_var builder in
-        let stable' = bind_var stable s new_var
-        in (builder, stable')
+        let stable' = bind_var stable s new_var in 
+        (builder, stable')
 
 and fdecl (builder, stable) f =
         let name = f.sfname in 
@@ -287,11 +320,11 @@ and fdecl (builder, stable) f =
                                           bind_var stable_accum x local) 
                                       stable' f.sformals (Array.to_list (L.params llvm_func)) in
         let stable''' = { variables = stable''.variables;
-                          parent = stable''.parent; 
-                          funcs = stable''.funcs;
+                          parent    = stable''.parent; 
+                          funcs     = stable''.funcs;
                           curr_func = name; }
-        in  
-        let _ = stmt (builder', stable''') f.sbody in 
+        in 
+        let _ = stmt (builder', stable''') f.sbody in
         (builder, stable')
 in
 
@@ -300,7 +333,7 @@ let rec build_decl (builder, stable) decl = match decl with
     SStatement s -> stmt (builder, stable) s
   | SBindAssign(typ, s, e) -> bindassign (builder, stable) (typ, s, e)
   | SBind (typ, n) -> bind (builder, stable) (typ, n) 
-  | SFdecl f -> fdecl (builder, stable) f
+  | SFdecl f -> fdecl (builder, stable) f 
 in
 (** to have func type have to build before you use it -- needed for line below it **)
 let ftype = L.function_type i32_t (Array.of_list []) in 
@@ -322,9 +355,9 @@ let empty_stable = {
 } in
 let init_stable = add_func "main" (None, global_main) empty_stable in 
 let init_stable = add_func "printf" (None, printf_func) init_stable in (* hmmm is this ok? *)
-let _ = program (builder, init_stable) decls in 
+let (builder', stable') = program (builder, init_stable) decls in 
 (* let _ = L.build_ret_int builder in  *)
-let _ = L.build_ret (L.const_int i32_t 0) builder in
+let _ = L.build_ret (L.const_int i32_t 0) builder' in
 the_module
 
 
