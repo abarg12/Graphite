@@ -291,6 +291,10 @@ and stmt (builder, stable) = function
       let merge_bb = L.append_block context "merge" currLLVMfunc in
       let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
       L.builder_at_end context merge_bb, stable
+  | SFor (e1, e2, e3, body) -> stmt (builder, stable) 
+        (SBlock [SLocalStatement(SExpr e1); 
+                SLocalStatement (SWhile(e2, SBlock [SLocalStatement(body) ; 
+                                  SLocalStatement(SExpr e3)]))])
   | SReturn e ->  let (fdecl_opt, llvm_decl) = find_func stable stable.curr_func in 
                   let fdecl = (match fdecl_opt with
                                 Some(f) -> f
@@ -301,7 +305,7 @@ and stmt (builder, stable) = function
                     | _ -> L.build_ret (expr (builder, stable) e) builder)
                   in 
                   (builder, stable)
-     | _ -> (builder, stable)
+     (* | _ -> (builder, stable) *)
 
 
 and  bind (builder, stable) = function

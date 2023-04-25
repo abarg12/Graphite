@@ -4,7 +4,7 @@ int a;
 a = 2;
 int b;
 string abcd;
-abcd = thisisastring;
+abcd = "thisisastring";
 b = 2;
 return 0;
 }
