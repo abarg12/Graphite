@@ -62,7 +62,7 @@ string_of_sexpr (t, e) =
   "(" ^ string_of_typ t ^ " : " ^ (match e with
     SLiteral(l) -> string_of_int l
   | SBoolLit(l) -> string_of_bool l
-  | SString(s) -> s
+  | SString(s) -> "\"" ^ s ^ "\""
   | SFliteral(f) -> f
   | SCall(f, el) ->
     f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"

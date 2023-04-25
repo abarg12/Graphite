@@ -46,34 +46,37 @@ entry:
   %c2 = load i32, i32* %c
   %b3 = load i32, i32* %b
   %tmp = icmp slt i32 %c2, %b3
-  br i1 %tmp, label %then, label %else10
+  br i1 %tmp, label %then, label %else13
 
-merge:                                            ; preds = %merge4
+merge:                                            ; preds = %merge7
   ret i32 0
 
 then:                                             ; preds = %entry
   %d = alloca i32
   store i32 5, i32* %d
-  br i1 false, label %then5, label %else
+  %d4 = load i32, i32* %d
+  %b5 = load i32, i32* %b
+  %tmp6 = icmp sgt i32 %d4, %b5
+  br i1 %tmp6, label %then8, label %else
 
-merge4:                                           ; preds = %else
+merge7:                                           ; preds = %else
   br label %merge
 
-then5:                                            ; preds = %then
-  %d6 = load i32, i32* %d
-  %b7 = load i32, i32* %b
-  %tmp8 = icmp sgt i32 %d6, %b7
+then8:                                            ; preds = %then
+  %d9 = load i32, i32* %d
+  %b10 = load i32, i32* %b
+  %tmp11 = icmp sgt i32 %d9, %b10
   %i = alloca i1
-  store i1 %tmp8, i1* %i
+  store i1 %tmp11, i1* %i
   %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @0, i32 0, i32 0))
   ret i32 1
 
 else:                                             ; preds = %then
-  %printf9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @1, i32 0, i32 0))
-  br label %merge4
+  %printf12 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @1, i32 0, i32 0))
+  br label %merge7
 
-else10:                                           ; preds = %entry
-  %printf11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([26 x i8], [26 x i8]* @2, i32 0, i32 0))
+else13:                                           ; preds = %entry
+  %printf14 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([26 x i8], [26 x i8]* @2, i32 0, i32 0))
   %a = load i32, i32* @a
   ret i32 %a
 }

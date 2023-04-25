@@ -7,7 +7,7 @@ int funky(int b) {
     if (c < b) {
         int d = 5;
         
-        if (false) {
+        if (d > b) {
             bool i = d > b;
             printf("your number is 4!!!!!");
             return 1;
