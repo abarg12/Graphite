@@ -113,6 +113,15 @@ let add_func s func stable =
       global_vars = stable.global_vars; }
 in
 
+let set_curr_func s stable = 
+    { variables = stable.variables;
+      parent = stable.parent; 
+      funcs = stable.funcs;
+      curr_func = s; 
+      global_vars = stable.global_vars; }
+in
+
+
 
 let printf_t : L.lltype = 
   L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
@@ -358,19 +367,14 @@ and fdecl (builder, stable) f =
         let ftype = L.function_type (ltype_of_typ f.styp) formal_types in
         let llvm_func = L.define_function name ftype the_module in
         let stable' = add_func name (Some f, llvm_func) stable in
+        let stable'' = set_curr_func name stable' in
         let builder' = L.builder_at_end context (L.entry_block llvm_func) in 
-        let stable'' = List.fold_left2 (fun stable_accum (t, x) p -> 
+        let stable''' = List.fold_left2 (fun stable_accum (t, x) p -> 
                                           let local = L.build_alloca (ltype_of_typ t) x builder' in
                                           let _ = L.build_store p local builder' in
                                           let _ = L.set_value_name x p in
                                           bind_var stable_accum x local) 
-                                      stable' f.sformals (Array.to_list (L.params llvm_func)) in
-        let stable''' = { variables = stable''.variables;
-                          parent    = stable''.parent; 
-                          funcs     = stable''.funcs;
-                          curr_func = name;
-                          global_vars = stable.global_vars; }
-        in 
+                                      stable'' f.sformals (Array.to_list (L.params llvm_func)) in
         let _ = stmt (builder', stable''') f.sbody in
         (builder, stable')
 in
