@@ -15,6 +15,7 @@ http://llvm.moe/ocaml/
 (* We'll refer to Llvm and Ast constructs with module names *)
 module L = Llvm
 module A = Ast
+open Predef
 open Sast 
 
 module StringMap = Map.Make(String)
@@ -45,7 +46,6 @@ let translate decls =
   and float_t  = L.double_type context
   and void_t   = L.void_type context 
   and the_module = L.create_module context "Graphite" in 
-
 
 (*** Define Graphite -> LLVM types here ***)
 let ltype_of_typ = function
@@ -229,7 +229,8 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
             | _ -> raise (Failure ("syntax error caught post parsing. Nonexistant field " ^ field))
         in 
         L.build_store e' steven builder
-      | _ -> raise (Failure("expr: not implemented"))
+  | SDotCall(ds, mname, args) -> raise (Failure("working on dot calls"))
+  | _ -> raise (Failure("expr: not implemented"))
 in
 
 
