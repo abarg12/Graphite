@@ -36,12 +36,12 @@ let translate decls =
     let _ = Llvm.struct_set_body node_t
       [| Llvm.pointer_type (L.i8_type context); 
       Llvm.i1_type context; 
-      Llvm.pointer_type (L.i8_type context); |] false 
+      Llvm.pointer_type (L.i8_type context); |] false
     in
   let edge_t = L.named_struct_type context "edge_t" in
     let _ = L.struct_set_body edge_t 
-      [| L.pointer_type (L.i8_type context);
-         L.pointer_type (L.i8_type context); |] false
+      [| L.pointer_type node_t;
+         L.pointer_type node_t; |] false
     in 
   let i32_t    = L.i32_type context
   and i8_t     = L.i8_type context
@@ -325,6 +325,10 @@ and  bind (builder, stable) = function
             | A.Int -> L.const_int (ltype_of_typ typ) 0
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
             | A.String -> L.build_global_stringptr "" "" builder
+            | A.Node -> L.const_named_struct node_t
+                                       [| (L.const_int i8_t 0); 
+                                          (L.const_int i1_t 0); 
+                                          (L.const_int i8_t 0); |] 
             | _ -> raise (Failure "no global default value set")
           in 
           let new_glob = L.define_global s init the_module in
@@ -347,6 +351,10 @@ and bindassign (builder, stable) = function
             | A.Int -> L.const_int (ltype_of_typ typ) 0
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
             | A.String -> L.build_global_stringptr "" "" builder
+            | A.Node -> L.const_named_struct node_t
+                                [| (L.const_int i8_t 0); 
+                                   (L.const_int i1_t 0); 
+                                   (L.const_int i8_t 0); |] 
             | _ -> raise (Failure "no global default value set")
           in 
           let new_glob = L.define_global s init the_module in
