@@ -3,10 +3,11 @@ int afunc (bool a) {
     if (a) {
         printf("hi");
     }
-    return 0;
+    return 42;
 }
 
 if (true) {
-    int c = afunc(false);
+    int c = afunc(true);
     int a = 1;
+    printf(c);
 }
