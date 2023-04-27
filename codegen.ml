@@ -123,7 +123,7 @@ let printf_func : L.llvalue =
      L.pointer_type i8_t is LLVM's equivalent of void pointers in C ***)
 
 
-let to_string e = match e with
+let to_string styp e = match e with
     (_, SLiteral i) -> SString((string_of_int i) ^ "\n")
   | (_, SString s) -> SString (s ^ "\n")
   | (_, SBoolLit b) -> (match b with
@@ -198,7 +198,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
     | (Float, SId s) -> L.build_call printf_func [| float_format_str builder ; (expr (builder, stable) e) |] "printf" builder
     | (String, SId s) -> L.build_call printf_func [| string_format_str builder ; (expr (builder, stable) e) |] "printf" builder
     | (Bool, SId s) -> L.build_call printf_func [| int_format_str builder ; (expr (builder, stable) e) |] "printf" builder
-    | _ -> L.build_call printf_func [| (expr (builder, stable) (A.String, (to_string e))) |] "printf" builder )
+    | _ -> L.build_call printf_func [| (expr (builder, stable) (A.String, (to_string styp e))) |] "printf" builder )
   | SCall (name, args) -> 
         let (fdecl_opt, llvm_decl) = find_func stable name in
         let sfdecl = (match fdecl_opt with
@@ -216,19 +216,42 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
               "flag" -> Llvm.build_struct_gep lvar 1 "temp" builder
             | "name" -> Llvm.build_struct_gep lvar 0 "temp" builder
             | "data" -> Llvm.build_struct_gep lvar 2 "temp" builder
-            | _ -> raise (Failure ("syntax error caught post parsing. Nonexistant field " ^ field))
+            | _ -> raise (Failure ("syntax error caught post parsing. Nonexistent field " ^ field))
         in 
-        L.build_load steven (var ^ "." ^ field) builder 
+        let steven' = match styp with 
+              Richard -> raise (Failure ("data field never set in node.data " ^ field))
+            | _ -> L.build_load steven (var ^ "." ^ field) builder 
+        in
+        (match field with 
+              "flag" -> L.build_load steven (var ^ "." ^ field) builder 
+            | "asdf" -> raise (Failure ("not implemented yet :0"))
+            | _ ->
+              let llvm_ty = ltype_of_typ styp in
+              let new_ptr = L.build_pointercast steven' (L.pointer_type (llvm_ty)) "name" builder in
+              L.build_load new_ptr (var ^ "." ^ field) builder)
   | SDotAssign(var, field, e) -> 
         let e' = expr (builder, stable) e in
+        let (my_typ, expr) = e in
         let lvar = find_variable stable var in 
         let steven = match field with 
-              "flag" -> Llvm.build_struct_gep lvar 1 "temp" builder
-            | "name" -> Llvm.build_struct_gep lvar 0 "temp" builder
-            | "data" -> Llvm.build_struct_gep lvar 2 "temp" builder
-            | _ -> raise (Failure ("syntax error caught post parsing. Nonexistant field " ^ field))
+              "flag" -> L.build_struct_gep lvar 1 "temp" builder
+            | "name" -> L.build_struct_gep lvar 0 "temp" builder
+            | "data" -> L.build_struct_gep lvar 2 "temp" builder
+            | _ -> raise (Failure ("syntax error caught post parsing. Nonexistent field " ^ field))
         in 
-        L.build_store e' steven builder
+        let e'' = match field with 
+             "flag" -> e' 
+            | "namasdfe" -> raise (Failure ("not implemented  " ^ field))
+            | _ -> 
+                let styp_ptr = L.build_malloc (ltype_of_typ my_typ) "bruh" builder in 
+                (* put data in *)
+                let _ = L.build_store e' styp_ptr builder in 
+                
+                let ptr = L.build_pointercast styp_ptr (L.pointer_type (i8_t)) "name" builder in 
+                ptr
+
+        in 
+        L.build_store e'' steven builder
       | _ -> raise (Failure("expr: not implemented"))
 in
 
@@ -305,7 +328,7 @@ and  bind (builder, stable) = function
               A.Float -> L.const_float (ltype_of_typ typ) 0.0
             | A.Int -> L.const_int (ltype_of_typ typ) 0
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
-            | A.String -> L.build_global_stringptr "" "" builder 
+            | A.String -> L.build_global_stringptr "" "" builder
             | _ -> raise (Failure "no global default value set")
           in 
           let new_glob = L.define_global s init the_module in
