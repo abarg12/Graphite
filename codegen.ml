@@ -67,7 +67,7 @@ in
 
 (* add to symbol table *)
 let bind_var (scope : symbol_table) x v  =
-  if scope.curr_func = "main" 
+  if scope.parent = None 
   then 
     { variables = scope.variables;
               parent = scope.parent;
@@ -342,7 +342,7 @@ and stmt (builder, stable) = function
 
 and  bind (builder, stable) = function
     (typ, s) -> 
-        if stable.curr_func = "main" then 
+        if stable.parent = None then 
           let init = match typ with
               A.Float -> L.const_float (ltype_of_typ typ) 0.0
             | A.Int -> L.const_int (ltype_of_typ typ) 0
@@ -365,7 +365,7 @@ and  bind (builder, stable) = function
 (* Bind assignments are declaration-assignment one-liners *)
 and bindassign (builder, stable) = function 
   (typ, s, e) -> 
-      if stable.curr_func = "main" then 
+      if stable.parent = None then 
           let e' = expr (builder, stable) e in 
           (* let new_glob = L.define_global s e' the_module in
           let stable' = bind_var stable s new_glob in *)
