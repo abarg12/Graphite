@@ -36,8 +36,13 @@ let translate decls =
     let _ = Llvm.struct_set_body node_t
       [| Llvm.pointer_type (L.i8_type context); 
       Llvm.i1_type context; 
-      Llvm.pointer_type (L.i8_type context); |] false 
+      Llvm.pointer_type (L.i8_type context); |] false
     in
+  let edge_t = L.named_struct_type context "edge_t" in
+    let _ = L.struct_set_body edge_t 
+      [| L.pointer_type node_t;
+         L.pointer_type node_t; |] false
+    in 
   let i32_t    = L.i32_type context
   and i8_t     = L.i8_type context
   and i1_t     = L.i1_type context
@@ -55,6 +60,7 @@ let ltype_of_typ = function
   | A.Void  -> void_t   
   | A.String -> string_t 
   | A.Node -> node_t
+  | A.Edge -> edge_t
   | _ -> raise (Unfinished "not all types implemented")
 in
 
@@ -63,7 +69,7 @@ in
 let bind_var (scope : symbol_table) x v  =
   if scope.curr_func = "main" 
   then 
-    { variables = StringMap.add x v scope.variables;
+    { variables = scope.variables;
               parent = scope.parent;
               funcs = scope.funcs;
               curr_func = scope.curr_func; 
@@ -106,6 +112,15 @@ let add_func s func stable =
       curr_func = stable.curr_func; 
       global_vars = stable.global_vars; }
 in
+
+let set_curr_func s stable = 
+    { variables = stable.variables;
+      parent = stable.parent; 
+      funcs = stable.funcs;
+      curr_func = s; 
+      global_vars = stable.global_vars; }
+in
+
 
 
 let printf_t : L.lltype = 
@@ -308,6 +323,10 @@ and stmt (builder, stable) = function
       let merge_bb = L.append_block context "merge" currLLVMfunc in
       let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
       L.builder_at_end context merge_bb, stable
+  | SFor (e1, e2, e3, body) -> stmt (builder, stable) 
+        (SBlock [SLocalStatement(SExpr e1); 
+                SLocalStatement (SWhile(e2, SBlock [SLocalStatement(body) ; 
+                                  SLocalStatement(SExpr e3)]))])
   | SReturn e ->  let (fdecl_opt, llvm_decl) = find_func stable stable.curr_func in 
                   let fdecl = (match fdecl_opt with
                                 Some(f) -> f
@@ -318,7 +337,7 @@ and stmt (builder, stable) = function
                     | _ -> L.build_ret (expr (builder, stable) e) builder)
                   in 
                   (builder, stable)
-     | _ -> (builder, stable)
+     (* | _ -> (builder, stable) *)
 
 
 and  bind (builder, stable) = function
@@ -329,10 +348,13 @@ and  bind (builder, stable) = function
             | A.Int -> L.const_int (ltype_of_typ typ) 0
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
             | A.String -> L.build_global_stringptr "" "" builder
+            | A.Node -> L.const_named_struct node_t
+                                       [| (L.const_int i8_t 0); 
+                                          (L.const_int i1_t 0); 
+                                          (L.const_int i8_t 0); |] 
             | _ -> raise (Failure "no global default value set")
           in 
           let new_glob = L.define_global s init the_module in
-          (* let () = L.set_externally_initialized false new_glob in *)
           let stable' = bind_var stable s new_glob in
           (builder, stable')
         else
@@ -343,10 +365,28 @@ and  bind (builder, stable) = function
 (* Bind assignments are declaration-assignment one-liners *)
 and bindassign (builder, stable) = function 
   (typ, s, e) -> 
+      if stable.curr_func = "main" then 
+          let e' = expr (builder, stable) e in 
+          (* let new_glob = L.define_global s e' the_module in
+          let stable' = bind_var stable s new_glob in *)
+          let init = match typ with
+              A.Float -> L.const_float (ltype_of_typ typ) 0.0
+            | A.Int -> L.const_int (ltype_of_typ typ) 0
+            | A.Bool -> L.const_int (ltype_of_typ typ) 0
+            | A.String -> L.build_global_stringptr "" "" builder
+            | A.Node -> L.const_named_struct node_t
+                                [| (L.const_int i8_t 0); 
+                                   (L.const_int i1_t 0); 
+                                   (L.const_int i8_t 0); |] 
+            | _ -> raise (Failure "no global default value set")
+          in 
+          let new_glob = L.define_global s init the_module in
+          (* let new_glob = L.define_global s e' the_module in *)
+          let _ = L.build_store e' new_glob builder in
+          let stable' = bind_var stable s new_glob in
+          (builder, stable')
+    else
         let e' = expr (builder, stable) e in
-                 (*let StringMap.add s (L.define_global s e the_module) global_vars*)
-                 (* let _  = L.build_store e' (L.define_global s e' the_module) builder *)
-        (* let () = L.set_value_name s e' in *)
         let new_var = L.build_alloca (ltype_of_typ typ) s builder in
         let _ = L.build_store e' new_var builder in
         let stable' = bind_var stable s new_var in 
@@ -358,19 +398,14 @@ and fdecl (builder, stable) f =
         let ftype = L.function_type (ltype_of_typ f.styp) formal_types in
         let llvm_func = L.define_function name ftype the_module in
         let stable' = add_func name (Some f, llvm_func) stable in
+        let stable'' = set_curr_func name stable' in
         let builder' = L.builder_at_end context (L.entry_block llvm_func) in 
-        let stable'' = List.fold_left2 (fun stable_accum (t, x) p -> 
+        let stable''' = List.fold_left2 (fun stable_accum (t, x) p -> 
                                           let local = L.build_alloca (ltype_of_typ t) x builder' in
                                           let _ = L.build_store p local builder' in
                                           let _ = L.set_value_name x p in
                                           bind_var stable_accum x local) 
-                                      stable' f.sformals (Array.to_list (L.params llvm_func)) in
-        let stable''' = { variables = stable''.variables;
-                          parent    = stable''.parent; 
-                          funcs     = stable''.funcs;
-                          curr_func = name;
-                          global_vars = stable''.global_vars; }
-        in 
+                                      stable'' f.sformals (Array.to_list (L.params llvm_func)) in
         let _ = stmt (builder', stable''') f.sbody in
         (builder, stable')
 in

@@ -1,7 +1,8 @@
 ###### testing blocks ######
 ### [positive test]
 
-int a = 1;
+int a;
+a = 3;
 printf(a);
 
 {

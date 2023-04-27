@@ -1,11 +1,18 @@
 ; ModuleID = 'Graphite'
 source_filename = "Graphite"
 
+@first = global double 0.000000e+00
+@second = global double 0.000000e+00
+@result = global double 0.000000e+00
 @0 = private unnamed_addr constant [28 x i8] c"addThings function result:\0A\00", align 1
 @fmt = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
+@result2 = global i1 false
 @1 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
 @2 = private unnamed_addr constant [29 x i8] c"testThings function result:\0A\00", align 1
 @fmt.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@x = global i32 0
+@y = global i32 0
+@result3 = global i32 0
 @3 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
 @4 = private unnamed_addr constant [30 x i8] c"scopeTester function result:\0A\00", align 1
 @fmt.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
@@ -14,37 +21,30 @@ declare i32 @printf(i8*, ...)
 
 define i32 @main() {
 entry:
-  %first = alloca double, align 8
-  store double 2.500000e+00, double* %first, align 8
-  %second = alloca double, align 8
-  store double 3.500000e+00, double* %second, align 8
-  %second1 = load double, double* %second, align 8
-  %first2 = load double, double* %first, align 8
-  %addThings_result = call double @addThings(double %first2, double %second1)
-  %result = alloca double, align 8
-  store double %addThings_result, double* %result, align 8
+  store double 2.500000e+00, double* @first
+  store double 3.500000e+00, double* @second
+  %second = load double, double* @second
+  %first = load double, double* @first
+  %addThings_result = call double @addThings(double %first, double %second)
+  store double %addThings_result, double* @result
   %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([28 x i8], [28 x i8]* @0, i32 0, i32 0))
-  %result3 = load double, double* %result, align 8
-  %printf4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), double %result3)
-  %result5 = load double, double* %result, align 8
-  %testThings_result = call i1 @testThings(double %result5, double 1.000000e+01, i1 true)
-  %result2 = alloca i1, align 1
-  store i1 %testThings_result, i1* %result2, align 1
-  %printf6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @1, i32 0, i32 0))
-  %printf7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([29 x i8], [29 x i8]* @2, i32 0, i32 0))
-  %result28 = load i1, i1* %result2, align 1
-  %printf9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.1, i32 0, i32 0), i1 %result28)
-  %x = alloca i32, align 4
-  store i32 1, i32* %x, align 4
-  %y = alloca i32, align 4
-  store i32 2, i32* %y, align 4
+  %result = load double, double* @result
+  %printf1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), double %result)
+  %result2 = load double, double* @result
+  %testThings_result = call i1 @testThings(double %result2, double 1.000000e+01, i1 true)
+  store i1 %testThings_result, i1* @result2
+  %printf3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @1, i32 0, i32 0))
+  %printf4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([29 x i8], [29 x i8]* @2, i32 0, i32 0))
+  %result25 = load i1, i1* @result2
+  %printf6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.1, i32 0, i32 0), i1 %result25)
+  store i32 1, i32* @x
+  store i32 2, i32* @y
   %scopeTester_result = call i32 @scopeTester(i32 3, i32 4)
-  %result310 = alloca i32, align 4
-  store i32 %scopeTester_result, i32* %result310, align 4
-  %printf11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @3, i32 0, i32 0))
-  %printf12 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([30 x i8], [30 x i8]* @4, i32 0, i32 0))
-  %result313 = load i32, i32* %result310, align 4
-  %printf14 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.2, i32 0, i32 0), i32 %result313)
+  store i32 %scopeTester_result, i32* @result3
+  %printf7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @3, i32 0, i32 0))
+  %printf8 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([30 x i8], [30 x i8]* @4, i32 0, i32 0))
+  %result3 = load i32, i32* @result3
+  %printf9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.2, i32 0, i32 0), i32 %result3)
   ret i32 0
 }
 
