@@ -55,7 +55,7 @@ entry:
 
 while:                                            ; preds = %while_body, %entry
   %j3 = load i32, i32* %j
-  %tmp4 = icmp sgt i32 %j3, 0
+  %tmp4 = icmp sge i32 %j3, 0
   br i1 %tmp4, label %while_body, label %merge
 
 while_body:                                       ; preds = %while

@@ -14,7 +14,7 @@ for (i = 0; i < 7; i = i + 1) {
 
 void rev() {
     int j = i;
-    for (;j > 0;) {
+    for (;j >= 0;) {
         printf(j);
         funcy("---");
         j = j - 1;
