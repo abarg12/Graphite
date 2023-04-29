@@ -50,53 +50,53 @@ entry:
 
 define double @addThings(double %z1, double %y2) {
 entry:
-  %z = alloca double, align 8
-  store double %z1, double* %z, align 8
-  %y = alloca double, align 8
-  store double %y2, double* %y, align 8
-  %z3 = load double, double* %z, align 8
-  %y4 = load double, double* %y, align 8
+  %z = alloca double
+  store double %z1, double* %z
+  %y = alloca double
+  store double %y2, double* %y
+  %z3 = load double, double* %z
+  %y4 = load double, double* %y
   %tmp = fadd double %z3, %y4
-  %x = alloca double, align 8
-  store double %tmp, double* %x, align 8
-  %x5 = load double, double* %x, align 8
+  %x = alloca double
+  store double %tmp, double* %x
+  %x5 = load double, double* %x
   ret double %x5
 }
 
 define i1 @testThings(double %x1, double %y2, i1 %b3) {
 entry:
-  %x = alloca double, align 8
-  store double %x1, double* %x, align 8
-  %y = alloca double, align 8
-  store double %y2, double* %y, align 8
-  %b = alloca i1, align 1
-  store i1 %b3, i1* %b, align 1
-  %x4 = load double, double* %x, align 8
-  %y5 = load double, double* %y, align 8
+  %x = alloca double
+  store double %x1, double* %x
+  %y = alloca double
+  store double %y2, double* %y
+  %b = alloca i1
+  store i1 %b3, i1* %b
+  %x4 = load double, double* %x
+  %y5 = load double, double* %y
   %tmp = fcmp olt double %x4, %y5
-  %a = alloca i1, align 1
-  store i1 %tmp, i1* %a, align 1
-  %a6 = load i1, i1* %a, align 1
-  %b7 = load i1, i1* %b, align 1
+  %a = alloca i1
+  store i1 %tmp, i1* %a
+  %a6 = load i1, i1* %a
+  %b7 = load i1, i1* %b
   %tmp8 = or i1 %a6, %b7
-  %res = alloca i1, align 1
-  store i1 %tmp8, i1* %res, align 1
-  %res9 = load i1, i1* %res, align 1
+  %res = alloca i1
+  store i1 %tmp8, i1* %res
+  %res9 = load i1, i1* %res
   ret i1 %res9
 }
 
 define i32 @scopeTester(i32 %x1, i32 %y2) {
 entry:
-  %x = alloca i32, align 4
-  store i32 %x1, i32* %x, align 4
-  %y = alloca i32, align 4
-  store i32 %y2, i32* %y, align 4
-  %x3 = alloca i32, align 4
-  store i32 80, i32* %x3, align 4
-  %y4 = alloca i32, align 4
-  store i32 20, i32* %y4, align 4
-  %x5 = load i32, i32* %x3, align 4
-  %y6 = load i32, i32* %y4, align 4
+  %x = alloca i32
+  store i32 %x1, i32* %x
+  %y = alloca i32
+  store i32 %y2, i32* %y
+  %x3 = alloca i32
+  store i32 80, i32* %x3
+  %y4 = alloca i32
+  store i32 20, i32* %y4
+  %x5 = load i32, i32* %x3
+  %y6 = load i32, i32* %y4
   %tmp = add i32 %x5, %y6
   ret i32 %tmp
 }

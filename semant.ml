@@ -27,11 +27,12 @@ let check (decls) =
 
   (* Collect function declarations for built-in functions: no bodies *)
   let built_in_decls = 
-    let add_bind map (name, ty) = StringMap.add name {
+    let add_bind map (name, ty, fs) = StringMap.add name {
       typ = Void; fname = name; 
-      formals = [(ty, "x")];
+      formals = fs;
       body = Block[] } map
-    in List.fold_left add_bind StringMap.empty [ ("printf", Int);]
+    in List.fold_left add_bind StringMap.empty [ ("printf", Int, [(Int, "x")]); 
+                                                 ("array_get", List, [(List, "arr");(Int, "idx")])]
   in
 
   (* TODO: make it so that you can search built in methods for graphs, etc. *)
@@ -117,10 +118,14 @@ let check (decls) =
     | Id s -> (scope, (find_variable scope s, SId s))
     | Assign(x, e) ->
       (* check if x \in scope *)
-      let lt = find_variable scope x in
-      let (new_scope, (rt, e')) = expr scope funcs e in
-      let err = "illegal assignment " ^ x ^ " : " ^ string_of_typ lt ^ " = " ^ string_of_typ rt in
-      if lt = rt then (new_scope, (rt, SAssign(x, (rt, e')))) else raise (Failure err)
+      (match e with 
+          Call("array_get", _) -> 
+            let (new_scope, (rt, e')) = expr scope funcs e in
+            (new_scope, (rt, SAssign(x, (rt, e'))))
+        | _ -> let lt = find_variable scope x in
+          let (new_scope, (rt, e')) = expr scope funcs e in
+          let err = "illegal assignment " ^ x ^ " : " ^ string_of_typ lt ^ " = " ^ string_of_typ rt in
+          if lt = rt then (new_scope, (rt, SAssign(x, (rt, e')))) else raise (Failure err))
     | DotOp(var, field) -> 
       let _ = 
         match find_variable scope var with 
@@ -249,6 +254,13 @@ let check (decls) =
       in let args' = List.map2 check_call md.formals args
       in
       (scope, (md.typ, SDotCall(ds, mname, args'))) (* TODO: figure out way to make scope here is new_scope*)
+    | List(elist) ->
+        let rec convert_es es scope funcs = match es with
+            [] -> []
+          | e::es -> let (scope, se) = (expr scope funcs e) in
+                            se :: convert_es es scope funcs
+        in
+        (scope, (List, SList(convert_es elist scope funcs))) 
     | _ -> raise (Failure("expr: not implemented"))
 
 in
