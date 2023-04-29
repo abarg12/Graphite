@@ -40,8 +40,9 @@ let translate decls =
     in
   let edge_t = L.named_struct_type context "edge_t" in
     let _ = L.struct_set_body edge_t 
-      [| L.pointer_type node_t;
-         L.pointer_type node_t; |] false
+      [| node_t;
+         node_t; 
+         L.i32_type context|] false
     in 
   let i32_t    = L.i32_type context
   and i8_t     = L.i8_type context
@@ -59,7 +60,7 @@ let ltype_of_typ = function
   | A.Float -> float_t
   | A.Void  -> void_t   
   | A.String -> string_t 
-  | A.Node -> node_t
+  | A.Node(typ) -> node_t
   | A.Edge -> edge_t
   | _ -> raise (Unfinished "not all types implemented")
 in
@@ -156,6 +157,13 @@ and float_format_str = L.build_global_stringptr "%g\n" "fmt"
 (* and bool_format_str = L.build_global_stringptr "%B\n" "fmt" *)
 and string_format_str = L.build_global_stringptr "%s\n" "fmt" in
 
+
+let add_terminal builder instr =
+  (* The current block where we're inserting instr *)
+match L.block_terminator (L.insertion_block builder) with
+Some _ -> ()
+| None -> ignore (instr builder)
+in
 (*** Expressions go here ***)
 let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
     SLiteral i -> L.const_int i32_t i
@@ -231,6 +239,9 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
               "flag" -> Llvm.build_struct_gep lvar 1 "temp" builder
             | "name" -> Llvm.build_struct_gep lvar 0 "temp" builder
             | "data" -> Llvm.build_struct_gep lvar 2 "temp" builder
+            | "src" -> L.build_struct_gep lvar 0 "temp" builder
+            | "dst" -> L.build_struct_gep lvar 1 "temp" builder
+            | "weight" -> L.build_struct_gep lvar 2 "temp" builder
             | _ -> raise (Failure ("syntax error caught post parsing. Nonexistent field " ^ field))
         in 
         let steven' = match styp with 
@@ -239,7 +250,6 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
         in
         (match field with 
               "flag" -> L.build_load steven (var ^ "." ^ field) builder 
-            | "asdf" -> raise (Failure ("not implemented yet :0"))
             | _ ->
               let llvm_ty = ltype_of_typ styp in
               let new_ptr = L.build_pointercast steven' (L.pointer_type (llvm_ty)) "name" builder in
@@ -252,30 +262,55 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
               "flag" -> L.build_struct_gep lvar 1 "temp" builder
             | "name" -> L.build_struct_gep lvar 0 "temp" builder
             | "data" -> L.build_struct_gep lvar 2 "temp" builder
+            | "src" -> L.build_struct_gep lvar 0 "temp" builder
+            | "dst" -> L.build_struct_gep lvar 1 "temp" builder
+            | "weight" -> L.build_struct_gep lvar 2 "temp" builder
             | _ -> raise (Failure ("syntax error caught post parsing. Nonexistent field " ^ field))
         in 
         let e'' = match field with 
              "flag" -> e' 
-            | "namasdfe" -> raise (Failure ("not implemented  " ^ field))
+            | "weight" -> e'
+            | "src" -> 
+               e' 
+            | "dst" -> 
+               e' 
             | _ -> 
+              (*let (_, currLLVMfunc) = find_func stable stable.curr_func in 
+              (* let start_bb = L.insertion_block builder in *)
+              let curr_ptr = L.build_load steven (var ^ "." ^ field) builder in
+              let _ = L.build_alloca i8_t "zero_for_comp" builder in
+              let zero_for_comp= L.build_load (L.const_int i8_t 0) "zero_for_comp" builder in
+              let bool_val = L.build_icmp L.Icmp.Eq curr_ptr zero_for_comp "tmp" builder in
+              let then_bb = L.append_block context "then" currLLVMfunc in 
+              let then_builder = 
                 let styp_ptr = L.build_malloc (ltype_of_typ my_typ) "bruh" builder in 
+                let _ = L.build_store e' styp_ptr builder in 
+                let ptr = L.build_pointercast styp_ptr (L.pointer_type (i8_t)) "name" builder in 
+                ptr 
+              in
+              let () = add_terminal then_builder branch_instr in 
+              let else_bb = 
+                let _ = L.build_store e' curr_ptr builder in 
+                let ptr = L.build_pointercast curr_ptr (L.pointer_type (i8_t)) "name" builder in 
+                ptr 
+              in
+              let _ = L.build_cond_br bool_val then_bb else_bb builder in
+              L.builder_at_end context merge_bb, stable *)
+                (*we need to not allocate new data for this *)
+                let styp_ptr = L.build_malloc (ltype_of_typ my_typ) "bruh" builder in
                 (* put data in *)
                 let _ = L.build_store e' styp_ptr builder in 
-                
-                let ptr = L.build_pointercast styp_ptr (L.pointer_type (i8_t)) "name" builder in 
-                ptr
+                let ptr = 
+                  match field with 
+                  | "src" -> styp_ptr
+                  | "dst" -> styp_ptr (* must fix for data *)
+                  | _ -> L.build_pointercast styp_ptr (L.pointer_type (i8_t)) "name" builder 
+                in
+                ptr 
 
         in 
         L.build_store e'' steven builder
       | _ -> raise (Failure("expr: not implemented"))
-in
-
-
-let add_terminal builder instr =
-                          (* The current block where we're inserting instr *)
-  match L.block_terminator (L.insertion_block builder) with
-       Some _ -> ()
-     | None -> ignore (instr builder)
 in
 
 
@@ -348,7 +383,7 @@ and  bind (builder, stable) = function
             | A.Int -> L.const_int (ltype_of_typ typ) 0
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
             | A.String -> L.build_global_stringptr "" "" builder
-            | A.Node -> L.const_named_struct node_t
+            | A.Node(typ) -> L.const_named_struct node_t
                                        [| (L.const_int i8_t 0); 
                                           (L.const_int i1_t 0); 
                                           (L.const_int i8_t 0); |] 
@@ -374,7 +409,7 @@ and bindassign (builder, stable) = function
             | A.Int -> L.const_int (ltype_of_typ typ) 0
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
             | A.String -> L.build_global_stringptr "" "" builder
-            | A.Node -> L.const_named_struct node_t
+            | A.Node(typ) -> L.const_named_struct node_t
                                 [| (L.const_int i8_t 0); 
                                    (L.const_int i1_t 0); 
                                    (L.const_int i8_t 0); |] 
