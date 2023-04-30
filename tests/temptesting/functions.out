@@ -19,6 +19,8 @@ source_filename = "Graphite"
 
 declare i32 @printf(i8*, ...)
 
+declare i8* @array_get(i8*, i32, ...)
+
 define i32 @main() {
 entry:
   store double 2.500000e+00, double* @first, align 8

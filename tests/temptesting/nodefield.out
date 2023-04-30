@@ -13,6 +13,8 @@ source_filename = "Graphite"
 
 declare i32 @printf(i8*, ...)
 
+declare i8* @array_get(i8*, i32, ...)
+
 define i32 @main() {
 entry:
   store i1 true, i1* getelementptr inbounds (%node_t, %node_t* @n, i32 0, i32 1), align 1
