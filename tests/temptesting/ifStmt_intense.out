@@ -5,9 +5,6 @@ source_filename = "Graphite"
 @0 = private unnamed_addr constant [23 x i8] c"your number is 4!!!!!\0A\00", align 1
 @1 = private unnamed_addr constant [24 x i8] c"your number is too big\0A\00", align 1
 @2 = private unnamed_addr constant [26 x i8] c"your number is too small\0A\00", align 1
-@r = global i32 0
-@r2 = global i32 0
-@r3 = global i32 0
 @fmt = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 
 declare i32 @printf(i8*, ...)
@@ -26,13 +23,16 @@ merge:                                            ; preds = %else, %then
 
 then:                                             ; preds = %entry
   %funky_result = call i32 @funky(i32 5)
-  store i32 %funky_result, i32* @r, align 4
+  %r = alloca i32, align 4
+  store i32 %funky_result, i32* %r, align 4
   %funky_result1 = call i32 @funky(i32 2)
-  store i32 %funky_result1, i32* @r2, align 4
+  %r2 = alloca i32, align 4
+  store i32 %funky_result1, i32* %r2, align 4
   %funky_result2 = call i32 @funky(i32 4)
-  store i32 %funky_result2, i32* @r3, align 4
-  %r3 = load i32, i32* @r3, align 4
-  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i32 %r3)
+  %r3 = alloca i32, align 4
+  store i32 %funky_result2, i32* %r3, align 4
+  %r33 = load i32, i32* %r3, align 4
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i32 %r33)
   br label %merge
 
 else:                                             ; preds = %entry
