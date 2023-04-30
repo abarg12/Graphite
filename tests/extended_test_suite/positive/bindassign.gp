@@ -11,3 +11,9 @@ printf(a);
 printf(b);
 printf(c);
 printf(d);
+
+a = 2;
+b = false;
+
+printf(a);
+printf(b);
