@@ -136,7 +136,10 @@ let check (decls) =
       let ty = match field with 
             "flag" -> Bool  
           | "name" -> String 
-          | "data" -> find_variable scope (var ^ "." ^ field)
+          | "data" -> let node_ty = find_variable scope var in 
+              (match node_ty with 
+                 Node(x) -> x 
+                | _ -> node_ty)
           | "src" -> Node(Richard)
           | "dst" -> Node(Richard)
           | "weight" -> Int
@@ -154,7 +157,10 @@ let check (decls) =
         let lt = match field with 
               "flag" -> Bool
             | "name" -> String 
-            | "data" -> find_variable scope (var ^ "." ^ field)
+            | "data" -> let x = find_variable scope var in 
+                  (match x with 
+                    Node(x) -> x 
+                  | _ -> raise (Failure (var ^ " is not a node or edge")))
             | "src" -> Node(Richard) 
             | "dst" -> Node(Richard) 
             | "weight" -> Int
@@ -342,6 +348,7 @@ in
         raise (Failure (x ^ " already declared in current scope"))
       with Not_found -> 
         let (_, (t', _)) = expr scope funcs e in
+     
         if t != t' then raise (Failure("local bind assign"))
         else
         match t with 
@@ -399,6 +406,7 @@ in
           raise (Failure (x ^ " already declared in current scope"))
         with Not_found -> 
           let (_, (t', _)) = expr scope funcs e in
+        
           if t != t' then raise (Failure("bind assign"))
           else
           match t with 
