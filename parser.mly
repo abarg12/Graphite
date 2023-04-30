@@ -64,7 +64,7 @@ typ:
   | BOOL     { Bool   }
   | FLOAT    { Float  }
   | VOID     { Void   }
-  | NODE     { Node   } 
+  | NODE     { Node(Richard)} 
   | EDGE     { Edge   }
   | STRING_T { String }
   | LIST     { List   }
