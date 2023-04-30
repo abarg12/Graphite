@@ -51,3 +51,8 @@ entry:
 }
 
 declare noalias i8* @malloc(i32)
+
+define i32 @funky() {
+entry:
+  ret i32 1
+}

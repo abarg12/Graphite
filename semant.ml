@@ -8,6 +8,7 @@ module StringMap = Map.Make(String)
 type symbol_table = {
   variables : typ StringMap.t;
   parent : symbol_table option;
+  curr_func : string option;
 }
 
 let check (decls) =
@@ -104,7 +105,7 @@ let check (decls) =
     match t with
       Void -> raise (Failure (x ^ " cannot be of void type"))
       | _ -> { variables = StringMap.add x t scope.variables;
-               parent = scope.parent; }
+               parent = scope.parent; curr_func = scope.curr_func }
   in
 
   (* Return a semantically-checked expression, i.e., with a type *)
@@ -311,13 +312,21 @@ in
           (new_scope2, SWhile(exp_p, stmt_s))
     | Return e -> 
           let (new_scope1, sast) = expr scope funcs e in
-          (new_scope1, SReturn (sast)) (** TODO: in the function body that holds 
+          let (ty_e, _) = sast in
+          let extract_func_name fname = match fname with
+            | Some name -> name
+            | None -> raise (Failure ("no current function specified"))
+          in
+          let my_func = find_func (extract_func_name scope.curr_func) funcs in 
+          if my_func.typ = ty_e then (new_scope1, SReturn (sast)) 
+          else raise (Failure ("function " ^ my_func.fname ^ "returning wrong type")) 
+          (** TODO: in the function body that holds 
                                     this return, look at the type of
                                     e returned and make sure it matches
                                     function return type in func def **)
       (** add another global to tell us which function nwe are in *)
     | Block(bs) -> 
-        let new_scope = { variables = StringMap.empty ; parent = Some scope; } in
+        let new_scope = { variables = StringMap.empty ; parent = Some scope; curr_func = scope.curr_func } in
         (scope, SBlock(check_body new_scope funcs bs))
   
   and check_body (scope : symbol_table) funcs b_lines =
@@ -436,7 +445,7 @@ in
     | Fdecl(b)::rest -> 
       let updated_funcs = add_func b funcs in 
       let temp_scope = add_formals StringMap.empty b.formals in
-      let new_scope = { variables = temp_scope ; parent = Some scope; } in
+      let new_scope = { variables = temp_scope ; parent = Some scope; curr_func = Some b.fname} in
       let (_, sstmt) = check_stmt new_scope updated_funcs b.body in
       (* make sure type is of block *)
       (* add formals to scope too!!!  -- have to add return for functions *)
@@ -448,6 +457,6 @@ in
       })::check_decls scope updated_funcs rest (* have to add fdecl*)
       (* you have to add a new scope for this functions local variables *)
   in 
-  let globals = { variables = StringMap.empty; parent = None; } in
+  let globals = { variables = StringMap.empty; parent = None; curr_func = None } in
 
  check_decls globals functions decls 

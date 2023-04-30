@@ -7,3 +7,7 @@ bool b = n1.flag;
 string y = n1.data;
 string name2 = n1.name; 
 printf(y);
+
+int funky () {
+    return 1; 
+}
