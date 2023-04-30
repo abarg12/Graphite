@@ -2,87 +2,39 @@
 source_filename = "Graphite"
 
 %node_t = type { i8*, i1, i8* }
-%edge_t = type { %node_t, %node_t, i32 }
 
-@0 = private unnamed_addr constant [8 x i8] c"my name\00", align 1
-@1 = private unnamed_addr constant [6 x i8] c"hello\00", align 1
-@fmt = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@2 = private unnamed_addr constant [11 x i8] c"new string\00", align 1
-@fmt.1 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@y = global i32 0
+@n1 = global %node_t zeroinitializer
+@0 = private unnamed_addr constant [3 x i8] c"me\00", align 1
+@1 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
+@m1 = global i8* getelementptr inbounds ([1 x i8], [1 x i8]* @1, i32 0, i32 0)
+@b = global i1 false
+@fmt = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 
 declare i32 @printf(i8*, ...)
 
 define i32 @main() {
 entry:
-  %func_result = call i32 @func()
-  store i32 %func_result, i32* @y, align 4
-  ret i32 0
-}
-
-define %node_t @thisFunc(%node_t %n11) {
-entry:
-  %n1 = alloca %node_t, align 8
-  store %node_t %n11, %node_t* %n1, align 8
-  %n12 = load %node_t, %node_t* %n1, align 8
-  ret %node_t %n12
-}
-
-define i32 @func() {
-entry:
-  %thisNode = alloca %node_t, align 8
-  %temp = getelementptr inbounds %node_t, %node_t* %thisNode, i32 0, i32 0
   %malloccall = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
   %bruh = bitcast i8* %malloccall to i8**
-  store i8* getelementptr inbounds ([8 x i8], [8 x i8]* @0, i32 0, i32 0), i8** %bruh, align 8
+  store i8* getelementptr inbounds ([3 x i8], [3 x i8]* @0, i32 0, i32 0), i8** %bruh, align 8
   %name = bitcast i8** %bruh to i8*
-  store i8* %name, i8** %temp, align 8
-  %temp1 = getelementptr inbounds %node_t, %node_t* %thisNode, i32 0, i32 2
-  %malloccall2 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
-  %bruh3 = bitcast i8* %malloccall2 to i8**
-  store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0), i8** %bruh3, align 8
-  %name4 = bitcast i8** %bruh3 to i8*
-  store i8* %name4, i8** %temp1, align 8
-  %temp5 = getelementptr inbounds %node_t, %node_t* %thisNode, i32 0, i32 1
-  store i1 true, i1* %temp5, align 1
-  %e1 = alloca %edge_t, align 8
-  %thisNode6 = load %node_t, %node_t* %thisNode, align 8
-  %temp7 = getelementptr inbounds %edge_t, %edge_t* %e1, i32 0, i32 0
-  store %node_t %thisNode6, %node_t* %temp7, align 8
-  %thisNode8 = load %node_t, %node_t* %thisNode, align 8
-  %temp9 = getelementptr inbounds %edge_t, %edge_t* %e1, i32 0, i32 1
-  store %node_t %thisNode8, %node_t* %temp9, align 8
-  %temp10 = getelementptr inbounds %edge_t, %edge_t* %e1, i32 0, i32 2
-  store i32 2, i32* %temp10, align 4
-  %temp11 = getelementptr inbounds %edge_t, %edge_t* %e1, i32 0, i32 0
-  %e1.src = load %node_t, %node_t* %temp11, align 8
-  %name12 = addrspacecast %node_t %e1.src to %node_t*
-  %e1.src13 = load %node_t, %node_t* %name12, align 8
-  %n1 = alloca %node_t, align 8
-  store %node_t %e1.src13, %node_t* %n1, align 8
-  %temp14 = getelementptr inbounds %node_t, %node_t* %n1, i32 0, i32 0
-  %n1.name = load i8*, i8** %temp14, align 8
-  %name15 = bitcast i8* %n1.name to i8**
-  %n1.name16 = load i8*, i8** %name15, align 8
-  %y = alloca i8*, align 8
-  store i8* %n1.name16, i8** %y, align 8
-  %y17 = load i8*, i8** %y, align 8
-  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i8* %y17)
-  %temp18 = getelementptr inbounds %node_t, %node_t* %n1, i32 0, i32 0
-  %malloccall19 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
-  %bruh20 = bitcast i8* %malloccall19 to i8**
-  store i8* getelementptr inbounds ([11 x i8], [11 x i8]* @2, i32 0, i32 0), i8** %bruh20, align 8
-  %name21 = bitcast i8** %bruh20 to i8*
-  store i8* %name21, i8** %temp18, align 8
-  %temp22 = getelementptr inbounds %node_t, %node_t* %thisNode, i32 0, i32 0
-  %thisNode.name = load i8*, i8** %temp22, align 8
-  %name23 = bitcast i8* %thisNode.name to i8**
-  %thisNode.name24 = load i8*, i8** %name23, align 8
-  %z = alloca i8*, align 8
-  store i8* %thisNode.name24, i8** %z, align 8
-  %z25 = load i8*, i8** %z, align 8
-  %printf26 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.1, i32 0, i32 0), i8* %z25)
-  ret i32 1
+  store i8* %name, i8** getelementptr inbounds (%node_t, %node_t* @n1, i32 0, i32 0), align 8
+  store i1 false, i1* getelementptr inbounds (%node_t, %node_t* @n1, i32 0, i32 1), align 1
+  %malloccall1 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
+  %bruh2 = bitcast i8* %malloccall1 to i32*
+  store i32 1, i32* %bruh2, align 4
+  %name3 = bitcast i32* %bruh2 to i8*
+  store i8* %name3, i8** getelementptr inbounds (%node_t, %node_t* @n1, i32 0, i32 2), align 8
+  %n1.name = load i8*, i8** getelementptr inbounds (%node_t, %node_t* @n1, i32 0, i32 0), align 8
+  %name4 = bitcast i8* %n1.name to i8**
+  %n1.name5 = load i8*, i8** %name4, align 8
+  store i8* %n1.name5, i8** @m1, align 8
+  %n1.flag = load i1, i1* getelementptr inbounds (%node_t, %node_t* @n1, i32 0, i32 1), align 1
+  %n1.flag6 = load i1, i1* getelementptr inbounds (%node_t, %node_t* @n1, i32 0, i32 1), align 1
+  store i1 %n1.flag6, i1* @b, align 1
+  %b = load i1, i1* @b, align 1
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i1 %b)
+  ret i32 0
 }
 
 declare noalias i8* @malloc(i32)
