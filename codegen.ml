@@ -44,7 +44,7 @@ let translate decls =
          node_t; 
          L.i32_type context|] false
     in 
-  let list_t = L.pointer_type (L.i8_type context)
+  let list_t   = L.pointer_type (L.i8_type context)
   and i32_t    = L.i32_type context
   and i8_t     = L.i8_type context
   and i1_t     = L.i1_type context
@@ -219,7 +219,10 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
         | A.Neg                  -> L.build_neg
         | A.Not                  -> L.build_not)
       e' "tmp" builder 
-  | SId s -> L.build_load (find_variable stable s) s builder
+  | SId s -> (match styp with 
+                  A.List -> let list_ptr = L.build_load (find_variable stable s) s builder in 
+                            L.build_load list_ptr s builder 
+                | _ -> L.build_load (find_variable stable s) s builder)
   | SAssign (s, (typ, sexp)) -> 
       (match sexp with
           SCall("array_get", _) -> let e' = expr (builder, stable) (typ, sexp) in
@@ -372,9 +375,9 @@ and array_get_def (builder, stable) args =
       (typ, SId(list_id)) :: index :: [] -> 
             (* let list_p = expr (builder, stable) list_id in *)
             (* let _ = print_endline (string_of_sexpr index) in  *)
-            let list_p = find_variable stable list_id in 
+            let list_dp = find_variable stable list_id in 
+            let list_p = L.build_load list_dp "list" builder in
             let idx = expr (builder, stable) index in
-            (* let _ = L.dump_value idx in *)
             (* let array_idx = L.build_in_bounds_gep list_p [| (L.const_int i32_t 0); (L.const_int i32_t 0) |]  *)
                                                                     (* "arr_idx" builder in  *)
             (* L.build_load array_idx "val" builder *)
@@ -467,7 +470,7 @@ and  bind (builder, stable) = function
               A.Float -> L.const_float (ltype_of_typ typ) 0.0
             | A.Int -> L.const_int (ltype_of_typ typ) 0
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
-            | A.String -> L.build_global_stringptr "" "" builder
+            | A.String -> L.const_pointer_null (L.pointer_type i8_t)
             | A.Node(typ) -> L.const_named_struct node_t
                                        [| (L.const_int i8_t 0); 
                                           (L.const_int i1_t 0); 
@@ -475,6 +478,7 @@ and  bind (builder, stable) = function
             | A.List -> L.const_pointer_null (L.pointer_type i8_t)
             | _ -> raise (Failure "no global default value set")
           in 
+
           let new_glob = L.define_global s init the_module in
           let stable' = bind_var stable s new_glob in
           (builder, stable')
@@ -492,23 +496,28 @@ and bindassign (builder, stable) = function
               A.Float -> L.const_float (ltype_of_typ typ) 0.0
             | A.Int -> L.const_int (ltype_of_typ typ) 0
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
-            | A.String -> L.build_global_stringptr "" "" builder
+            | A.String -> L.const_pointer_null (L.type_of e')
             | A.Node(t) -> L.const_named_struct node_t
                                 [| (L.const_int i8_t 0); 
-                                   (L.const_int i1_t 0); 
-                                   (L.const_int i8_t 0); |] 
+                                      (L.const_int i1_t 0); 
+                                      (L.const_int i8_t 0); |] 
             | A.List -> L.const_pointer_null (L.type_of e')
             | _ -> raise (Failure "no global default value set")
           in 
-          let new_glob = L.define_global s init the_module in
+          
 
-          let stable' = 
-            (if typ = A.List 
-              then bind_var stable s e'
-              else let _ = L.build_store e' new_glob builder in
-                   bind_var stable s new_glob
-            )
-          in 
+          (* let stable' = 
+            match typ with
+                A.List -> bind_var stable s e'
+              | A.String -> bind_var stable s e'  
+              | _  -> let new_glob = L.define_global s init the_module in
+                      let _ = L.build_store e' new_glob builder in
+                            bind_var stable s new_glob
+          in  *)
+
+          let new_glob = L.define_global s init the_module in
+          let _ = L.build_store e' new_glob builder in
+          let stable' = bind_var stable s new_glob in
           
           (builder, stable')
     else
