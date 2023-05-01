@@ -94,7 +94,7 @@ and find_variable_local (scope : symbol_table) (name : string) =
   with Not_found ->
     match scope.parent with
       Some p -> find_variable p name
-    | None -> raise (Failure "variable not found in codegen")
+    | None -> raise Not_found
 in
 
 
@@ -374,7 +374,6 @@ and array_get_def (builder, stable) args =
     (match args with
       (typ, SId(list_id)) :: index :: [] -> 
             (* let list_p = expr (builder, stable) list_id in *)
-            (* let _ = print_endline (string_of_sexpr index) in  *)
             let list_dp = find_variable stable list_id in 
             let list_p = L.build_load list_dp "list" builder in
             let idx = expr (builder, stable) index in
@@ -490,7 +489,8 @@ and  bind (builder, stable) = function
 (* Bind assignments are declaration-assignment one-liners *)
 and bindassign (builder, stable) = function 
   (typ, s, e) ->    
-    let e' = (match e with
+    let e' =
+        (match e with
                 (_, SCall("array_get", _)) -> let exp = expr (builder, stable) e in
                               let e_cast = L.build_pointercast exp (ltype_of_typ typ) "li_conv" builder in
                               L.build_load e_cast "val_ptr" builder
@@ -519,7 +519,7 @@ and bindassign (builder, stable) = function
     else
         let new_var = L.build_alloca (ltype_of_typ typ) s builder in
         let _ = L.build_store e' new_var builder in
-        let stable' = bind_var stable s new_var in 
+        let stable' = bind_var stable s new_var in
         (builder, stable')
 
 and fdecl (builder, stable) f =

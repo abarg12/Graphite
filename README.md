@@ -15,10 +15,10 @@ HOW TO RUN TEST SCRIPT:
     In order to run the testing script, enter 'chmod u+x runtests.sh' into your terminal, and run the command.
 
     TO RUN ALL TESTS:
-        ./runtests all
+        ./runtests.sh all
     
     TO RUN SPECIFIC TESTS (both AST and LLVM):
-        ./runtests full_path
+        ./runtests.sh full_path
         where full_path is the full path to the test you want to run.
         For example, "/tests/positive/test1.gp", not just "test1.gp".
     

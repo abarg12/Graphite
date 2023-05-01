@@ -154,9 +154,9 @@ else
     then 
          # if we cannot even run the test, something went wrong :(
         ./toplevel.native < $1 > ./tests/temptesting/${base_name%%.*}.out 2>&1
-
+        lli < ./tests/temptesting/${base_name%%.*}.out > ./tests/temptesting/${base_name%%.*}run.out
         # diff
-        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/extended_test_suite/negative/goldStandards/${base_name%%.*}.Gold;
+        if ! cmp -s ./tests/temptesting/${base_name%%.*}run.out ./tests/extended_test_suite/negative/goldStandards/${base_name%%.*}.Gold;
         then 
             echo ${base_name} "FAILED"
         else 
@@ -167,9 +167,11 @@ else
          # if we cannot even run the test, something went wrong :(
         ./toplevel.native < $1 > ./tests/temptesting/${base_name%%.*}.out 2>&1
 
+        lli < ./tests/temptesting/${base_name%%.*}.out > ./tests/temptesting/${base_name%%.*}run.out
         # diff
-        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/extended_test_suite/positive/goldStandards/${base_name%%.*}.Gold;
+        if ! cmp -s ./tests/temptesting/${base_name%%.*}run.out ./tests/extended_test_suite/positive/goldStandards/${base_name%%.*}.Gold;
         then 
+            echo "./tests/temptesting/"${base_name%%.*}"run.out"
             echo ${base_name} "FAILED"
         else 
             echo ${base_name} "PASSED"
