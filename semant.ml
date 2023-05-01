@@ -44,7 +44,7 @@ let check (decls) =
       formals = [(ty, "x")];
       body = Block[] } map
     in  
-    List.fold_left add_bind StringMap.empty [ ("add", Node(Richard)); ]
+    List.fold_left add_bind StringMap.empty [ ("add", Node(Uninitialized)); ]
   in
     
 
@@ -108,6 +108,26 @@ let check (decls) =
                parent = scope.parent; curr_func = scope.curr_func }
   in
 
+  let assert_field x field m =
+    match find_variable m x with
+        Node(_) -> find_node_field field
+      | Edge -> find_edge_field field
+      | _ -> raise (Failure (x ^ " is not a node or edge"))
+  in
+  let get_field_ty x field m =
+    match field with
+        "flag" -> Bool  
+      | "name" -> String 
+      | "data" ->
+        let xty = find_variable m x in
+        (match xty with 
+            Node(dty) -> dty
+          | actual -> raise (Failure("semant/field_ty: " ^ x ^ " must be of node type. Actual: " ^ string_of_typ actual)))
+      | "src" -> Node(Uninitialized)
+      | "dst" -> Node(Uninitialized)
+      | "weight" -> Int
+      | _ -> raise (Failure ("Field " ^ field ^ " does not exist in " ^ x))
+    in
   (* Return a semantically-checked expression, i.e., with a type *)
   let rec expr scope funcs e =
     match e with
@@ -118,62 +138,45 @@ let check (decls) =
     | Noexpr -> (scope, (Void, SNoexpr))
     | Id s -> (scope, (find_variable scope s, SId s))
     | Assign(x, e) ->
-      (* check if x \in scope *)
       (match e with 
           Call("array_get", _) -> 
             let (new_scope, (rt, e')) = expr scope funcs e in
             (new_scope, (rt, SAssign(x, (rt, e'))))
-        | _ -> let lt = find_variable scope x in
+        | _ ->
+          let lt = find_variable scope x in
           let (new_scope, (rt, e')) = expr scope funcs e in
           let err = "illegal assignment " ^ x ^ " : " ^ string_of_typ lt ^ " = " ^ string_of_typ rt in
           if lt = rt then (new_scope, (rt, SAssign(x, (rt, e')))) else raise (Failure err))
-    | DotOp(var, field) -> 
-      let _ = 
-        match find_variable scope var with 
-            Node(typ) -> find_node_field field
-          | Edge -> find_edge_field field
-          | _ -> raise (Failure (var ^ " is not a node or edge"))
-      in 
-      let ty = match field with 
-            "flag" -> Bool  
-          | "name" -> String 
-          | "data" -> let node_ty = find_variable scope var in 
-              (match node_ty with 
-                 Node(x) -> x 
-                | _ -> node_ty)
-          | "src" -> Node(Richard)
-          | "dst" -> Node(Richard)
-          | "weight" -> Int
-          | _ -> raise (Failure ("nonexistant field call"))
-          (* maybe check to make sure its not temp *)
-      in 
-      (scope, (ty, SDotOp(var, field)))
+    | DotOp(var, field) ->
+      (* node.field access *)
+
+      (* assert field is correct *)
+      let _ = assert_field var field scope in
+
+      (* get the type of field *)
+      let field_ty = get_field_ty var field scope in 
+
+      (scope, (field_ty, SDotOp(var, field)))
     | DotAssign(var, field, e) -> 
-        let _ = 
-          match find_variable scope var with 
-              Node(ty) -> find_node_field field
-            | Edge -> find_edge_field field
-            | _ -> raise (Failure (var ^ " is not a node or edge"))
-        in 
-        let lt = match field with 
-              "flag" -> Bool
-            | "name" -> String 
-            | "data" -> let x = find_variable scope var in 
-                  (match x with 
-                    Node(x) -> x 
-                  | _ -> raise (Failure (var ^ " is not a node or edge")))
-            | "src" -> Node(Richard) 
-            | "dst" -> Node(Richard) 
-            | "weight" -> Int
-            | x -> raise (Failure (x))
-        in          
-        let (_, (rt, e')) = expr scope funcs e in
-        let new_scope = match lt with 
-              Richard -> bind_var scope var (Node(rt))
-            | _ -> scope 
-        in 
-        let err = "illegal assignment " ^ var ^ "." ^ field ^ " : " ^ string_of_typ lt ^ " = " ^ string_of_typ rt in
-        if lt = rt || lt = Richard then (new_scope, (rt, SDotAssign(var, field, (rt, e')))) else raise (Failure err)
+        (* node.field = value *)
+
+        (* assert field is correct *)
+        let _ = assert_field var field scope in
+        (* get the type of field *)
+        let field_ty = get_field_ty var field scope in
+        (* expr returns (scope, (A.typ, S.sx)) *)
+        let (_, (e_ty, e_sx)) = expr scope funcs e in
+
+        let err = "illegal assignment " ^ var ^ "." ^ field ^ " : " ^ string_of_typ field_ty ^ " = " ^ string_of_typ e_ty in
+        (match field_ty with
+            (* if field is Uninitialized, bind to type of expression *)
+            Uninitialized ->
+              let field_bound_scope = bind_var scope var (Node(e_ty)) in
+              (field_bound_scope, (e_ty, SDotAssign(var, field, (e_ty, e_sx))))
+          | _ ->
+            if field_ty = e_ty
+            then (scope, (e_ty, SDotAssign(var, field, (e_ty, e_sx))))
+            else raise (Failure err))
     | Unop(op, e) as ex -> 
         let (new_scope, (t, e')) = expr scope funcs e in
         let ty = match op with
@@ -250,17 +253,45 @@ let check (decls) =
         in
         let sexprs = check_args scope (args, f.formals) in
         (scope, (f.typ, SCall(fname, sexprs)))
-    | DotCall(ds, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
-      let md = find_method mname ds in 
+    | DotCall(oname, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
+      (* graph_name.add(node_name); *)
+
+      (* why do we need to check this by hardcoding?
+      graph methods should be able to handle any node
+      we cannot expect a node<?> because we don't know <?> *)
+      let o_ty = find_variable scope oname in
+      (match o_ty with
+          Graph(flags) ->
+            (match mname with
+                "add" ->
+                  (match args with
+                      [Id(nname)] ->
+                        let (scope', sexpr) = expr scope funcs (Id(nname)) in
+                        let (node_ty, node_sx) = sexpr in
+                        (match node_ty with
+                            Node(d_ty) ->
+                              (scope, (node_ty, SDotCall(oname, mname, [sexpr])))
+                          | _ -> raise (Failure("dotcall: graph. " ^ mname ^ " not yet implemented for non-node"))
+                        )
+                    | _ -> raise (Failure("dotcall: graph. " ^ mname ^ " expects id as arg"))
+                  )
+              | _ -> raise (Failure("dotcall: graph. " ^ mname ^ " not yet implemented"))
+            (* (scope, (node_ty, SDotCall(oname, mname, sargs))) *)
+            )
+        | _ -> raise (Failure("dotcall: non-graph not yet implemented"))
+      )
+      (* let md = find_method mname ds in 
       let param_length = List.length md.formals in
         if List.length args != param_length then raise (Failure ("wrong arg num"))
         else let check_call (mt, _) e =
-          let (new_scope, (et, e')) = expr scope funcs e in (* double check that this wildcard is fine here*)
+          let (new_scope, (et, e')) = expr scope funcs e in
+          (* double check that this wildcard is fine here*)
             if mt = et then (mt, e')
             else raise (Failure ("wrong formal type"))
       in let args' = List.map2 check_call md.formals args
       in
-      (scope, (md.typ, SDotCall(ds, mname, args'))) (* TODO: figure out way to make scope here is new_scope*)
+      (scope, (md.typ, SDotCall(ds, mname, args'))) *)
+      (* TODO: figure out way to make scope here is new_scope*)
     | List(elist) ->
         let rec convert_es es scope funcs = match es with
             [] -> []
@@ -342,13 +373,13 @@ in
               SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest
           | Node(ty) -> 
             let scope1 = (bind_var scope x t) in 
-            let scope2 = (bind_var scope1 (x ^ ".data") Richard) in 
+            let scope2 = (bind_var scope1 (x ^ ".data") Uninitialized) in 
             (*I THINK NODES NEED TO BE (NODE of DATA)*)
             SLocalBind(t, x)::check_body scope2 funcs rest
           | Edge -> 
             let scope1 = (bind_var scope x t) in 
-            let scope2 = (bind_var scope1 (x ^ ".src.data") Richard) in 
-            let scope3 = (bind_var scope2 (x ^ ".dst.data") Richard) in 
+            let scope2 = (bind_var scope1 (x ^ ".src.data") Uninitialized) in 
+            let scope3 = (bind_var scope2 (x ^ ".dst.data") Uninitialized) in 
             SLocalBind(t, x)::check_body scope3 funcs rest
           | _ -> SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest)
   | LocalBindAssign(t, x, e)::rest -> 
@@ -367,8 +398,8 @@ in
               SLocalBindAssign(t, x, sexp)::check_body (bind_var scope x t) funcs rest (*CHANGEED HERE ASK ABBY*)
         (*| Edge -> 
           let scope1 = (bind_var scope x t) in 
-          let scope2 = (bind_var scope1 (x ^ ".src.data") Richard) in 
-          let scope3 = (bind_var scope2 (x ^ ".dst.data") Richard) in 
+          let scope2 = (bind_var scope1 (x ^ ".src.data") Uninitialized) in 
+          let scope3 = (bind_var scope2 (x ^ ".dst.data") Uninitialized) in 
           SLocalBind(t, x)::check_body scope3 funcs rest*)
         | _ -> 
         let (_, sexp) = expr scope funcs e in
@@ -387,6 +418,11 @@ in
       | [] -> map 
   in 
 
+  let rec check_node_dty n1 n2 = match (n1, n2) with
+      (Node(dty1), Node(dty2)) -> dty1 = dty2
+    | _ -> raise (Failure("node typecheck failed"))
+  in
+
   let rec check_decls (scope : symbol_table) funcs decls =
     match decls with
       [] -> []
@@ -401,18 +437,19 @@ in
                 SBind(t, x)::check_decls (bind_var scope x t) funcs rest
             | Node(ty) -> 
               let scope1 = (bind_var scope x t) in 
-              let scope2 = (bind_var scope1 (x ^ ".data") Richard) in 
+              let scope2 = (bind_var scope1 (x ^ ".data") Uninitialized) in 
               SBind(t, x)::check_decls scope2 funcs rest
             | Edge -> 
               let scope1 = (bind_var scope x t) in 
-              let scope2 = (bind_var scope1 (x ^ "src.data") Richard) in 
-              let scope3 = (bind_var scope2 (x ^ "dst.data") Richard) in 
+              let scope2 = (bind_var scope1 (x ^ "src.data") Uninitialized) in 
+              let scope3 = (bind_var scope2 (x ^ "dst.data") Uninitialized) in 
               SBind(t, x)::check_decls scope3 funcs rest
             | _ -> SBind(t, x)::check_decls (bind_var scope x t) funcs rest)
     | BindAssign(t, x, e)::rest ->
         (try
           let _ = find_loc_variable scope x in
           raise (Failure (x ^ " already declared in current scope"))
+<<<<<<< Updated upstream
         with Not_found -> 
           let (_, (t', sexp)) = expr scope funcs e in
           let _ = (match sexp with
@@ -420,15 +457,30 @@ in
             | _ -> if t != t' then raise (Failure("bind assign"))
           ) in 
           match t with 
+=======
+        with Not_found ->
+
+        (* real stuff here *)
+          let (_, (et, sx)) = expr scope funcs e in
+          let err = "semant/BindAssign: illegal assignment: " ^ x ^ " : " ^ string_of_typ t ^ " = " ^ string_of_typ et in
+
+          if t != et && (not (check_node_dty t et))
+          then raise (Failure(err))
+          else SBindAssign(t, x, (et, sx))::check_decls (bind_var scope x t) funcs rest
+          (* graphs cannot be assigned to something??? *)
+          (* match t with 
+>>>>>>> Stashed changes
             Graph(fields) ->
                 let _ = List.map find_invar fields in  
                 let (_, sexp) = expr scope funcs e in 
                 SBindAssign(t,x , sexp)::check_decls (bind_var scope x t) funcs rest
             | _ -> 
                 let (_, sexp) = expr scope funcs e in 
-                SBindAssign(t,x , sexp)::check_decls (bind_var scope x t) funcs rest)
+                SBindAssign(t,x , sexp)::check_decls (bind_var scope x t) funcs rest) *)
+        )
+        (* *)
     | Statement(s)::rest ->
-      (*let node_data_typ = { changed = false; type_of = Richard } in 
+      (*let node_data_typ = { changed = false; type_of = Uninitialized } in 
       let node_data_typ_ptr node_data_typ = Pointer (ref node_data_typ) in *)
       let (scope2, ss) = check_stmt scope funcs s in   
       (*let (t, e') = match s with 

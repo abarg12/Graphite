@@ -64,11 +64,11 @@ typ:
   | BOOL     { Bool   }
   | FLOAT    { Float  }
   | VOID     { Void   }
-  | NODE     { Node(Richard)} 
   | EDGE     { Edge   }
   | STRING_T { String }
   | LIST     { List   }
   | DICT     { Dict   }
+  | NODE  LT typ      GT { Node ($3) } 
   | GRAPH LT flag_opt GT { Graph($3) }
 
 
