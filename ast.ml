@@ -7,7 +7,7 @@ type setop = Inter | Diff | Union | Xor
 
 type uop = Neg | Not
 
-type typ = Int | Bool | Float | Void | Node | Edge | String |
+type typ = Int | Bool | Float | Void | Node of typ | Edge | String |
            List | Dict | Richard | Graph of string list 
 (* "Richard" is a temp type holder used for node *)
 
@@ -97,7 +97,7 @@ let string_of_typ = function
   | Float -> "float"
   | Void -> "void"
   | Richard -> "" (*for later -- is this dumb lol? *)
-  | Node -> "node"
+  | Node(typ) -> "node"
   | Edge -> "edge"
   | Graph(flags) -> "graph <" ^ String.concat ", " (List.map (fun (x) -> x) flags) ^ ">"
   | String -> "string"
