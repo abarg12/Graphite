@@ -405,10 +405,11 @@ in
           let _ = find_loc_variable scope x in
           raise (Failure (x ^ " already declared in current scope"))
         with Not_found -> 
-          let (_, (t', _)) = expr scope funcs e in
-        
-          if t != t' then raise (Failure("bind assign"))
-          else
+          let (_, (t', sexp)) = expr scope funcs e in
+          let _ = (match sexp with
+              SCall("array_get", _) -> ()
+            | _ -> if t != t' then raise (Failure("bind assign"))
+          ) in 
           match t with 
             Graph(fields) ->
                 let _ = List.map find_invar fields in  

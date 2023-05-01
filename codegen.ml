@@ -94,7 +94,7 @@ and find_variable_local (scope : symbol_table) (name : string) =
   with Not_found ->
     match scope.parent with
       Some p -> find_variable p name
-    | None -> raise Not_found
+    | None -> raise (Failure "variable not found in codegen")
 in
 
 
@@ -472,7 +472,7 @@ and  bind (builder, stable) = function
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
             | A.String -> L.const_pointer_null (L.pointer_type i8_t)
             | A.Node(typ) -> L.const_named_struct node_t
-                                       [| (L.const_int i8_t 0); 
+                                      [| (L.const_int i8_t 0); 
                                           (L.const_int i1_t 0); 
                                           (L.const_int i8_t 0); |] 
             | A.List -> L.const_pointer_null (L.pointer_type i8_t)
@@ -489,9 +489,16 @@ and  bind (builder, stable) = function
 
 (* Bind assignments are declaration-assignment one-liners *)
 and bindassign (builder, stable) = function 
-  (typ, s, e) -> 
-      if stable.parent = None then 
-          let e' = expr (builder, stable) e in 
+  (typ, s, e) ->    
+    let e' = (match e with
+                (_, SCall("array_get", _)) -> let exp = expr (builder, stable) e in
+                              let e_cast = L.build_pointercast exp (ltype_of_typ typ) "li_conv" builder in
+                              L.build_load e_cast "val_ptr" builder
+                              (* let _ = L.dump_value values in
+                              values  *)
+              | _ -> expr (builder, stable) e) in
+
+    if stable.parent = None then
           let init = match typ with
               A.Float -> L.const_float (ltype_of_typ typ) 0.0
             | A.Int -> L.const_int (ltype_of_typ typ) 0
@@ -505,23 +512,11 @@ and bindassign (builder, stable) = function
             | _ -> raise (Failure "no global default value set")
           in 
           
-
-          (* let stable' = 
-            match typ with
-                A.List -> bind_var stable s e'
-              | A.String -> bind_var stable s e'  
-              | _  -> let new_glob = L.define_global s init the_module in
-                      let _ = L.build_store e' new_glob builder in
-                            bind_var stable s new_glob
-          in  *)
-
           let new_glob = L.define_global s init the_module in
           let _ = L.build_store e' new_glob builder in
           let stable' = bind_var stable s new_glob in
-          
           (builder, stable')
     else
-        let e' = expr (builder, stable) e in
         let new_var = L.build_alloca (ltype_of_typ typ) s builder in
         let _ = L.build_store e' new_var builder in
         let stable' = bind_var stable s new_var in 
