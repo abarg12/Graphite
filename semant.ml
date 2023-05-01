@@ -137,6 +137,14 @@ let check (decls) =
     | Fliteral f -> (scope, (Float, SFliteral f))
     | Noexpr -> (scope, (Void, SNoexpr))
     | Id s -> (scope, (find_variable scope s, SId s))
+    | Edge(src, dst) ->
+      let (_, (src_ty, src_sx)) = expr scope funcs src in
+      let (_, (dst_ty, dst_sx)) = expr scope funcs dst in
+      let (src_dty, dst_dty) = match (src_ty, dst_ty) with
+          (Node(_src_dty), Node(_dst_dty)) -> (_src_dty, _dst_dty)
+        | _ -> raise (Failure ("semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " cannot form an edge"))
+      in
+      (scope, (Edge, (SEdge((src_ty, src_sx), (dst_ty, dst_sx)))))
     | Assign(x, e) ->
       (match e with 
           Call("array_get", _) -> 
@@ -449,15 +457,13 @@ in
         (try
           let _ = find_loc_variable scope x in
           raise (Failure (x ^ " already declared in current scope"))
-<<<<<<< Updated upstream
-        with Not_found -> 
+        (* with Not_found -> 
           let (_, (t', sexp)) = expr scope funcs e in
           let _ = (match sexp with
               SCall("array_get", _) -> ()
             | _ -> if t != t' then raise (Failure("bind assign"))
           ) in 
-          match t with 
-=======
+          match t with  *)
         with Not_found ->
 
         (* real stuff here *)
@@ -469,7 +475,6 @@ in
           else SBindAssign(t, x, (et, sx))::check_decls (bind_var scope x t) funcs rest
           (* graphs cannot be assigned to something??? *)
           (* match t with 
->>>>>>> Stashed changes
             Graph(fields) ->
                 let _ = List.map find_invar fields in  
                 let (_, sexp) = expr scope funcs e in 
