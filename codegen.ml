@@ -105,6 +105,10 @@ let rec find_func (scope : symbol_table) (name : string) =
     | None -> raise Not_found
 in
 
+(* let find_meth (name : string) = (* at this point we only need the name of it bc we know the type should be checked*)
+
+in *)
+
 (* Add function name to symbol table *)
 (* func is the llvm func type *)
 let add_func s func stable = 
@@ -133,7 +137,9 @@ let printf_func : L.llvalue =
 let array_get_t = 
   L.var_arg_function_type (L.pointer_type i8_t) [| L.pointer_type i8_t; i32_t |] in
 let array_get_func = 
-  L.declare_function "array_get" array_get_t the_module in 
+  L.declare_function "array_get" array_get_t the_module in
+  
+(* Place for predefined node dot calls *)
 
 
 (* let add_node_t : L.lltype = 
@@ -242,6 +248,9 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
                            A.Void -> ""
                          | _ -> name ^ "_result") in
                     L.build_call llvm_decl (Array.of_list llargs) result builder)
+  | SDotCall (ds, name, args) ->
+    (* let (meth, llvm_decl) = find_meth stable name in *)
+    raise (Failure ("working on dot calls"))
   | SDotOp(var, field) -> 
         let lvar = find_variable stable var in 
         let steven = match field with 
@@ -334,7 +343,7 @@ and array_get_def (builder, stable) args =
             (* L.build_load array_idx "val" builder *)
             L.const_int i8_t 0
       | _ -> raise (Failure("wrong args to array_get")))
-in 
+in
 
 (*** end built-in func defs ***)
 
@@ -510,7 +519,7 @@ let empty_stable = {
 } in
 let init_stable = add_func "main" (None, global_main) empty_stable in 
 let init_stable = add_func "printf" (None, printf_func) init_stable in 
-let init_stable = add_func "array_get" (None, array_get_func) init_stable in 
+let init_stable = add_func "array_get" (None, array_get_func) init_stable in
 
 let (builder', stable') = program (builder, init_stable) decls in 
 (* let _ = L.build_ret_int builder in  *)

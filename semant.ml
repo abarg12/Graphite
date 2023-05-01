@@ -28,7 +28,8 @@ let check (decls) =
   (* Collect function declarations for built-in functions: no bodies *)
   let built_in_decls = 
     let add_bind map (name, ty, fs) = StringMap.add name {
-      typ = Void; fname = name; 
+      typ = ty;
+      fname = name; 
       formals = fs;
       body = Block[] } map
     in List.fold_left add_bind StringMap.empty [ ("printf", Int, [(Int, "x")]); 
@@ -37,19 +38,29 @@ let check (decls) =
 
   (* TODO: make it so that you can search built in methods for graphs, etc. *)
   let built_in_graph_meths =
-    let add_bind map (name, ty) = StringMap.add name {
-      typ = Graph(["none"]);
+    let add_bind map (name, ty, forms) = StringMap.add name {
+      typ = ty;
       fname = name;
-      formals = [(ty, "x")];
+      formals = forms;
       body = Block[] } map
-    in List.fold_left add_bind StringMap.empty [ ("add", Node); ]
+    in List.fold_left add_bind StringMap.empty [ ("add", Graph(["none"]), [(Node, "to_add")]); ]
+  in
+
+  let built_in_node_meths =
+    let add_bind map (name, ty, forms) = StringMap.add name {
+      typ = ty;
+      fname = name;
+      formals = forms;
+      body = Block[] } map
+    in List.fold_left add_bind StringMap.empty [ ("mark", Node, []); ]
   in
     
 
   (* this is where we're gonna add more invariants later heeheehoohoo*)
   let invariants = ["tree"; "connected"]  in
   let fields = ["flag"; "data"; "name"] in
-  let graph_meths = built_in_graph_meths in 
+  let graph_meths = built_in_graph_meths in
+  let node_meths = built_in_node_meths in 
 
   let rec find_elt x lst message = match lst with 
       y::rest when x = y -> x  
@@ -66,8 +77,19 @@ let check (decls) =
     find_elt x fields "node field" 
   in
   
-  let find_method m data_structs = (* needs to  *)
+  (* let find_method m data_structs = (* needs to  *)
     let meths = graph_meths (* instead of hard coding graph meths, make it so that you can pattern match and find which ds you want*)
+    in  
+    try StringMap.find m meths
+    with Not_found -> raise (Failure ("method " ^ m ^ " not found in data struct")) 
+  in *)
+
+  let find_method m data_structs scope = 
+    let ds = find_loc_variable scope data_structs in (*data_structs is the name, we need the actual type of it *)
+    let meths = (match ds with 
+        Graph([]) -> graph_meths
+      | Node -> node_meths
+      | _ -> raise (Failure ("Data Struc " ^ data_structs ^ " not found")))
     in  
     try StringMap.find m meths
     with Not_found -> raise (Failure ("method " ^ m ^ " not found in data struct")) 
@@ -232,16 +254,19 @@ let check (decls) =
         let sexprs = check_args scope (args, f.formals) in
         (scope, (f.typ, SCall(fname, sexprs)))
     | DotCall(ds, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
-      let md = find_method mname ds in 
-      let param_length = List.length md.formals in
-        if List.length args != param_length then raise (Failure ("wrong arg num"))
-        else let check_call (mt, _) e =
-          let (new_scope, (et, e')) = expr scope funcs e in (* double check that this wildcard is fine here*)
-            if mt = et then (mt, e')
-            else raise (Failure ("wrong formal type"))
-      in let args' = List.map2 check_call md.formals args
+      let md = find_method mname ds scope in 
+      let rec check_args m (actuals, formals) = match (actuals, formals) with
+        ([], []) -> []
+      | (x::xs, y::ys) ->
+        let (rt, _) = y in
+        let (m', lsexpr) = expr m funcs x in
+        let (lt, le) = lsexpr in
+        if lt = rt then lsexpr::check_args m' (xs, ys)
+        else raise (Failure("invalid args: " ^ string_of_typ lt ^ " != " ^ string_of_typ rt))
+      | _ -> raise (Failure("invalid number of args"))
+      in let sexprs = check_args scope (args, md.formals)
       in
-      (scope, (md.typ, SDotCall(ds, mname, args'))) (* TODO: figure out way to make scope here is new_scope*)
+      (scope, (md.typ, SDotCall(ds, mname, sexprs)))
     | List(elist) ->
         let rec convert_es es scope funcs = match es with
             [] -> []
