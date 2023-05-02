@@ -44,7 +44,7 @@ let check (decls) =
       fname = name;
       formals = forms;
       body = Block[] } map
-    in List.fold_left add_bind StringMap.empty [ ("add", Graph(["none"]), [(Node, "to_add")]); ]
+    in List.fold_left add_bind StringMap.empty [ ("add", Graph(Uninitialized, ["none"]), [(Node(Uninitialized), "to_add")]); ]
   in
 
   let built_in_node_meths =
@@ -53,7 +53,7 @@ let check (decls) =
       fname = name;
       formals = forms;
       body = Block[] } map
-    in List.fold_left add_bind StringMap.empty [ ("mark", Node, []); ]
+    in List.fold_left add_bind StringMap.empty [ ("mark", Node(Uninitialized), []); ]
   in
     
 
@@ -94,8 +94,8 @@ let check (decls) =
   let find_method m data_structs scope = 
     let ds = find_loc_variable scope data_structs in (*data_structs is the name, we need the actual type of it *)
     let meths = (match ds with 
-        Graph([]) -> graph_meths
-      | Node -> node_meths
+        Graph(Uninitialized, []) -> graph_meths
+      | Node(Uninitialized) -> node_meths
       | _ -> raise (Failure ("Data Struc " ^ data_structs ^ " not found")))
     in  
     try StringMap.find m meths
@@ -297,7 +297,7 @@ let check (decls) =
           | _ -> raise (Failure("invalid number of args"))
         in
         let sexprs = check_args scope (args, f.formals) in
-        (scope, (f.typ, SCall(fname, sexprs)))
+        (f.typ, SCall(fname, sexprs))
     (* | DotCall(ds, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
       let md = find_method mname ds scope in 
       let rec check_args m (actuals, formals) = match (actuals, formals) with
