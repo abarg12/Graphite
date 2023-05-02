@@ -98,7 +98,7 @@ let rec string_of_typ = function
   | Void -> "void"
   | Uninitialized -> "" (*for later -- is this dumb lol? *)
   | Node(t) -> "node<" ^ string_of_typ t ^ ">"
-  | Edge -> "edge"
+  | Edge -> "edge" 
   | Graph((typ, flags)) -> "graph <" ^ string_of_typ typ ^ ", " ^ String.concat ", " (List.map (fun (x) -> x) flags) ^ ">"
   | String -> "string"
   | List -> "list"
