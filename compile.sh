@@ -3,33 +3,51 @@
 # Path to the LLVM compiler
 LLC=llc
 CC="cc"
+FLAG="-relocation-model=pic"
+LLC_WITH_FLAG="$LLC $FLAG"
 
+make_dir() {
+    if [ ! -d $1 ]
+    then
+        echo -e "\nCreating dir:\n" $1
+        mkdir $1
+    fi
+}
+
+BASE_DIR="tests"
+GRAPHITE="./toplevel.native"
+
+eval $(opam env) 
 make toplevel.native
 
-if [ ! -d "./tests/generatedfiles" ]
-then
-    mkdir ./tests/generatedfiles
-fi
+# $1 FILENAME
+# $2 OUTPUT_FILE_DIR
+# $3 GOLD_STANDARD_DIR
+diff() {
+    PARENT_DIR=${2%%.*}
+    if cmp $2 $3;
+    then echo $1 "PASSED"
+    else echo $1 "FAILED"
+    fi
+}
 
-if [ ! -d "./tests/temptesting" ]
-then
-    mkdir ./tests/temptesting
-fi
+COMPILE_DIR="$BASE_DIR/compile"
+make_dir $COMPILE_DIR
 
-gen_dir="./test/generatedfiles"
+INTERMED_DIR="$COMPILE_DIR/intermediary_files"
+make_dir $INTERMED_DIR
 
 if [ ! -f $1 ]; 
 then
-    echo "$1 is NOT file. It must be a file."
+    echo "$1 is must be a file."
 else
-    base_name=$(basename $1)
+    FILE_WITH_EXT=$(basename $1)
+    FILENAME=${FILE_WITH_EXT%%.*}
 
-    # Compiles Graphite code into LLVM
-
-    ./toplevel.native < $1 > ./tests/generatedfiles/${base_name%%.*}.ll
+    $GRAPHITE < $1 > $INTERMED_DIR/$FILENAME.ll
 
     # Runs the LLVM interpreter with the previously generated LLVM code 
-    $LLC "-relocation-model=pic"  < ./tests/generatedfiles/${base_name%%.*}.ll > ./tests/generatedfiles/${base_name%%.*}.s
-    cc -o ./tests/generatedfiles/${base_name%%.*}.exe tests/generatedfiles/${base_name%%.*}.s 
+    $LLC_WITH_FLAG < $INTERMED_DIR/$FILENAME.ll > $INTERMED_DIR/$FILENAME.s
+    cc -o $COMPILE_DIR/$FILENAME.exe $INTERMED_DIR/$FILENAME.s 
 
 fi

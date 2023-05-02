@@ -275,7 +275,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
             | _ -> raise (Failure ("syntax error caught post parsing. Nonexistent field " ^ field))
         in 
         let steven' = match styp with 
-              Richard -> raise (Failure ("data field never set in node.data " ^ field))
+              Uninitialized -> raise (Failure ("data field never set in node.data " ^ field))
             | _ -> L.build_load steven (var ^ "." ^ field) builder 
         in
         (match field with 
@@ -582,5 +582,3 @@ let (builder', stable') = program (builder, init_stable) decls in
 (* let _ = L.build_ret_int builder in  *)
 let _ = L.build_ret (L.const_int i32_t 0) builder' in
 the_module
-
-

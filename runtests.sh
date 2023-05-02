@@ -1,194 +1,168 @@
 #!/bin/bash
 
-
-# Path to the LLVM interpreter
 LLI=lli
-# Path to the LLVM compiler
 LLC=llc
 
+make_dir() {
+    if [ ! -d $1 ]
+    then
+        echo -e "\nCreating dir:\n" $1
+        mkdir $1
+    fi
+}
 
-
-if [ ! -d "./tests/temptesting" ]
-then
-    mkdir ./tests/temptesting
-fi
+BASE_DIR="tests"
+GRAPHITE="./toplevel.native"
 
 eval $(opam env) 
-
 make toplevel.native
 
-if [[ $1 == all ]]
-then echo $1
+make_dir $BASE_DIR
 
-echo "
-running positive tests...
-                            "
+NOC="\033[0m"
+RED="\033[0;31m"
+GRN="\033[1;32m"
+BLU="\033[1;34m"
 
-for entry in ./tests/positive/*; do
-    if [[ $entry == *.gp ]]       
-    then
-        base_name=$(basename ${entry})
-        # if we cannot even run the test, something went wrong :(
-        ./toplevel.native -a < $entry > ./tests/temptesting/${base_name%%.*}.out ||
-                echo "" ${base_name%%.*} "something went wrong. :("
-
-        # diff
-        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/positive/goldStandards/${base_name%%.*}.Gold; 
-        then 
-            echo ${base_name} "FAILED"
-        else 
-            echo ${base_name} "PASSED"
-        fi 
+# $1 FILENAME
+# $2 OUTPUT_FILE_DIR
+# $3 GOLD_STANDARD_DIR
+diff() {
+    PARENT_DIR=${2%%.*}
+    if cmp $2 $3;
+    then echo -e $1 "${GRN}PASSED${NOC}"
+    else echo -e $1 "${RED}FAILED${NOC}"
     fi
-done
+}
 
-echo "
-running negative ast tests...
-                            "
-                            
-for entry in ./tests/negative/*; do
-    if [[ $entry == *.gp ]]       
-    then
-        base_name=$(basename ${entry})
-        # if we cannot even run the test, something went wrong :(
-        ./toplevel.native -a < $entry > ./tests/temptesting/${base_name%%.*}.out 2>&1
-
-        # diff
-        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/negative/goldStandards/${base_name%%.*}.Gold;
-        then 
-            echo ${base_name} "FAILED"
-        else 
-            echo ${base_name} "PASSED"
-        fi 
+# $1 = [ "ast" | "hello_world" | "extended" ]
+# $2 = [ "positive" | "negative "]
+run_batch() {
+    # hello_world is only positive
+    SIGN=$2
+    if [ $1 == "hello_world" ]
+    then SIGN="positive"
     fi
-done
 
-echo "
-running extended_test_suite tests...
-                            "
+    make_dir "$BASE_DIR/$1" # make batch folder (should exist)
+    make_dir "$BASE_DIR/$1/$SIGN" # make signed folder (should exist)
+    make_dir "$BASE_DIR/$1/$SIGN/output_files" # make output folder
+    TEST_DIRS="$BASE_DIR/$1/$SIGN/*"
 
-for entry in ./tests/extended_test_suite/positive/*; do
-    if [[ $entry == *.gp ]]       
-    then
-        base_name=$(basename ${entry})
-        # if we cannot even run the test, something went wrong :(
-        ./toplevel.native  < $entry > ./tests/temptesting/${base_name%%.*}.out 2>&1
-
-        $LLI < tests/temptesting/${base_name%%.*}.out > tests/temptesting/${base_name%%.*}ran.out
-
-        # diff
-        if ! cmp -s ./tests/temptesting/${base_name%%.*}ran.out ./tests/extended_test_suite/positive/goldStandards/${base_name%%.*}.Gold;
-        then 
-            echo ${base_name} "FAILED"
-        else 
-            echo ${base_name} "PASSED"
-        fi 
+    # make llvm dir
+    if [ $1 == "hello_world" ] || [ $1 == "extended" ]
+    then make_dir "$BASE_DIR/$1/$SIGN/llvm"
     fi
-done
+    
+    echo -e "\n${BLU}[Running $SIGN $1 tests]${NOC}\n"
 
-for entry in ./tests/extended_test_suite/negative/*; do
-    if [[ $entry == *.gp ]]       
+    if [ $1 == "ast" ]
     then
-        base_name=$(basename ${entry})
-        # if we cannot even run the test, something went wrong :(
-        ./toplevel.native  < $entry > ./tests/temptesting/${base_name%%.*}.out 2>&1
-
-        # diff
-        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/extended_test_suite/negative/goldStandards/${base_name%%.*}.Gold;
-        then 
-            echo ${base_name} "FAILED"
-        else 
-            echo ${base_name} "PASSED"
-        fi 
+        for TEST_DIR in $TEST_DIRS; do
+            if [[ $TEST_DIR == *.gp ]]
+            then
+                run_ast $TEST_DIR $SIGN
+            fi
+        done
+    elif [ $1 == "hello_world" ]
+    then
+        for TEST_DIR in $TEST_DIRS; do
+            if [[ $TEST_DIR == *.gp ]]
+            then
+                run_llvm $TEST_DIR $SIGN
+            fi
+        done
+    elif [ $1 == "extended" ]
+    then
+        for TEST_DIR in $TEST_DIRS; do
+            if [[ $TEST_DIR == *.gp ]]
+            then
+                run_llvm $TEST_DIR $SIGN
+            fi
+        done
+    else
+        echo "Invalid batch test type:" $1
     fi
-done
+}
 
-# Compiles Graphite code into LLVM
-./toplevel.native < tests/hello_world/helloworld.gp > tests/temptesting/helloworld.out
+# $1 = TEST_DIR
+# $2 = [ "positive" | "negative "]
+run_ast() {
+    PARENT_DIR=${1%/*}
+    FILENAME=$(basename -s .gp $1)
 
-# Runs the LLVM interpreter with the previously generated LLVM code 
-$LLI < tests/temptesting/helloworld.out > tests/temptesting/helloworld_compiled.out
+    if [ $2 == "positive" ]
+    then
+        $GRAPHITE -a < $1 > $PARENT_DIR/output_files/$FILENAME.out
+    else
+        $GRAPHITE -a < $1 > $PARENT_DIR/output_files/$FILENAME.out 2>&1
+    fi
+    diff $FILENAME $PARENT_DIR/output_files/$FILENAME.out $PARENT_DIR/gold_standards/$FILENAME.gold
+}
 
-# Compares the output of the print against the gold standard
-if ! cmp -s tests/temptesting/helloworld_compiled.out tests/hello_world/helloworld.gold;
-then echo "Hello World FAILED"
-else echo "Hello World PASSED"
-fi
-else
+# $1 = TEST_DIR
+# $2 = [ "positive" | "negative "]
+run_llvm() {
+    PARENT_DIR=${1%/*}
+    FILENAME=$(basename -s .gp $1)
+    
+    if [ $2 == "positive" ]
+    then
+        $GRAPHITE < $1 > $PARENT_DIR/llvm/$FILENAME.ll
+        $LLI < $PARENT_DIR/llvm/$FILENAME.ll > $PARENT_DIR/output_files/$FILENAME.out
+    else
+        $GRAPHITE < $1 > $PARENT_DIR/output_files/$FILENAME.out 2>&1
+    fi
+    diff $FILENAME $PARENT_DIR/output_files/$FILENAME.out $PARENT_DIR/gold_standards/$FILENAME.gold
+}
 
+run_all() {
+    run_batch "ast" "positive"
+    run_batch "ast" "negative"
+    run_batch "hello_world"
+    run_batch "extended" "positive"
+    run_batch "extended" "negative"
+}
 
-if [ ! -f $1 ]; 
+# $1 TEST_DIR
+# ex: BASE_DIR/extended/positive/FILENAME
+run_one() {
+    INC_FILENAME=${1%.*}
+
+    INC_SIGN=${INC_FILENAME%/*}
+    SIGN=$(basename -s / $INC_SIGN)
+
+    INC_BATCH_TYPE=${INC_SIGN%/*}
+    BATCH_TYPE=$(basename -s / $INC_BATCH_TYPE)
+
+    make_dir "$INC_SIGN/output_files"
+
+    if [ $BATCH_TYPE == "hello_world" ] || [ $BATCH_TYPE == "extended" ]
+    then
+        make_dir "$INC_SIGN/llvm"
+    fi
+    
+    echo -e "\n[Running $1]\n"
+
+    if [ $BATCH_TYPE = "ast" ]
+    then
+        run_ast $1 $SIGN
+    elif [ $BATCH_TYPE == "hello_world" ] || [ $BATCH_TYPE == "extended" ]
+    then
+        run_llvm $1 $SIGN
+    else
+         echo "Invalid batch test type: <$BATCH_TYPE>"
+    fi
+}
+
+if [ $# == 1 ]
 then
-    echo "$1 is NOT file. It must be a file."
-else
-    parentdir=$(dirname $1) 
-    echo $parentdir
-    base_name=$(basename $1)
-
-    if [ "$parentdir" = "tests/positive" ];
+    if [ $1 = "all" ]
     then
-        # if we cannot even run the test, something went wrong :( uwu
-        ./toplevel.native -a < $1 > ./tests/temptesting/${base_name%%.*}.out ||
-                echo "" ${base_name%%.*} "something went wrong. :("
-
-        # diff
-        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/positive/goldStandards/${base_name%%.*}.Gold; 
-        then 
-            echo ${base_name} "FAILED"
-        else 
-            echo ${base_name} "PASSED"
-        fi 
-    elif [ "$parentdir" = "tests/negative" ];
-    then 
-        # if we cannot even run the test, something went wrong :(
-        ./toplevel.native -a < $1 > ./tests/temptesting/${base_name%%.*}.out 2>&1
-
-        # diff
-        if ! cmp -s ./tests/temptesting/${base_name%%.*}.out ./tests/negative/goldStandards/${base_name%%.*}.Gold;
-        then 
-            echo ${base_name} "FAILED"
-        else 
-            echo ${base_name} "PASSED"
-        fi 
-    elif [ "$parentdir" = "tests/extended_test_suite/negative" ];
-    then 
-         # if we cannot even run the test, something went wrong :(
-        ./toplevel.native < $1 > ./tests/temptesting/${base_name%%.*}.out 2>&1
-        lli < ./tests/temptesting/${base_name%%.*}.out > ./tests/temptesting/${base_name%%.*}run.out
-        # diff
-        if ! cmp -s ./tests/temptesting/${base_name%%.*}run.out ./tests/extended_test_suite/negative/goldStandards/${base_name%%.*}.Gold;
-        then 
-            echo ${base_name} "FAILED"
-        else 
-            echo ${base_name} "PASSED"
-        fi  
-    elif [ "$parentdir" = "tests/extended_test_suite/positive" ];
-    then 
-         # if we cannot even run the test, something went wrong :(
-        ./toplevel.native < $1 > ./tests/temptesting/${base_name%%.*}.out 2>&1
-
-        lli < ./tests/temptesting/${base_name%%.*}.out > ./tests/temptesting/${base_name%%.*}run.out
-        # diff
-        if ! cmp -s ./tests/temptesting/${base_name%%.*}run.out ./tests/extended_test_suite/positive/goldStandards/${base_name%%.*}.Gold;
-        then 
-            echo "./tests/temptesting/"${base_name%%.*}"run.out"
-            echo ${base_name} "FAILED"
-        else 
-            echo ${base_name} "PASSED"
-        fi  
-    else 
-
-        # Compiles Graphite code into LLVM
-        ./toplevel.native < tests/hello_world/helloworld.gp > tests/temptesting/helloworld.out
-
-        # Runs the LLVM interpreter with the previously generated LLVM code 
-        $LLI < tests/temptesting/helloworld.out > tests/temptesting/helloworld_compiled.out 
-
-        # Compares the output of the print against the gold standard
-        if ! cmp -s tests/temptesting/helloworld_compiled.out tests/hello_world/helloworld.gold;
-        then echo "Hello World FAILED"
-        else echo "Hello World PASSED"
+        run_all
+    else
+        run_one $1
     fi
-    fi
-fi
+else
+    echo "Usage: ./runtests.sh [all | test_dir]"
 fi
