@@ -66,7 +66,7 @@ typ:
   | VOID     { Void   }
   | EDGE  LT typ      GT { Edge ($3) } 
   | STRING_T { String }
-  | LIST     { List   }
+  | LIST     { List_t }
   | DICT     { Dict   }
   | NODE  LT typ      GT { Node ($3) } 
   | GRAPH LT graph_specifics GT { Graph($3) }

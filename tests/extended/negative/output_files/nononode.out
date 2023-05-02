@@ -1,1 +1,1 @@
-Fatal error: exception Failure("illegal assignment n.data : string = int")
+Fatal error: exception Stdlib.Parsing.Parse_error
