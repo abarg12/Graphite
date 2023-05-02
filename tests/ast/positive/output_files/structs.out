@@ -1,0 +1,15 @@
+int main() 
+{
+dict myDict1 = {
+bool crab;
+int krusty;
+};
+myDict1.remove(crab);
+}
+dict myDict2 = {
+int numbaONe;
+dict otherDict;
+string larryLobstah;
+};
+string hewwo = myDict2.get(larryLobstah);
+int Won = myDict2.get(numbaOne);
