@@ -39,7 +39,7 @@ let check (decls) =
   (* TODO: make it so that you can search built in methods for graphs, etc. *)
   let built_in_graph_meths =
     let add_bind map (name, ty) = StringMap.add name {
-      typ = Graph(["none"]);
+      typ = Graph(Uninitialized, ["none"]);
       fname = name;
       formals = [(ty, "x")];
       body = Block[] } map
@@ -218,16 +218,15 @@ let check (decls) =
         let (new_scope2, (t2, e2')) = expr new_scope funcs e2 in
 
         let same = t1 = t2 in
-        let fields = match t1 with 
-          Graph(fields) -> fields
+        let (typ, fields) = match t1 with 
+          Graph(typ, fields) -> (typ, fields)
           | _ -> raise (
             Failure ("illegal set operator " ^
                           string_of_typ t1 ^ " " ^ string_of_setop setop ^ " " ^
                           string_of_typ t2 ^ " in " ^ string_of_expr e))
         in 
-
         let ty = match setop with
-          Union | Inter | Xor | Diff when same && t1 = Graph(fields) -> Graph(fields)
+          Union | Inter | Xor | Diff when same && t1 = Graph(typ, fields) -> Graph(typ, fields)
         | _ -> raise (
           Failure ("illegal binary operator " ^
                     string_of_typ t1 ^ " " ^ string_of_setop setop ^ " " ^
@@ -269,7 +268,7 @@ let check (decls) =
       we cannot expect a node<?> because we don't know <?> *)
       let o_ty = find_variable scope oname in
       (match o_ty with
-          Graph(flags) ->
+          Graph(typ, flags) ->
             (match mname with
                 "add" ->
                   (match args with
@@ -308,7 +307,6 @@ let check (decls) =
         in
         (scope, (List, SList(convert_es elist scope funcs))) 
     | _ -> raise (Failure("expr: not implemented"))
-
 in
 
 
@@ -376,7 +374,7 @@ in
         raise (Failure (x ^ " already declared in current scope"))
       with Not_found -> 
         match t with 
-           Graph(fields) ->
+           Graph(typ, fields) ->
               let _ = List.map find_invar fields in  
               SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest
           | Node(ty) -> 
@@ -400,7 +398,7 @@ in
         if t != t' then raise (Failure("local bind assign"))
         else
         match t with 
-          Graph(fields) ->
+          Graph(typ, fields) ->
               let _ = List.map find_invar fields in  
               let (_, sexp) = expr scope funcs e in
               SLocalBindAssign(t, x, sexp)::check_body (bind_var scope x t) funcs rest (*CHANGEED HERE ASK ABBY*)
@@ -440,7 +438,7 @@ in
           raise (Failure (x ^ " already declared in current scope"))
         with Not_found -> 
           match t with 
-             Graph(fields) ->
+             Graph(typ, fields) ->
                 let _ = List.map find_invar fields in  
                 SBind(t, x)::check_decls (bind_var scope x t) funcs rest
             | Node(ty) -> 

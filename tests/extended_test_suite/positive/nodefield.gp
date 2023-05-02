@@ -1,4 +1,4 @@
-node n;
+node<int> n;
 n.flag = true;
 bool f = n.flag;
 printf(f);
@@ -7,7 +7,7 @@ int int_value = n.data;
 printf(int_value);
 
 void node_in_func() {
-    node m;
+    node<string> m;
     m.flag = false;
     bool f = m.flag;
     printf(f);

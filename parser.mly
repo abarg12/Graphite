@@ -69,7 +69,7 @@ typ:
   | LIST     { List   }
   | DICT     { Dict   }
   | NODE  LT typ      GT { Node ($3) } 
-  | GRAPH LT flag_opt GT { Graph($3) }
+  | GRAPH LT typ COMMA flag_opt GT { Graph($3, $5) }
 
 
 
