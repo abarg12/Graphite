@@ -62,7 +62,7 @@ let ltype_of_typ = function
   | A.Void  -> void_t   
   | A.String -> string_t 
   | A.Node(typ) -> node_t
-  | A.Edge -> edge_t
+  | A.Edge(typ) -> edge_t
   | A.List -> list_t
   | _ -> raise (Unfinished "not all types implemented")
 in

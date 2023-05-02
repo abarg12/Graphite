@@ -64,7 +64,7 @@ typ:
   | BOOL     { Bool   }
   | FLOAT    { Float  }
   | VOID     { Void   }
-  | EDGE     { Edge   }
+  | EDGE  LT typ      GT { Edge ($3) } 
   | STRING_T { String }
   | LIST     { List   }
   | DICT     { Dict   }

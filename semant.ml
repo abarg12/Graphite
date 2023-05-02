@@ -111,7 +111,7 @@ let check (decls) =
   let assert_field x field m =
     match find_variable m x with
         Node(_) -> find_node_field field
-      | Edge -> find_edge_field field
+      | Edge(_) -> find_edge_field field
       | _ -> raise (Failure (x ^ " is not a node or edge"))
   in
   let get_field_ty x field m =
@@ -144,7 +144,11 @@ let check (decls) =
           (Node(_src_dty), Node(_dst_dty)) -> (_src_dty, _dst_dty)
         | _ -> raise (Failure ("semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " cannot form an edge"))
       in
-      (Edge, (SEdge((src_ty, src_sx), (dst_ty, dst_sx))))
+      let _ = match src_dty with 
+          _ when src_dty = dst_ty -> dst_ty
+        | _ -> raise (Failure ("edge source and destination must be nodes of the same type"))
+      in
+      (Edge(src_dty), (SEdge((src_ty, src_sx), (dst_ty, dst_sx))))
     | Assign(x, e) ->
       (match e with 
           Call("array_get", _) -> 
@@ -382,7 +386,7 @@ in
             (*let scope2 = (bind_var scope1 (x ^ ".data") Uninitialized) in *)
             (*I THINK NODES NEED TO BE (NODE of DATA)*)
             SLocalBind(t, x)::check_body scope1 funcs rest
-          | Edge -> 
+          | Edge(ty) -> 
             let scope1 = (bind_var scope x t) in 
             (*let scope2 = (bind_var scope1 (x ^ ".src.data") Uninitialized) in 
             let scope3 = (bind_var scope2 (x ^ ".dst.data") Uninitialized) in *)
@@ -444,7 +448,7 @@ in
               let scope1 = (bind_var scope x t) in 
               (*let scope2 = (bind_var scope1 (x ^ ".data") Uninitialized) in *)
               SBind(t, x)::check_decls scope1 funcs rest
-            | Edge -> 
+            | Edge(ty) -> 
               let scope1 = (bind_var scope x t) in 
               (*let scope2 = (bind_var scope1 (x ^ "src.data") Uninitialized) in 
               let scope3 = (bind_var scope2 (x ^ "dst.data") Uninitialized) in *)
