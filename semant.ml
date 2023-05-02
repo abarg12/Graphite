@@ -114,6 +114,7 @@ let check (decls) =
       | Edge(_) -> find_edge_field field
       | _ -> raise (Failure (x ^ " is not a node or edge"))
   in
+
   let get_field_ty x field m =
     match field with
         "flag" -> Bool  
@@ -123,8 +124,16 @@ let check (decls) =
         (match xty with 
             Node(dty) -> dty
           | actual -> raise (Failure("semant/field_ty: " ^ x ^ " must be of node type. Actual: " ^ string_of_typ actual)))
-      | "src" -> Node(Uninitialized) (*placeholder*) 
-      | "dst" -> Node(Uninitialized) (*placeholder*)
+      | "src" -> 
+        let xty = find_variable m x in
+        (match xty with 
+            Edge(dty) -> Node(dty)
+          | actual -> raise (Failure("semant/field_ty: " ^ x ^ " must be of edge type. Actual: " ^ string_of_typ actual)))
+      | "dst" -> 
+        let xty = find_variable m x in
+        (match xty with 
+            Edge(dty) -> Node(dty)
+          | actual -> raise (Failure("semant/field_ty: " ^ x ^ " must be of edge type. Actual: " ^ string_of_typ actual)))
       | "weight" -> Int
       | _ -> raise (Failure ("Field " ^ field ^ " does not exist in " ^ x))
     in
