@@ -7,15 +7,9 @@ type setop = Inter | Diff | Union | Xor
 
 type uop = Neg | Not
 
-<<<<<<< HEAD
-type typ = Int | Bool | Float | Void | Node of typ | Edge | String |
-           List_t | Dict | Richard | Graph of string list 
-(* "Richard" is a temp type holder used for node *)
-=======
 type typ = Int | Bool | Float | Void | Node of typ | Edge of typ | String |
            List | Dict | Uninitialized | Graph of (typ * string list)
 (* "Uninitialized" is a temp type holder used for node *)
->>>>>>> 5a4a400c575b66eb50c985b17b031ec34e81e968
 
 type bind = typ * string
 
