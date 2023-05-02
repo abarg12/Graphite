@@ -8,7 +8,7 @@ type setop = Inter | Diff | Union | Xor
 type uop = Neg | Not
 
 type typ = Int | Bool | Float | Void | Node of typ | Edge of typ | String |
-           List | Dict | Uninitialized | Graph of (typ * string list)
+           List_t | Dict | Uninitialized | Graph of (typ * string list)
 (* "Uninitialized" is a temp type holder used for node *)
 
 type bind = typ * string
