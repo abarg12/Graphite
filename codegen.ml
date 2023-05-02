@@ -15,7 +15,6 @@ http://llvm.moe/ocaml/
 (* We'll refer to Llvm and Ast constructs with module names *)
 module L = Llvm
 module A = Ast
-open Predef
 open Sast 
 
 module StringMap = Map.Make(String)
@@ -46,6 +45,10 @@ let translate decls =
          L.i32_type context|] false
     in 
   let list_t   = L.pointer_type (L.i8_type context)
+  and list_closure = L.named_struct_type context "list_closure" in
+  let _ = L.struct_set_body list_closure
+    [| list_t;
+       L.i32_type context |] false
   and i32_t    = L.i32_type context
   and i8_t     = L.i8_type context
   and i1_t     = L.i1_type context
@@ -53,6 +56,7 @@ let translate decls =
   and float_t  = L.double_type context
   and void_t   = L.void_type context 
   and the_module = L.create_module context "Graphite" in 
+
 
 (*** Define Graphite -> LLVM types here ***)
 let ltype_of_typ = function
@@ -62,8 +66,8 @@ let ltype_of_typ = function
   | A.Void  -> void_t   
   | A.String -> string_t 
   | A.Node(typ) -> node_t
-  | A.Edge -> edge_t
-  | A.List -> list_t
+  | A.Edge(typ) -> edge_t
+  | A.List_t -> list_t
   | _ -> raise (Unfinished "not all types implemented")
 in
 
@@ -106,10 +110,6 @@ let rec find_func (scope : symbol_table) (name : string) =
     | None -> raise Not_found
 in
 
-(* let find_meth (name : string) = (* at this point we only need the name of it bc we know the type should be checked*)
-
-in *)
-
 (* Add function name to symbol table *)
 (* func is the llvm func type *)
 let add_func s func stable = 
@@ -139,9 +139,7 @@ let printf_func : L.llvalue =
 let array_get_t = 
   L.var_arg_function_type (L.pointer_type i8_t) [| L.pointer_type i8_t; i32_t |] in
 let array_get_func = 
-  L.declare_function "array_get" array_get_t the_module in
-  
-(* Place for predefined node dot calls *)
+  L.declare_function "array_get" array_get_t the_module in 
 
 
 (* let add_node_t : L.lltype = 
@@ -226,7 +224,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
         | A.Not                  -> L.build_not)
       e' "tmp" builder 
   | SId s -> (match styp with 
-                  A.List -> let list_ptr = L.build_load (find_variable stable s) s builder in 
+                  A.List_t -> let list_ptr = L.build_load (find_variable stable s) s builder in 
                             L.build_load list_ptr s builder 
                 | _ -> L.build_load (find_variable stable s) s builder)
   | SAssign (s, (typ, sexp)) -> 
@@ -255,14 +253,23 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
                         Some(f) -> f
                       | _ -> raise (Failure "No function definition found"))
           in 
-          let llargs = List.rev (List.map (expr (builder, stable)) (List.rev args)) in
+          (* let _ = List.map L.dump_value (Array.to_list (L.params llvm_decl)) in *)
+          let proc_args arg = (match arg with 
+                                  (A.List_t, SId s) -> let arr_ptr = L.build_load (find_variable stable s) s builder in
+                                                          L.const_named_struct list_closure
+                                                              [| L.build_pointercast arr_ptr list_t "list_arg" builder; 
+                                                                 L.const_int i32_t (L.array_length (L.type_of arr_ptr)) |]
+                                | (A.List_t, _) -> let arr_ptr = expr (builder, stable) arg in
+                                                      L.const_named_struct list_closure
+                                                        [| L.build_pointercast arr_ptr list_t "list_arg" builder; 
+                                                          L.const_int i32_t (L.array_length (L.type_of arr_ptr)) |]
+                                | _ -> expr (builder, stable) arg) in
+          (* let proc_args arg = expr (builder, stable) arg in                       *)
+          let llargs = List.rev (List.map proc_args (List.rev args)) in
           let result = (match sfdecl.styp with 
                             A.Void -> ""
                           | _ -> name ^ "_result") in
                     L.build_call llvm_decl (Array.of_list llargs) result builder)
-  | SDotCall (ds, name, args) ->
-    (* let (meth, llvm_decl) = find_meth stable name in *)
-    raise (Failure ("working on dot calls"))
   | SDotOp(var, field) -> 
         let lvar = find_variable stable var in 
         let steven = match field with 
@@ -400,7 +407,7 @@ and array_get_def (builder, stable) args =
             (* L.build_load uncast "actual" builder *)
 
       | _ -> raise (Failure("wrong args to array_get")))
-in
+in 
 
 (*** end built-in func defs ***)
 
@@ -415,8 +422,8 @@ let rec sb_lines (builder, stable) (ls : sb_line list) = match ls with
 and stmt (builder, stable) = function
     SExpr (typ, sexp) -> 
       (match (typ, sexp) with
-          (A.List, SAssign(s,(typ,SList(es)))) -> bindassign (builder, stable) 
-                                                          (A.List, s, (typ, SList(es)))
+          (A.List_t, SAssign(s,(typ,SList(es)))) -> bindassign (builder, stable) 
+                                                          (A.List_t, s, (typ, SList(es)))
         | _ -> let _ = expr (builder, stable) (typ, sexp) in (builder, stable))
 
   | SBlock ls -> let stable' = {
@@ -483,7 +490,7 @@ and  bind (builder, stable) = function
                                       [| (L.const_int i8_t 0); 
                                           (L.const_int i1_t 0); 
                                           (L.const_int i8_t 0); |] 
-            | A.List -> L.const_pointer_null (L.pointer_type i8_t)
+            | A.List_t -> L.const_pointer_null (L.pointer_type i8_t)
             | _ -> raise (Failure "no global default value set")
           in 
 
@@ -501,7 +508,7 @@ and bindassign (builder, stable) = function
     let e' =
         (match e with
                 (_, SCall("array_get", _)) -> let exp = expr (builder, stable) e in
-                              let e_cast = L.build_pointercast exp (ltype_of_typ typ) "li_conv" builder in
+                              let e_cast = L.build_pointercast exp (L.pointer_type (ltype_of_typ typ)) "li_conv" builder in
                               L.build_load e_cast "val_ptr" builder
                               (* let _ = L.dump_value values in
                               values  *)
@@ -517,7 +524,7 @@ and bindassign (builder, stable) = function
                                 [| (L.const_int i8_t 0); 
                                       (L.const_int i1_t 0); 
                                       (L.const_int i8_t 0); |] 
-            | A.List -> L.const_pointer_null (L.type_of e')
+            | A.List_t -> L.const_pointer_null (L.type_of e')
             | _ -> raise (Failure "no global default value set")
           in 
           
@@ -526,14 +533,17 @@ and bindassign (builder, stable) = function
           let stable' = bind_var stable s new_glob in
           (builder, stable')
     else
-        let new_var = L.build_alloca (ltype_of_typ typ) s builder in
+        let new_var = L.build_alloca (L.type_of e') s builder in
         let _ = L.build_store e' new_var builder in
         let stable' = bind_var stable s new_var in
         (builder, stable')
 
 and fdecl (builder, stable) f =
         let name = f.sfname in 
-        let formal_types = Array.of_list (List.map (fun (t, _) -> ltype_of_typ t) f.sformals) in
+        let formal_types = Array.of_list (List.map (fun (t, _) -> match t with
+                                                                      A.List_t -> list_closure
+                                                                    | _ -> ltype_of_typ t) 
+                                            f.sformals) in
         let ftype = L.function_type (ltype_of_typ f.styp) formal_types in
         let llvm_func = L.define_function name ftype the_module in
         let stable' = add_func name (Some f, llvm_func) stable in

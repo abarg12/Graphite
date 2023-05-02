@@ -34,7 +34,7 @@ let check (decls) =
       formals = fs;
       body = Block[] } map
     in List.fold_left add_bind StringMap.empty [ ("printf", Int, [(Int, "x")]); 
-                                                 ("array_get", List, [(List, "arr");(Int, "idx")])]
+                                                 ("array_get", List_t, [(List_t, "arr");(Int, "idx")])]
   in
 
   (* TODO: make it so that you can search built in methods for graphs, etc. *)
@@ -133,9 +133,10 @@ let check (decls) =
   let assert_field x field m =
     match find_variable m x with
         Node(_) -> find_node_field field
-      | Edge -> find_edge_field field
+      | Edge(_) -> find_edge_field field
       | _ -> raise (Failure (x ^ " is not a node or edge"))
   in
+
   let get_field_ty x field m =
     match field with
         "flag" -> Bool  
@@ -145,8 +146,16 @@ let check (decls) =
         (match xty with 
             Node(dty) -> dty
           | actual -> raise (Failure("semant/field_ty: " ^ x ^ " must be of node type. Actual: " ^ string_of_typ actual)))
-      | "src" -> Node(Uninitialized) (*placeholder*) 
-      | "dst" -> Node(Uninitialized) (*placeholder*)
+      | "src" -> 
+        let xty = find_variable m x in
+        (match xty with 
+            Edge(dty) -> Node(dty)
+          | actual -> raise (Failure("semant/field_ty: " ^ x ^ " must be of edge type. Actual: " ^ string_of_typ actual)))
+      | "dst" -> 
+        let xty = find_variable m x in
+        (match xty with 
+            Edge(dty) -> Node(dty)
+          | actual -> raise (Failure("semant/field_ty: " ^ x ^ " must be of edge type. Actual: " ^ string_of_typ actual)))
       | "weight" -> Int
       | _ -> raise (Failure ("Field " ^ field ^ " does not exist in " ^ x))
     in
@@ -166,7 +175,14 @@ let check (decls) =
           (Node(_src_dty), Node(_dst_dty)) -> (_src_dty, _dst_dty)
         | _ -> raise (Failure ("semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " cannot form an edge"))
       in
-      (Edge, (SEdge((src_ty, src_sx), (dst_ty, dst_sx))))
+      let src_data_ty = match src_ty with 
+          _ when src_ty = dst_ty -> 
+              match dst_ty with 
+                Node(x) -> x
+              | _ -> raise (Failure ("semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " must point to node types"))
+        | _ -> raise (Failure ("edge source and destination must be nodes of the same type"))
+      in
+      (Edge(src_data_ty), (SEdge((src_ty, src_sx), (dst_ty, dst_sx))))
     | Assign(x, e) ->
       (match e with 
           Call("array_get", _) -> 
@@ -342,7 +358,7 @@ let check (decls) =
           | e::es -> let se = (expr scope funcs e) in
                             se :: convert_es es scope funcs
         in
-        (List, SList(convert_es elist scope funcs))
+        (List_t, SList(convert_es elist scope funcs))
     | _ -> raise (Failure("expr: not implemented"))
 in
 
@@ -419,7 +435,7 @@ in
             (*let scope2 = (bind_var scope1 (x ^ ".data") Uninitialized) in *)
             (*I THINK NODES NEED TO BE (NODE of DATA)*)
             SLocalBind(t, x)::check_body scope1 funcs rest
-          | Edge -> 
+          | Edge(ty) -> 
             let scope1 = (bind_var scope x t) in 
             (*let scope2 = (bind_var scope1 (x ^ ".src.data") Uninitialized) in 
             let scope3 = (bind_var scope2 (x ^ ".dst.data") Uninitialized) in *)
@@ -431,9 +447,12 @@ in
         raise (Failure (x ^ " already declared in current scope"))
       with Not_found -> 
         let (t', sexp) = expr scope funcs e in
-     
-        if t != t' then raise (Failure("local bind assign"))
-        else
+
+        let _ = (match sexp with
+              SCall("array_get", _) -> ()
+            | _ -> if t != t' then raise (Failure("local bind assign"))
+        ) in 
+
         match t with 
           Graph(typ, fields) ->
               let _ = List.map find_invar fields in  
@@ -460,9 +479,10 @@ in
       | [] -> map 
   in 
 
-  let rec check_node_dty n1 n2 = match (n1, n2) with
+  let rec check_dty n1 n2 = match (n1, n2) with
       (Node(dty1), Node(dty2)) -> dty1 = dty2
-    | _ -> raise (Failure("node typecheck failed"))
+    | (Edge(dty1), Edge(dty2)) -> dty1 = dty2
+    | _ -> raise (Failure("node/edge typecheck failed"))
   in
 
   let rec check_decls (scope : symbol_table) funcs decls =
@@ -481,7 +501,7 @@ in
               let scope1 = (bind_var scope x t) in 
               (*let scope2 = (bind_var scope1 (x ^ ".data") Uninitialized) in *)
               SBind(t, x)::check_decls scope1 funcs rest
-            | Edge -> 
+            | Edge(ty) -> 
               let scope1 = (bind_var scope x t) in 
               (*let scope2 = (bind_var scope1 (x ^ "src.data") Uninitialized) in 
               let scope3 = (bind_var scope2 (x ^ "dst.data") Uninitialized) in *)
@@ -504,7 +524,7 @@ in
           let (et, sx) = expr scope funcs e in
           let err = "semant/BindAssign: illegal assignment: " ^ x ^ " : " ^ string_of_typ t ^ " = " ^ string_of_typ et in
 
-          if t != et && (not (check_node_dty t et))
+          if t != et && (not (check_dty t et))
           then raise (Failure(err))
           else SBindAssign(t, x, (et, sx))::check_decls (bind_var scope x t) funcs rest
           (* graphs cannot be assigned to something??? *)

@@ -7,8 +7,8 @@ type setop = Inter | Diff | Union | Xor
 
 type uop = Neg | Not
 
-type typ = Int | Bool | Float | Void | Node of typ | Edge | String |
-           List | Dict | Uninitialized | Graph of (typ * string list)
+type typ = Int | Bool | Float | Void | Node of typ | Edge of typ | String |
+           List_t | Dict | Uninitialized | Graph of (typ * string list)
 (* "Uninitialized" is a temp type holder used for node *)
 
 type bind = typ * string
@@ -98,10 +98,10 @@ let rec string_of_typ = function
   | Void -> "void"
   | Uninitialized -> "" (*for later -- is this dumb lol? *)
   | Node(t) -> "node<" ^ string_of_typ t ^ ">"
-  | Edge -> "edge" 
+  | Edge(t) -> "edge<" ^ string_of_typ t ^ ">"
   | Graph((typ, flags)) -> "graph <" ^ string_of_typ typ ^ ", " ^ String.concat ", " (List.map (fun (x) -> x) flags) ^ ">"
   | String -> "string"
-  | List -> "list"
+  | List_t -> "list"
   | Dict -> "dict"
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"

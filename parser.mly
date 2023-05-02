@@ -64,9 +64,9 @@ typ:
   | BOOL     { Bool   }
   | FLOAT    { Float  }
   | VOID     { Void   }
-  | EDGE     { Edge   }
+  | EDGE  LT typ      GT { Edge ($3) } 
   | STRING_T { String }
-  | LIST     { List   }
+  | LIST     { List_t }
   | DICT     { Dict   }
   | NODE  LT typ      GT { Node ($3) } 
   | GRAPH LT graph_specifics GT { Graph($3) }
