@@ -282,7 +282,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
             | _ -> raise (Failure ("syntax error caught post parsing. Nonexistent field " ^ field))
         in 
         let steven' = match styp with 
-              Uninitialized -> raise (Failure ("data field never set in node.data " ^ field))
+              Uninitialized -> raise (Failure ("something went wrong " ^ field))
             | _ -> L.build_load steven (var ^ "." ^ field) builder 
         in
         (match field with 
