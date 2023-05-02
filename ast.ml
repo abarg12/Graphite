@@ -7,9 +7,15 @@ type setop = Inter | Diff | Union | Xor
 
 type uop = Neg | Not
 
+<<<<<<< HEAD
 type typ = Int | Bool | Float | Void | Node of typ | Edge | String |
            List_t | Dict | Richard | Graph of string list 
 (* "Richard" is a temp type holder used for node *)
+=======
+type typ = Int | Bool | Float | Void | Node of typ | Edge of typ | String |
+           List | Dict | Uninitialized | Graph of (typ * string list)
+(* "Uninitialized" is a temp type holder used for node *)
+>>>>>>> 5a4a400c575b66eb50c985b17b031ec34e81e968
 
 type bind = typ * string
 
@@ -91,15 +97,15 @@ let string_of_uop = function
     Neg -> "-"
   | Not -> "not"
 
-let string_of_typ = function
+let rec string_of_typ = function
     Int -> "int"
   | Bool -> "bool"
   | Float -> "float"
   | Void -> "void"
-  | Richard -> "" (*for later -- is this dumb lol? *)
-  | Node(typ) -> "node"
-  | Edge -> "edge"
-  | Graph(flags) -> "graph <" ^ String.concat ", " (List.map (fun (x) -> x) flags) ^ ">"
+  | Uninitialized -> "" (*for later -- is this dumb lol? *)
+  | Node(t) -> "node<" ^ string_of_typ t ^ ">"
+  | Edge(t) -> "edge<" ^ string_of_typ t ^ ">"
+  | Graph((typ, flags)) -> "graph <" ^ string_of_typ typ ^ ", " ^ String.concat ", " (List.map (fun (x) -> x) flags) ^ ">"
   | String -> "string"
   | List_t -> "list"
   | Dict -> "dict"

@@ -20,19 +20,19 @@ HOW TO RUN TEST SCRIPT:
     TO RUN SPECIFIC TESTS (both AST and LLVM):
         ./runtests.sh full_path
         where full_path is the full path to the test you want to run.
-        For example, "/tests/positive/test1.gp", not just "test1.gp".
+        For example, "/tests/ast/positive/test1.gp", not just "test1.gp".
     
     TO COMPILE ANY GRAPHITE PROGRAM INTO AN LLVM EXECUTABLE:
         ./compile.sh full_path
         where full_path is the full path to the test you want to run.
         For example, "/graphite_programs/prog1.gp", not just "prog1.gp".
-        This generates an executable in the folder tests/generatedfiles
+        This generates an executable in the folder tests/compile/
         that can be run with ./file_name.exe
 
 INTEGRATION TESTS
     POSITIVE TESTS: 
     
-        bindassign.gp (NEW IN GRAPHITE)
+        bind_assign.gp (NEW IN GRAPHITE)
             tests variable declaration and assignment in one line
             example: int a = 1;
         
@@ -62,14 +62,14 @@ INTEGRATION TESTS
         strings.gp (NEW IN GRAPHITE)
             tests string declaration, assignment, and printing
             
-        nodefield.gp 
+        node_field.gp 
             this tests the ability to set a node field (specifically the flag) 
             value and then retrieve the set value (ex. node.flag = true)  
 
 
     NEGATIVE TESTS:
 
-        graphOps.gp
+        graph_ops.gp
             This tests graph declarations (with flags). It ensures that improper 
             invariant flags are rejected. 
             example: graph<tree, other> g1;
