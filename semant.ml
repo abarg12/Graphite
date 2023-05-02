@@ -153,11 +153,14 @@ let check (decls) =
           (Node(_src_dty), Node(_dst_dty)) -> (_src_dty, _dst_dty)
         | _ -> raise (Failure ("semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " cannot form an edge"))
       in
-      let _ = match src_dty with 
-          _ when src_dty = dst_ty -> dst_ty
+      let src_data_ty = match src_ty with 
+          _ when src_ty = dst_ty -> 
+              match dst_ty with 
+                Node(x) -> x
+              | _ -> raise (Failure ("semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " must point to node types"))
         | _ -> raise (Failure ("edge source and destination must be nodes of the same type"))
       in
-      (Edge(src_dty), (SEdge((src_ty, src_sx), (dst_ty, dst_sx))))
+      (Edge(src_data_ty), (SEdge((src_ty, src_sx), (dst_ty, dst_sx))))
     | Assign(x, e) ->
       (match e with 
           Call("array_get", _) -> 
@@ -436,9 +439,10 @@ in
       | [] -> map 
   in 
 
-  let rec check_node_dty n1 n2 = match (n1, n2) with
+  let rec check_dty n1 n2 = match (n1, n2) with
       (Node(dty1), Node(dty2)) -> dty1 = dty2
-    | _ -> raise (Failure("node typecheck failed"))
+    | (Edge(dty1), Edge(dty2)) -> dty1 = dty2
+    | _ -> raise (Failure("node/edge typecheck failed"))
   in
 
   let rec check_decls (scope : symbol_table) funcs decls =
@@ -480,7 +484,7 @@ in
           let (et, sx) = expr scope funcs e in
           let err = "semant/BindAssign: illegal assignment: " ^ x ^ " : " ^ string_of_typ t ^ " = " ^ string_of_typ et in
 
-          if t != et && (not (check_node_dty t et))
+          if t != et && (not (check_dty t et))
           then raise (Failure(err))
           else SBindAssign(t, x, (et, sx))::check_decls (bind_var scope x t) funcs rest
           (* graphs cannot be assigned to something??? *)
