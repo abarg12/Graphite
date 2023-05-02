@@ -19,14 +19,19 @@ make toplevel.native
 
 make_dir $BASE_DIR
 
+NOC="\033[0m"
+RED="\033[0;31m"
+GRN="\033[1;32m"
+BLU="\033[1;34m"
+
 # $1 FILENAME
 # $2 OUTPUT_FILE_DIR
 # $3 GOLD_STANDARD_DIR
 diff() {
     PARENT_DIR=${2%%.*}
     if cmp $2 $3;
-    then echo $1 "PASSED"
-    else echo $1 "FAILED"
+    then echo -e $1 "${GRN}PASSED${NOC}"
+    else echo -e $1 "${RED}FAILED${NOC}"
     fi
 }
 
@@ -49,7 +54,7 @@ run_batch() {
     then make_dir "$BASE_DIR/$1/$SIGN/llvm"
     fi
     
-    echo -e "\n[Running $SIGN $1 tests]\n"
+    echo -e "\n${BLU}[Running $SIGN $1 tests]${NOC}\n"
 
     if [ $1 == "ast" ]
     then
@@ -150,9 +155,14 @@ run_one() {
     fi
 }
 
-if [ $1 = "all" ]
+if [ $# == 1 ]
 then
-    run_all
+    if [ $1 = "all" ]
+    then
+        run_all
+    else
+        run_one $1
+    fi
 else
-    run_one $1
+    echo "Usage: ./runtests.sh [all | test_dir]"
 fi
