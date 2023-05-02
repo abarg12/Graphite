@@ -69,7 +69,7 @@ typ:
   | LIST     { List   }
   | DICT     { Dict   }
   | NODE  LT typ      GT { Node ($3) } 
-  | GRAPH LT typ COMMA flag_opt GT { Graph($3, $5) }
+  | GRAPH LT graph_specifics GT { Graph($3) }
 
 
 
@@ -178,3 +178,7 @@ flag_opt:
 flags_list:
     ID                   { [$1] }
   | flags_list COMMA ID  { $3 :: $1 }
+
+graph_specifics: 
+    typ                   { ($1, []) }
+  | typ COMMA flag_opt    { ($1 , $3)  }

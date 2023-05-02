@@ -1,4 +1,4 @@
-node n; 
+node<string> n; 
 
 n.flag = true; 
 n.name = "myName"; 

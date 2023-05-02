@@ -1,5 +1,5 @@
-edge testEdge(node n1, node n2) {
-    node temp;
+edge testEdge(node<int> n1, node<int> n2) {
+    node<int> temp;
 
     n1.name = "Spongebob";
     n1.value = 3;
@@ -7,7 +7,7 @@ edge testEdge(node n1, node n2) {
     return n1 -> n2;
 }
 
-node testNode(edge e) {
-    node temp;
+node<int> testNode(edge e) {
+    node<int> temp;
     return temp;
 }

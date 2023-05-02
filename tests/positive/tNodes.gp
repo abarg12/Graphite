@@ -1,5 +1,5 @@
 int main () {
-    node a;
+    node<int> a;
 
     a.flag = true;
     a.value = 2;
