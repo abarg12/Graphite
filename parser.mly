@@ -67,7 +67,7 @@ typ:
   | NODE     { Node(Richard)} 
   | EDGE     { Edge   }
   | STRING_T { String }
-  | LIST     { List   }
+  | LIST     { List_t }
   | DICT     { Dict   }
   | GRAPH LT flag_opt GT { Graph($3) }
 

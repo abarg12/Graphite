@@ -8,7 +8,7 @@ type setop = Inter | Diff | Union | Xor
 type uop = Neg | Not
 
 type typ = Int | Bool | Float | Void | Node of typ | Edge | String |
-           List | Dict | Richard | Graph of string list 
+           List_t | Dict | Richard | Graph of string list 
 (* "Richard" is a temp type holder used for node *)
 
 type bind = typ * string
@@ -101,7 +101,7 @@ let string_of_typ = function
   | Edge -> "edge"
   | Graph(flags) -> "graph <" ^ String.concat ", " (List.map (fun (x) -> x) flags) ^ ">"
   | String -> "string"
-  | List -> "list"
+  | List_t -> "list"
   | Dict -> "dict"
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"

@@ -1,0 +1,5 @@
+Use of instruction is not an instruction!
+  %list_arg = bitcast [3 x i8*]* %array155 to i8*
+Stored value type does not match pointer operand type!
+  store %list_closure %l1, i8** %l, align 8
+ %list_closure = type { i8*, i32 }LLVM ERROR: Broken module found, compilation aborted!

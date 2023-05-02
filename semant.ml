@@ -33,7 +33,7 @@ let check (decls) =
       formals = fs;
       body = Block[] } map
     in List.fold_left add_bind StringMap.empty [ ("printf", Int, [(Int, "x")]); 
-                                                 ("array_get", List, [(List, "arr");(Int, "idx")])]
+                                                 ("array_get", List_t, [(List_t, "arr");(Int, "idx")])]
   in
 
   (* TODO: make it so that you can search built in methods for graphs, etc. *)
@@ -267,7 +267,7 @@ let check (decls) =
           | e::es -> let (scope, se) = (expr scope funcs e) in
                             se :: convert_es es scope funcs
         in
-        (scope, (List, SList(convert_es elist scope funcs))) 
+        (scope, (List_t, SList(convert_es elist scope funcs))) 
     | _ -> raise (Failure("expr: not implemented"))
 
 in
@@ -356,10 +356,13 @@ in
         let _ = find_loc_variable scope x in
         raise (Failure (x ^ " already declared in current scope"))
       with Not_found -> 
-        let (_, (t', _)) = expr scope funcs e in
-     
-        if t != t' then raise (Failure("local bind assign"))
-        else
+        let (_, (t', sexp)) = expr scope funcs e in
+
+        let _ = (match sexp with
+              SCall("array_get", _) -> ()
+            | _ -> if t != t' then raise (Failure("local bind assign"))
+        ) in 
+
         match t with 
           Graph(fields) ->
               let _ = List.map find_invar fields in  

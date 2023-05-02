@@ -45,6 +45,10 @@ let translate decls =
          L.i32_type context|] false
     in 
   let list_t   = L.pointer_type (L.i8_type context)
+  and list_closure = L.named_struct_type context "list_closure" in
+                      let _ = L.struct_set_body list_closure
+                        [| list_t;
+                           L.i32_type context |] false
   and i32_t    = L.i32_type context
   and i8_t     = L.i8_type context
   and i1_t     = L.i1_type context
@@ -63,7 +67,7 @@ let ltype_of_typ = function
   | A.String -> string_t 
   | A.Node(typ) -> node_t
   | A.Edge -> edge_t
-  | A.List -> list_t
+  | A.List_t -> list_t
   | _ -> raise (Unfinished "not all types implemented")
 in
 
@@ -219,8 +223,9 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
         | A.Neg                  -> L.build_neg
         | A.Not                  -> L.build_not)
       e' "tmp" builder 
-  | SId s -> (match styp with 
-                  A.List -> let list_ptr = L.build_load (find_variable stable s) s builder in 
+  | SId s -> 
+        (match styp with 
+                  A.List_t -> let list_ptr = L.build_load (find_variable stable s) s builder in 
                             L.build_load list_ptr s builder 
                 | _ -> L.build_load (find_variable stable s) s builder)
   | SAssign (s, (typ, sexp)) -> 
@@ -228,7 +233,6 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
           SCall("array_get", _) -> let e' = expr (builder, stable) (typ, sexp) in
                                 let e_cast = L.build_pointercast e' (L.type_of (find_variable stable s)) "li_conv" builder in
                                 let e_cast_val = L.build_load e_cast "val_ptr" builder in
-                                (* let _ = L.dump_value (find_variable stable s) in  *)
                                 let _ = L.build_store e_cast_val (find_variable stable s) builder in 
                                 e'
         | _ -> let e' = expr (builder, stable) (typ, sexp) in
@@ -249,7 +253,19 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
                         Some(f) -> f
                       | _ -> raise (Failure "No function definition found"))
           in 
-          let llargs = List.rev (List.map (expr (builder, stable)) (List.rev args)) in
+          (* let _ = List.map L.dump_value (Array.to_list (L.params llvm_decl)) in *)
+          let proc_args arg = (match arg with 
+                                  (A.List_t, SId s) -> let arr_ptr = L.build_load (find_variable stable s) s builder in
+                                                          L.const_named_struct list_closure
+                                                              [| L.build_pointercast arr_ptr list_t "list_arg" builder; 
+                                                                 L.const_int i32_t (L.array_length (L.type_of arr_ptr)) |]
+                                | (A.List_t, _) -> let arr_ptr = expr (builder, stable) arg in
+                                                      L.const_named_struct list_closure
+                                                        [| L.build_pointercast arr_ptr list_t "list_arg" builder; 
+                                                          L.const_int i32_t (L.array_length (L.type_of arr_ptr)) |]
+                                | _ -> expr (builder, stable) arg) in
+          (* let proc_args arg = expr (builder, stable) arg in                       *)
+          let llargs = List.rev (List.map proc_args (List.rev args)) in
           let result = (match sfdecl.styp with 
                             A.Void -> ""
                           | _ -> name ^ "_result") in
@@ -334,11 +350,8 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
   | SList(ses) ->
       let list_len = List.length ses in
       let array_type = L.array_type (L.pointer_type i8_t) list_len in
-      (* let array_initialized = Array.make list_len (L.const_int i8_t 0) in 
-      let array_mem = L.const_array array_type array_initialized in *)
       let array_ptr = L.build_array_malloc array_type (L.const_int i32_t list_len) 
                                                         "array" builder in 
-      (* let _ = L.dump_value array_ptr in *)
       let rec add_elems idx es array_p = (match es with
           [] -> 0
         | (typ, e) :: es -> let llvm_val = expr (builder, stable) (typ, e) in
@@ -353,18 +366,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
                     ) 
       in 
       let _ = add_elems 0 ses array_ptr in 
-      (* let array_idx = L.build_in_bounds_gep array_ptr [| (L.const_int i32_t 0);
-                                                          (L.const_int i32_t 2) |] 
-                                                              "arr_idx" builder in
-      let value = L.build_load array_idx "value" builder in
-      let uncast = L.build_pointercast value (L.pointer_type i32_t) "arr_val" builder in
-      let valuenew = L.build_load uncast "actual" builder in 
-      let _ = L.build_call printf_func [| int_format_str builder ; valuenew |] "printf" builder in *)
-      (* let _ = L.dump_value value in  *)
-                     (* let array_ind = L.build_in_bounds_gep array_p  *)
-      (* let _ = L.dump_value array_ptr in  *)
       array_ptr
-      (* L.build_pointercast array_ptr (L.pointer_type i8_t) "array_pointer" builder *)
       
 
   | _ -> raise (Failure("expr: not implemented"))
@@ -377,18 +379,10 @@ and array_get_def (builder, stable) args =
             let list_dp = find_variable stable list_id in 
             let list_p = L.build_load list_dp "list" builder in
             let idx = expr (builder, stable) index in
-            (* let array_idx = L.build_in_bounds_gep list_p [| (L.const_int i32_t 0); (L.const_int i32_t 0) |]  *)
-                                                                    (* "arr_idx" builder in  *)
-            (* L.build_load array_idx "val" builder *)
-            (* L.const_int i8_t 0 *)
-
             let array_idx = L.build_in_bounds_gep list_p [| (L.const_int i32_t 0); idx |] 
                                                                   "arr_idx" builder 
             in
             L.build_load array_idx "value" builder
-            (* let value = L.build_load array_idx "value" builder in *)
-            (* let uncast = L.build_pointercast value (L.pointer_type i32_t) "arr_val" builder in *)
-            (* L.build_load uncast "actual" builder *)
 
       | _ -> raise (Failure("wrong args to array_get")))
 in 
@@ -406,8 +400,8 @@ let rec sb_lines (builder, stable) (ls : sb_line list) = match ls with
 and stmt (builder, stable) = function
     SExpr (typ, sexp) -> 
       (match (typ, sexp) with
-          (A.List, SAssign(s,(typ,SList(es)))) -> bindassign (builder, stable) 
-                                                          (A.List, s, (typ, SList(es)))
+          (A.List_t, SAssign(s,(typ,SList(es)))) -> bindassign (builder, stable) 
+                                                          (A.List_t, s, (typ, SList(es)))
         | _ -> let _ = expr (builder, stable) (typ, sexp) in (builder, stable))
 
   | SBlock ls -> let stable' = {
@@ -474,7 +468,7 @@ and  bind (builder, stable) = function
                                       [| (L.const_int i8_t 0); 
                                           (L.const_int i1_t 0); 
                                           (L.const_int i8_t 0); |] 
-            | A.List -> L.const_pointer_null (L.pointer_type i8_t)
+            | A.List_t -> L.const_pointer_null (L.pointer_type i8_t)
             | _ -> raise (Failure "no global default value set")
           in 
 
@@ -492,10 +486,8 @@ and bindassign (builder, stable) = function
     let e' =
         (match e with
                 (_, SCall("array_get", _)) -> let exp = expr (builder, stable) e in
-                              let e_cast = L.build_pointercast exp (ltype_of_typ typ) "li_conv" builder in
+                              let e_cast = L.build_pointercast exp (L.pointer_type (ltype_of_typ typ)) "li_conv" builder in
                               L.build_load e_cast "val_ptr" builder
-                              (* let _ = L.dump_value values in
-                              values  *)
               | _ -> expr (builder, stable) e) in
 
     if stable.parent = None then
@@ -508,7 +500,7 @@ and bindassign (builder, stable) = function
                                 [| (L.const_int i8_t 0); 
                                       (L.const_int i1_t 0); 
                                       (L.const_int i8_t 0); |] 
-            | A.List -> L.const_pointer_null (L.type_of e')
+            | A.List_t -> L.const_pointer_null (L.type_of e')
             | _ -> raise (Failure "no global default value set")
           in 
           
@@ -517,20 +509,24 @@ and bindassign (builder, stable) = function
           let stable' = bind_var stable s new_glob in
           (builder, stable')
     else
-        let new_var = L.build_alloca (ltype_of_typ typ) s builder in
+        let new_var = L.build_alloca (L.type_of e') s builder in
         let _ = L.build_store e' new_var builder in
         let stable' = bind_var stable s new_var in
         (builder, stable')
 
 and fdecl (builder, stable) f =
         let name = f.sfname in 
-        let formal_types = Array.of_list (List.map (fun (t, _) -> ltype_of_typ t) f.sformals) in
+        let formal_types = Array.of_list (List.map (fun (t, _) -> match t with
+                                                                      A.List_t -> list_closure
+                                                                    | _ -> ltype_of_typ t) 
+                                            f.sformals) in
         let ftype = L.function_type (ltype_of_typ f.styp) formal_types in
         let llvm_func = L.define_function name ftype the_module in
         let stable' = add_func name (Some f, llvm_func) stable in
         let stable'' = set_curr_func name stable' in
         let builder' = L.builder_at_end context (L.entry_block llvm_func) in 
         let stable''' = List.fold_left2 (fun stable_accum (t, x) p -> 
+                                          (* let _ = L.dump_value p in *)
                                           let local = L.build_alloca (ltype_of_typ t) x builder' in
                                           let _ = L.build_store p local builder' in
                                           let _ = L.set_value_name x p in
