@@ -333,7 +333,19 @@ in
     in if t' != Bool then raise (Failure err) else (t', e')
   in
 
+  let rec check_dty n1 n2 = match (n1, n2) with
+      (Node(dty1), Node(dty2)) -> dty1 = dty2
+    | (Edge(dty1), Edge(dty2)) -> dty1 = dty2
+    | (Graph(typ1, fields1), Graph(typ2, fields2)) -> 
+        if typ1 = typ2 && fields1 = fields2 then true else false
+    | _ -> raise (Failure("node/edge typecheck failed"))
+  in 
 
+  (*let same_graph_typ t1 t2 = match (t1, t2) with  
+    (Graph(typ1, fields1), Graph(typ2, fields2)) -> 
+        if typ1 = typ2 && fields1 = fields2 then true else false
+    | _ -> t1 = t2 
+  in*)
   (* Return a semantically-checked statement i.e. containing sexprs *)
   let rec check_stmt scope funcs s =
     match s with
@@ -371,8 +383,8 @@ in
             | None -> raise (Failure ("no current function specified"))
           in
           let my_func = find_func (extract_func_name scope.curr_func) funcs in 
-          if my_func.typ = ty_e then SReturn (sast)
-          else raise (Failure ("function " ^ my_func.fname ^ "returning wrong type")) 
+          if my_func.typ = ty_e (*|| (same_graph_typ my_func.typ ty_e)*) then SReturn (sast)
+          else raise (Failure ("function " ^ my_func.fname ^ " returning wrong type " ^ string_of_typ ty_e ^ " rather than " ^ string_of_typ my_func.typ)) 
           (** TODO: in the function body that holds 
                                     this return, look at the type of
                                     e returned and make sure it matches
@@ -413,7 +425,7 @@ in
 
         let _ = (match sexp with
               SCall("array_get", _) -> ()
-            | _ -> if t != t' then raise (Failure("local bind assign"))
+            | _ -> if t != t' && (not (check_dty t t')) then raise (Failure("local bind assign"))
         ) in 
 
         match t with 
@@ -441,12 +453,6 @@ in
         (t, str)::rest -> add_formals (StringMap.add str t map) rest
       | [] -> map 
   in 
-
-  let rec check_dty n1 n2 = match (n1, n2) with
-      (Node(dty1), Node(dty2)) -> dty1 = dty2
-    | (Edge(dty1), Edge(dty2)) -> dty1 = dty2
-    | _ -> raise (Failure("node/edge typecheck failed"))
-  in
 
   let rec check_decls (scope : symbol_table) funcs decls =
     match decls with
@@ -487,7 +493,7 @@ in
           let (et, sx) = expr scope funcs e in
           let err = "semant/BindAssign: illegal assignment: " ^ x ^ " : " ^ string_of_typ t ^ " = " ^ string_of_typ et in
 
-          if t != et && (not (check_dty t et))
+          if t != et && (not (check_dty t et)) 
           then raise (Failure(err))
           else SBindAssign(t, x, (et, sx))::check_decls (bind_var scope x t) funcs rest
           (* graphs cannot be assigned to something??? *)
