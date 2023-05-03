@@ -185,7 +185,6 @@ let check (decls) =
               match dst_ty with 
                 Node(x) -> x
               | _ -> raise (Failure ("semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " must point to node types"))
-        | _ -> raise (Failure ("edge source and destination must be nodes of the same type"))
       in
       (Edge(src_data_ty), (SEdge((src_ty, src_sx), (dst_ty, dst_sx))))
     | Assign(x, e) ->
@@ -339,7 +338,8 @@ let check (decls) =
       | _ -> raise (Failure("invalid number of args"))
       in let sexprs = check_args scope (args, md.formals)
       in
-      (md.typ, SDotCall(ds, mname, sexprs))
+      (dsty, SDotCall(ds, mname, sexprs)) (* codegen might need the flags info *)
+      (* (md.typ, SDotCall(ds, mname, sexprs)) *)
     (* | DotCall(oname, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
       (* graph_name.add(node_name); *)
 

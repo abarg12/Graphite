@@ -68,6 +68,20 @@ let translate decls =
       |] false
   in
 
+  let rec enforce_invariants gname flags (action : string) = match flags with
+      [] -> "proceed"
+    | flag::rest ->
+      let err = action ^ " failed on " ^ flag ^ " graph " ^ gname in
+      (match (flag, action) with
+          (* adding node to a tree won't break any rules *)
+          ("tree", "addNode") -> enforce_invariants gname rest action
+
+        | ("tree", "addEdge") -> raise (Failure ("addEdge to tree cannot be enforced yet"))
+        | ("connected", "addNode") -> raise (Failure (err))
+        | ("connected", "addEdge") -> raise (Failure ("addEdge to connected cannot be enforced yet"))
+      )
+  in
+
   let list_node = L.named_struct_type context "list_node" in 
     let _ = L.struct_set_body list_node
             [| L.pointer_type (L.i8_type context); L.pointer_type list_node |] false
@@ -391,18 +405,22 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
           let _ = link_list 0 ses (L.const_pointer_null list_node) in 
           L.build_load list_head "temp" builder
 
-  | SDotCall(ds_name, "addNode", [to_add]) ->   
+  | SDotCall(ds_name, "addNode", [to_add]) ->
+      let flags = match styp with
+          Graph(t, flags) -> flags
+        | _ -> raise (Failure ("unimplemented"))
+      in
+      let _ = enforce_invariants ds_name flags "addNode" in
       let n_to_add = expr (builder, stable) to_add in
       let ds = find_variable stable ds_name in 
       let nodes = L.build_struct_gep ds 0 "nodes" builder in (*ptr to our linked list of nodes*)
       let nodes_hd = L.build_load nodes "nodes_hd" builder in (*the head of our linked list*)
-
       let new_node = L.build_malloc node_node "new_node" builder in (*create a new node head to add*)
       let lst_rst = L.build_struct_gep new_node 1 "lst_rst'" builder in (* where we will put the rest of the list *)
       let node_ptr = L.build_struct_gep new_node 0 "node_ptr" builder in (* where we will point to node being added *)
       let _ = L.build_store nodes_hd lst_rst builder in (* add ptr to rest of nodes list *)
       let _ = L.build_store n_to_add node_ptr builder in (* point to newly added node *)
-      L.build_store new_node nodes builder 
+      L.build_store new_node nodes builder
 
     | SDotCall(ds_name, "findName", [toFind]) -> raise (Failure ("unimplemented"))
 
