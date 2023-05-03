@@ -520,18 +520,13 @@ and  bind (builder, stable) = function
             | A.Int -> L.const_int (ltype_of_typ typ) 0
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
             | A.String -> L.const_pointer_null (L.pointer_type i8_t)
-            | A.Node(ntyp) -> 
-                 
-                  (*L.const_named_struct node_t
-                                [| (L.const_int i8_t 0); 
-                                      (L.const_int i1_t 0); 
-                                      (L.const_int i8_t 0); |] *)
-                  (*let node_typ = match typ with 
-                        A.Node(typ) -> typ 
-                      | _ -> raise (Failure ("not a node"))
-                  in*)
-                  
-                  let new_var = L.build_alloca (ltype_of_typ typ) s builder in
+            | A.Node(ntyp) -> L.const_pointer_null node_t                  
+            | A.List_t -> L.const_pointer_null (L.pointer_type i8_t)
+            | _ -> raise (Failure "no global default value set")
+          in 
+          let new_glob = L.define_global s init the_module in
+          let _ = match typ with 
+              A.Node(ntyp) -> 
                   let node = L.build_malloc node_struct "node" builder in 
                   let data = L.build_malloc (ltype_of_typ ntyp) "data" builder in 
                   let name = L.build_malloc (ltype_of_typ A.String) "name" builder in 
@@ -542,14 +537,10 @@ and  bind (builder, stable) = function
     
                   let _ = L.build_store name_ptr name' builder in 
                   let _ = L.build_store data_ptr data' builder in 
-                  let _ = L.build_store node new_var builder in
-                  L.build_struct_gep node 0 "name2" builder
-                  (*let _ = L.build_store name_ptr node_struct builder in *) 
-                  
-            | A.List_t -> L.const_pointer_null (L.pointer_type i8_t)
-            | _ -> raise (Failure "no global default value set")
+                  let _ = L.build_store node new_glob builder in
+                  true
+              | _ -> true
           in 
-          let new_glob = L.define_global s init the_module in
           let stable' = bind_var stable s new_glob in
           (builder, stable')
         else
@@ -591,16 +582,27 @@ and bindassign (builder, stable) = function
             | A.Int -> L.const_int (ltype_of_typ typ) 0
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
             | A.String -> L.const_pointer_null (L.type_of e')
-            | A.Node(t) -> raise (Failure ("problem"))
-              (*L.const_named_struct node_t
-                                [| (L.const_int i8_t 0); 
-                                      (L.const_int i1_t 0); 
-                                      (L.const_int i8_t 0); |] *) 
+            | A.Node(t) -> L.const_pointer_null node_t                  
             | A.List_t -> L.const_pointer_null (L.type_of e')
             | _ -> raise (Failure "no global default value set")
           in 
-          
           let new_glob = L.define_global s init the_module in
+          let _ = match typ with 
+              A.Node(ntyp) -> 
+                  let node = L.build_malloc node_struct "node" builder in 
+                  let data = L.build_malloc (ltype_of_typ ntyp) "data" builder in 
+                  let name = L.build_malloc (ltype_of_typ A.String) "name" builder in 
+                  let data_ptr = L.build_pointercast data (L.pointer_type (i8_t)) "data_ptr" builder in
+                  let name_ptr = L.build_pointercast name (L.pointer_type (i8_t)) "name_ptr" builder in 
+                  let name' = Llvm.build_struct_gep node 0 "name'" builder in
+                  let data' = Llvm.build_struct_gep node 2 "data'" builder in
+    
+                  let _ = L.build_store name_ptr name' builder in 
+                  let _ = L.build_store data_ptr data' builder in 
+                  let _ = L.build_store node new_glob builder in
+                  true
+              | _ -> true
+          in 
           let _ = L.build_store e' new_glob builder in
           let stable' = bind_var stable s new_glob in
           (builder, stable')
