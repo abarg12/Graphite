@@ -32,12 +32,13 @@ type symbol_table = {
 (*** Declare all the LLVM types we'll use ***)
 let translate decls = 
   let context  = L.global_context () in 
-  let node_t = Llvm.named_struct_type context "node_t" in
-    let _ = Llvm.struct_set_body node_t
+  let node_struct = Llvm.named_struct_type context "node_struct" in
+    let _ = Llvm.struct_set_body node_struct
       [| Llvm.pointer_type (L.i8_type context); 
       Llvm.i1_type context; 
       Llvm.pointer_type (L.i8_type context); |] false
     in
+  let node_t = Llvm.pointer_type node_struct in
   let edge_t = L.named_struct_type context "edge_t" in
     let _ = L.struct_set_body edge_t 
       [| node_t;
@@ -273,32 +274,50 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
   | SDotOp(var, field) -> 
         let lvar = find_variable stable var in 
         let steven = match field with 
-              "flag" -> Llvm.build_struct_gep lvar 1 "temp" builder
-            | "name" -> Llvm.build_struct_gep lvar 0 "temp" builder
-            | "data" -> Llvm.build_struct_gep lvar 2 "temp" builder
+              "flag" -> 
+                let lvar' = L.build_load lvar "lvar'" builder in  
+                Llvm.build_struct_gep lvar' 1 "temp" builder
+            | "name" -> 
+                let lvar' = L.build_load lvar "lvar'" builder in
+                Llvm.build_struct_gep lvar' 0 "temp" builder
+            | "data" -> 
+                let lvar' = L.build_load lvar "lvar'" builder in
+                Llvm.build_struct_gep lvar' 2 "temp" builder
             | "src" -> L.build_struct_gep lvar 0 "temp" builder
             | "dst" -> L.build_struct_gep lvar 1 "temp" builder
             | "weight" -> L.build_struct_gep lvar 2 "temp" builder
             | _ -> raise (Failure ("syntax error caught post parsing. Nonexistent field " ^ field))
         in 
+        
         let steven' = match styp with 
               Uninitialized -> raise (Failure ("something went wrong " ^ field))
             | _ -> L.build_load steven (var ^ "." ^ field) builder 
         in
         (match field with 
               "flag" -> L.build_load steven (var ^ "." ^ field) builder 
+            | "src" -> 
+              L.build_load steven "srcNode" builder
+            | "dst" -> 
+              L.build_load steven "srcNode" builder
             | _ ->
               let llvm_ty = ltype_of_typ styp in
-              let new_ptr = L.build_pointercast steven' (L.pointer_type (llvm_ty)) "name" builder in
+              let new_ptr = L.build_pointercast steven' (L.pointer_type (llvm_ty)) "new_ptr" builder in
               L.build_load new_ptr (var ^ "." ^ field) builder)
   | SDotAssign(var, field, e) -> 
         let e' = expr (builder, stable) e in
         let (my_typ, expr) = e in
         let lvar = find_variable stable var in 
+
         let steven = match field with 
-              "flag" -> L.build_struct_gep lvar 1 "temp" builder
-            | "name" -> L.build_struct_gep lvar 0 "temp" builder
-            | "data" -> L.build_struct_gep lvar 2 "temp" builder
+             "flag" -> 
+                  let lvar' = L.build_load lvar "lvar'" builder in
+                  L.build_struct_gep lvar' 1 "temp" builder
+            | "name" -> 
+                  let lvar' = L.build_load lvar "lvar'" builder in
+                  L.build_struct_gep lvar' 0 "temp" builder
+            | "data" -> 
+                  let lvar' = L.build_load lvar "lvar'" builder in
+                  L.build_struct_gep lvar' 2 "temp" builder
             | "src" -> L.build_struct_gep lvar 0 "temp" builder
             | "dst" -> L.build_struct_gep lvar 1 "temp" builder
             | "weight" -> L.build_struct_gep lvar 2 "temp" builder
@@ -308,9 +327,9 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
              "flag" -> e' 
             | "weight" -> e'
             | "src" -> 
-               e' 
+              e'
             | "dst" -> 
-               e' 
+              e'
             | _ -> 
               (*let (_, currLLVMfunc) = find_func stable stable.curr_func in 
               (* let start_bb = L.insertion_block builder in *)
@@ -334,6 +353,9 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
               let _ = L.build_cond_br bool_val then_bb else_bb builder in
               L.builder_at_end context merge_bb, stable *)
                 (*we need to not allocate new data for this *)
+                (*let styp_ptr = L.build_malloc (ltype_of_typ my_typ) "bruh" builder in*)
+                (* put data in *)
+
                 let styp_ptr = L.build_malloc (ltype_of_typ my_typ) "bruh" builder in
                 (* put data in *)
                 let _ = L.build_store e' styp_ptr builder in 
@@ -344,9 +366,21 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
                   | _ -> L.build_pointercast styp_ptr (L.pointer_type (i8_t)) "name" builder 
                 in
                 ptr 
+                (*let field_ptr = L.build_load steven "field_ptr" builder in
+                let field_ptr' = L.build_pointercast field_ptr (L.pointer_type (ltype_of_typ my_typ)) "field_ptr'" builder in
+                let _ = L.build_store e' field_ptr' builder in 
+                let field_ptr'' = 
+                  match field with 
+                  | "src" -> raise (Failure ("unimplemented 1"))
+                  | "dst" -> raise (Failure ("unimplemented 1")) (* must fix for data *)
+                  | _ -> L.build_pointercast field_ptr' (L.pointer_type (i8_t)) "name1" builder 
+                in
+                field_ptr'' *)
 
         in 
-        L.build_store e'' steven builder
+        L.build_store e'' steven builder 
+
+
   | SList(ses) ->
       let list_len = List.length ses in
       let array_type = L.array_type (L.pointer_type i8_t) list_len in
@@ -486,22 +520,59 @@ and  bind (builder, stable) = function
             | A.Int -> L.const_int (ltype_of_typ typ) 0
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
             | A.String -> L.const_pointer_null (L.pointer_type i8_t)
-            | A.Node(typ) -> L.const_named_struct node_t
-                                      [| (L.const_int i8_t 0); 
-                                          (L.const_int i1_t 0); 
-                                          (L.const_int i8_t 0); |] 
+            | A.Node(ntyp) -> 
+                 
+                  (*L.const_named_struct node_t
+                                [| (L.const_int i8_t 0); 
+                                      (L.const_int i1_t 0); 
+                                      (L.const_int i8_t 0); |] *)
+                  (*let node_typ = match typ with 
+                        A.Node(typ) -> typ 
+                      | _ -> raise (Failure ("not a node"))
+                  in*)
+                  
+                  let new_var = L.build_alloca (ltype_of_typ typ) s builder in
+                  let node = L.build_malloc node_struct "node" builder in 
+                  let data = L.build_malloc (ltype_of_typ ntyp) "data" builder in 
+                  let name = L.build_malloc (ltype_of_typ A.String) "name" builder in 
+                  let data_ptr = L.build_pointercast data (L.pointer_type (i8_t)) "data_ptr" builder in
+                  let name_ptr = L.build_pointercast name (L.pointer_type (i8_t)) "name_ptr" builder in 
+                  let name' = Llvm.build_struct_gep node 0 "name'" builder in
+                  let data' = Llvm.build_struct_gep node 2 "data'" builder in
+    
+                  let _ = L.build_store name_ptr name' builder in 
+                  let _ = L.build_store data_ptr data' builder in 
+                  let _ = L.build_store node new_var builder in
+                  L.build_struct_gep node 0 "name2" builder
+                  (*let _ = L.build_store name_ptr node_struct builder in *) 
+                  
             | A.List_t -> L.const_pointer_null (L.pointer_type i8_t)
             | _ -> raise (Failure "no global default value set")
           in 
-
           let new_glob = L.define_global s init the_module in
           let stable' = bind_var stable s new_glob in
           (builder, stable')
         else
           let new_var = L.build_alloca (ltype_of_typ typ) s builder in
+          let _ = match typ with 
+               A.Node(typ) -> 
+                  let node = L.build_malloc node_struct "node" builder in 
+                  let data = L.build_malloc (ltype_of_typ typ) "data" builder in 
+                  let name = L.build_malloc (ltype_of_typ A.String) "name" builder in 
+                  let data_ptr = L.build_pointercast data (L.pointer_type (i8_t)) "data_ptr" builder in
+                  let name_ptr = L.build_pointercast name (L.pointer_type (i8_t)) "name_ptr" builder in 
+                  let name' = Llvm.build_struct_gep node 0 "name'" builder in
+                  let data' = Llvm.build_struct_gep node 2 "data'" builder in
+    
+                  let _ = L.build_store name_ptr name' builder in 
+                  let _ = L.build_store data_ptr data' builder in 
+                  let _ = L.build_store node new_var builder in
+                  true
+              | _ ->  true 
+          in 
           let stable' = bind_var stable s new_var in
           (builder, stable')
-
+          
 (* Bind assignments are declaration-assignment one-liners *)
 and bindassign (builder, stable) = function 
   (typ, s, e) ->    
@@ -520,10 +591,11 @@ and bindassign (builder, stable) = function
             | A.Int -> L.const_int (ltype_of_typ typ) 0
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
             | A.String -> L.const_pointer_null (L.type_of e')
-            | A.Node(t) -> L.const_named_struct node_t
+            | A.Node(t) -> raise (Failure ("problem"))
+              (*L.const_named_struct node_t
                                 [| (L.const_int i8_t 0); 
                                       (L.const_int i1_t 0); 
-                                      (L.const_int i8_t 0); |] 
+                                      (L.const_int i8_t 0); |] *) 
             | A.List_t -> L.const_pointer_null (L.type_of e')
             | _ -> raise (Failure "no global default value set")
           in 
@@ -534,7 +606,23 @@ and bindassign (builder, stable) = function
           (builder, stable')
     else
         let new_var = L.build_alloca (L.type_of e') s builder in
-        let _ = L.build_store e' new_var builder in
+        (*let _ = match typ with 
+             A.Node(typ) -> 
+                let node = L.build_malloc node_struct "node" builder in 
+                let data = L.build_malloc (ltype_of_typ typ) "data" builder in 
+                let name = L.build_malloc (ltype_of_typ A.String) "name" builder in 
+                let data_ptr = L.build_pointercast data (L.pointer_type (i8_t)) "data" builder in
+                let name_ptr = L.build_pointercast name (L.pointer_type (i8_t)) "name" builder in 
+                let name' = Llvm.build_struct_gep node 0 "data'" builder in
+                let data' = Llvm.build_struct_gep node 2 "name'" builder in
+
+                let _ = L.build_store name' name_ptr builder in 
+                let _ = L.build_store data' data_ptr builder in 
+                let _ = L.build_store node new_var builder in
+                true 
+            | _ -> true  
+        in*)
+        let _ = L.build_store e' new_var builder in (*in node? *)
         let stable' = bind_var stable s new_var in
         (builder, stable')
 
