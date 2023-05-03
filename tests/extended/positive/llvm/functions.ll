@@ -21,6 +21,8 @@ declare i32 @printf(i8*, ...)
 
 declare i8* @array_get(i8*, i32, ...)
 
+declare i8* @array_set(i8*, i32, i8*, ...)
+
 define i32 @main() {
 entry:
   store double 2.500000e+00, double* @first, align 8

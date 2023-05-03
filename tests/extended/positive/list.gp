@@ -30,9 +30,16 @@ printf(bcd);
 }
 
 void funcy(list l) {
-    #int a;
-    #a = array_get(l, 0);
-    #printf(a);
+    int a;
+    a = array_get(l, 0);
+    printf(a);
+    
+    string s = "set";
+    s = array_get(l4, 0);
+    printf(s);
+
+    bool b = array_get(l3, 5);
+    printf(b);
     return;
 }
 

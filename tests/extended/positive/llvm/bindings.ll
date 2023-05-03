@@ -15,6 +15,8 @@ declare i32 @printf(i8*, ...)
 
 declare i8* @array_get(i8*, i32, ...)
 
+declare i8* @array_set(i8*, i32, i8*, ...)
+
 define i32 @main() {
 entry:
   store i32 1, i32* @a, align 4

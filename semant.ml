@@ -34,7 +34,9 @@ let check (decls) =
       formals = fs;
       body = Block[] } map
     in List.fold_left add_bind StringMap.empty [ ("printf", Int, [(Int, "x")]); 
-                                                 ("array_get", List_t, [(List_t, "arr");(Int, "idx")])]
+                                                 ("array_get", List_t, [(List_t, "arr");(Int, "idx")]);
+                                                 ("array_set", List_t, [(List_t, "arr");(Int, "idx"); (Void, "poly")]);
+                                                 ]
   in
 
   (* TODO: make it so that you can search built in methods for graphs, etc. *)
@@ -284,6 +286,14 @@ let check (decls) =
         let sexp = expr scope funcs arg1 in
         (f.typ, SCall(fname, [sexp]))
       else
+      if fname = "array_set"
+      then
+        let [list_name; idx; value;] = args in
+        let a1 = expr scope funcs list_name in
+        let a2 = expr scope funcs idx       in
+        let a3 = expr scope funcs value     in
+        (f.typ, SCall(fname, [a1;a2;a3])) 
+      else
         let rec check_args m (actuals, formals) = match (actuals, formals) with
             ([], []) -> []
           | (x::xs, y::ys) ->
@@ -517,7 +527,13 @@ in
           let (et, sx) = expr scope funcs e in
           let err = "semant/BindAssign: illegal assignment: " ^ x ^ " : " ^ string_of_typ t ^ " = " ^ string_of_typ et in
 
-          if t != et && (not (check_dty t et)) 
+
+          match (t, e) with
+              (List_t, _) -> SBindAssign(t, x, (et, sx))::check_decls (bind_var scope x t) funcs rest 
+            | (_, Call("array_get", _)) -> SBindAssign(t, x, (et, sx))::check_decls (bind_var scope x t) funcs rest
+            | _ ->
+
+          if t != et && (not (check_dty t et))
           then raise (Failure(err))
           else SBindAssign(t, x, (et, sx))::check_decls (bind_var scope x t) funcs rest
           (* graphs cannot be assigned to something??? *)

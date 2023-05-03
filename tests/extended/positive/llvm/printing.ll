@@ -19,6 +19,8 @@ declare i32 @printf(i8*, ...)
 
 declare i8* @array_get(i8*, i32, ...)
 
+declare i8* @array_set(i8*, i32, i8*, ...)
+
 define i32 @main() {
 entry:
   %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @0, i32 0, i32 0))
