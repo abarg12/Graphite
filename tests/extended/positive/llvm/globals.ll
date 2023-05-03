@@ -12,30 +12,32 @@ declare i32 @printf(i8*, ...)
 
 declare i8* @array_get(i8*, i32, ...)
 
+declare i8* @array_set(i8*, i32, i8*, ...)
+
 define i32 @main() {
 entry:
-  store i32 2, i32* @a, align 4
-  %a = load i32, i32* @a, align 4
+  store i32 2, i32* @a
+  %a = load i32, i32* @a
   %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i32 %a)
-  store i32 10, i32* @b, align 4
-  %b = load i32, i32* @b, align 4
+  store i32 10, i32* @b
+  %b = load i32, i32* @b
   %printf1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.1, i32 0, i32 0), i32 %b)
   %myFunc_result = call i32 @myFunc(i32 3)
-  store i32 %myFunc_result, i32* @d, align 4
-  %d = load i32, i32* @d, align 4
+  store i32 %myFunc_result, i32* @d
+  %d = load i32, i32* @d
   %printf2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.2, i32 0, i32 0), i32 %d)
   ret i32 0
 }
 
 define i32 @myFunc(i32 %b1) {
 entry:
-  %b = alloca i32, align 4
-  store i32 %b1, i32* %b, align 4
-  %a = load i32, i32* @a, align 4
-  %b2 = load i32, i32* %b, align 4
+  %b = alloca i32
+  store i32 %b1, i32* %b
+  %a = load i32, i32* @a
+  %b2 = load i32, i32* %b
   %tmp = add i32 %a, %b2
-  %c = alloca i32, align 4
-  store i32 %tmp, i32* %c, align 4
-  %c3 = load i32, i32* %c, align 4
+  %c = alloca i32
+  store i32 %tmp, i32* %c
+  %c3 = load i32, i32* %c
   ret i32 %c3
 }
