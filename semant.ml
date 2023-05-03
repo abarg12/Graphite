@@ -46,9 +46,12 @@ let check (decls) =
       fname = name;
       formals = forms;
       body = Block[] } map
-    in List.fold_left add_bind StringMap.empty [ ("add", Graph(Int, []), [(Node(Int), "to_add")]); ]
+    in List.fold_left add_bind StringMap.empty [ ("addNode", Graph(Uninitialized, []), [(Node(Uninitialized), "to_add")]);
+                                                 ("nameExists", Graph(Uninitialized, []), [(String, "toFind")]); 
+                                                 ("getByName", Graph(Uninitialized, []), [(String, "toFind")]); 
+                                                 ("nodeExists", Graph(Uninitialized, []), [(Node(Uninitialized), "toFind")]); 
+                                                 ("getNode", Graph(Uninitialized, []), [(Node(Uninitialized), "toFind")]); ]
   in
-
   let built_in_node_meths =
     let add_bind map (name, ty, forms) = StringMap.add name {
       typ = ty;
@@ -60,7 +63,7 @@ let check (decls) =
     
 
   (* this is where we're gonna add more invariants later heeheehoohoo*)
-  let invariants = ["tree"; "connected"]  in
+  let invariants = ["tree"; "connected"; "uniqueName"]  in
   let fields = ["flag"; "data"; "name"] in
   let graph_meths = built_in_graph_meths in
   let node_meths = built_in_node_meths in 
@@ -310,13 +313,28 @@ let check (decls) =
         (f.typ, SCall(fname, sexprs))
     | DotCall(ds, mname, args) ->
       let md = find_method mname ds scope in 
+      let dsty = find_variable scope ds in
+      let dsIntTy = match dsty with 
+          Node(ty) -> ty 
+        | Graph(ty, invars) -> ty
+        | Edge(ty) -> ty 
+      in 
       let rec check_args m (actuals, formals) = match (actuals, formals) with
         ([], []) -> []
       | (x::xs, y::ys) ->
         let (rt, _) = y in
         let lsexpr = expr m funcs x in
         let (lt, le) = lsexpr in
-        if lt = rt then lsexpr::check_args m (xs, ys)
+        let sameTy = match (lt, rt) with 
+            (* make sure that overall type for function matches (eg node given for a node)
+               and the type of that matches the type of the ds *)
+             (Node(ty1), Node(ty2)) -> ty1 = dsIntTy
+           | (Graph(ty1, invars), Graph(ty2, invars2)) -> ty1 = dsIntTy (* TODO might have to change later to check invars*)
+           | (Edge(ty1), Edge(ty2)) -> ty1 = dsIntTy
+           | (ty1, ty2) -> ty1 = ty2
+           | _ -> raise (Failure ("impropper argument type"))
+        in
+        if sameTy then lsexpr::check_args m (xs, ys)
         else raise (Failure("invalid dotcall args: " ^ string_of_typ lt ^ " != " ^ string_of_typ rt))
       | _ -> raise (Failure("invalid number of args"))
       in let sexprs = check_args scope (args, md.formals)

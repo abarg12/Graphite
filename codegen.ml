@@ -46,13 +46,28 @@ let translate decls =
          L.i32_type context|] false
     in
   let edge_t = Llvm.pointer_type edge_struct in
+
+  (* for linked list of graph *)
+  let edge_node = L.named_struct_type context "edge_node" in
+  let _ = L.struct_set_body edge_node 
+    [| edge_t; (*first is our current edge*)
+       Llvm.pointer_type edge_node |](*second is our next edge pointer *) false
+  in
+  let node_node = L.named_struct_type context "node_node" in
+  let _ = L.struct_set_body node_node 
+    [|  node_t; (*first is our current edge*)
+        Llvm.pointer_type node_node |](*second is our next node pointer *) false
+  in
+
+  (* linked list of graph *)
   let graph_t = L.named_struct_type context "graph_t" in
     let _ = Llvm.struct_set_body graph_t
       [|
-        Llvm.pointer_type (L.i8_type context);
-        Llvm.pointer_type (L.i8_type context);
+        Llvm.pointer_type node_node;
+        Llvm.pointer_type edge_node;
       |] false
   in
+
   let list_node = L.named_struct_type context "list_node" in 
     let _ = L.struct_set_body list_node
             [| L.pointer_type (L.i8_type context); L.pointer_type list_node |] false
@@ -313,6 +328,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
         let e' = expr (builder, stable) e in
         let (my_typ, expr) = e in
         let lvar = find_variable stable var in 
+        (* bc its a pointer *)
         let lvar' = L.build_load lvar "lvar'" builder in
         let steven = match field with 
              "flag" -> 
@@ -375,12 +391,69 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
           let _ = link_list 0 ses (L.const_pointer_null list_node) in 
           L.build_load list_head "temp" builder
 
-  | SDotCall(ds_name, meth, args) -> 
-      let ds = find_variable stable ds_name in (match ds with 
-        graph_t -> raise (Failure ("working on this ds methods rn"))
-      | _ -> raise (Failure ("mm whoops")))
+  | SDotCall(ds_name, "addNode", [to_add]) ->   
+      let n_to_add = expr (builder, stable) to_add in
+      let ds = find_variable stable ds_name in 
+      let nodes = L.build_struct_gep ds 0 "nodes" builder in (*ptr to our linked list of nodes*)
+      let nodes_hd = L.build_load nodes "nodes_hd" builder in (*the head of our linked list*)
+
+      let new_node = L.build_malloc node_node "new_node" builder in (*create a new node head to add*)
+      let lst_rst = L.build_struct_gep new_node 1 "lst_rst'" builder in (* where we will put the rest of the list *)
+      let node_ptr = L.build_struct_gep new_node 0 "node_ptr" builder in (* where we will point to node being added *)
+      let _ = L.build_store nodes_hd lst_rst builder in (* add ptr to rest of nodes list *)
+      let _ = L.build_store n_to_add node_ptr builder in (* point to newly added node *)
+      L.build_store new_node nodes builder 
+
+    | SDotCall(ds_name, "findName", [toFind]) -> raise (Failure ("unimplemented"))
+
+    | SDotCall(ds_name, "getByName", [toFind]) -> raise (Failure ("unimplemented"))
+      (* set up info to iterate through list *)
+     (* let nameToFind = expr (builder, stable) toFind in
+      let ds = find_variable stable ds_name in 
+      let nodes = L.build_struct_gep ds 0 "nodes" builder in (*ptr to our linked list of nodes*)
+      let curr_nd = L.build_load nodes "nodes_hd" builder in (*the head of our linked list*)
+      let nd_ptr_gep = L.build_struct_gep new_node 0 "nd_ptr_gep'" builder in (* where we will put the rest of the list *)
+
+      (* set up while loop *)
+      let (_, currLLVMfunc) = find_func stable stable.curr_func in 
+      let pred_bb = L.append_block context "while" currLLVMfunc in (*builder for predicate*)
+      let _ = L.build_br pred_bb builder in
+      let pred_builder = L.builder_at_end context pred_bb in (*building predicate*)
+      
+      let bool_val = L.build_icmp  in
+
+      (* set up loop body *)
+      let body_bb = L.append_block context "while_body" currLLVMfunc in (*builder for body*)
+      let (while_builder, _) = stmt ((L.builder_at_end context body_bb), stable) body in (*building while*)
+      let () = add_terminal while_builder (L.build_br pred_bb) in
+
+      let merge_bb = L.append_block context "merge" currLLVMfunc in (*merge builder ??*)
+      let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
+      L.builder_at_end context merge_bb, stable *)
 
       
+
+    | SDotCall(ds_name, "exists", [to_find]) -> raise (Failure ("to implement"))
+
+
+
+      (* let n_to_add = expr (builder, stable) to_add in
+      let ds = find_variable stable ds_name in 
+      let nodes = L.build_struct_gep ds 0 "nodes" builder in (*ptr to our linked list of nodes*)
+      let nodes_hd = L.build_load nodes "nodes_hd" builder in (*the head of our linked list*)
+
+      let new_node = L.build_malloc node_node "new_node" builder in (*create a new node head to add*)
+      let lst_rst = L.build_struct_gep new_node 1 "lst_rst'" builder in (* where we will put the rest of the list *)
+      let node_ptr = L.build_struct_gep new_node 0 "node_ptr" builder in (* where we will point to node being added *)
+      let _ = L.build_store nodes_hd lst_rst builder in (* add ptr to rest of nodes list *)
+      let _ = L.build_store n_to_add node_ptr builder in (* point to newly added node *)
+      L.build_store new_node nodes builder *)
+
+
+  | SDotCall(ds_name, meth, args) -> raise (Failure ("Other dot methods are not currently implemented"))
+
+      
+
 
   | SEdge(n1, n2) -> 
       let n1' = expr (builder, stable) n1 in
@@ -522,15 +595,11 @@ and  bind (builder, stable) = function
             | A.Int -> L.const_int (ltype_of_typ typ) 0
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
             | A.String -> L.const_pointer_null (L.pointer_type i8_t)
-            | A.Graph(typ, slist) -> L.const_named_struct graph_t (* MAY WANNA MAKE THIS JUST CONST POINTER NULL*)
-                                      [| L.const_pointer_null (L.pointer_type i8_t);
-                                      L.const_pointer_null (L.pointer_type i8_t)|]
             | A.Node(ntyp) -> L.const_pointer_null node_t 
             | A.Edge(t) -> L.const_pointer_null edge_t 
-              (*L.const_named_struct edge_t      
-                    [| L.const_pointer_null node_t;
-                      L.const_pointer_null node_t;
-                      L.const_int (ltype_of_typ typ) 0|]    *)             
+            | A.Graph(t, invars) -> Llvm.const_named_struct graph_t
+                          [| L.const_pointer_null node_node; 
+                             L.const_pointer_null edge_node; |] 
             | A.List_t -> L.const_pointer_null (L.pointer_type i8_t)
             | _ -> raise (Failure "no global default value set")
           in 
@@ -610,12 +679,11 @@ and bindassign (builder, stable) = function
             | A.Int -> L.const_int (ltype_of_typ typ) 0
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
             | A.String -> L.const_pointer_null (L.type_of e')
+            | A.Graph(t, invars) -> Llvm.const_named_struct graph_t
+                  [| L.const_pointer_null node_node;
+                     L.const_pointer_null edge_node; |] 
             | A.Node(t) -> L.const_pointer_null node_t           
             | A.Edge(t) -> L.const_pointer_null edge_t   
-              (* L.const_named_struct edge_t      
-                              [| L.const_pointer_null node_t;
-                                 L.const_pointer_null node_t;
-                                 L.const_int (ltype_of_typ typ) 0|]   *)               
             | A.List_t -> L.const_pointer_null (L.type_of e')
             | _ -> raise (Failure "no global default value set")
           in 
