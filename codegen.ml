@@ -53,7 +53,11 @@ let translate decls =
         Llvm.pointer_type (L.i8_type context);
       |] false
   in
-  let list_t   = L.pointer_type (L.i8_type context)
+  let list_node = L.named_struct_type context "list_node" in 
+    let _ = L.struct_set_body list_node
+            [| L.pointer_type (L.i8_type context); L.pointer_type list_node |] false
+    in
+  let list_t = L.pointer_type list_node
   and list_closure = L.named_struct_type context "list_closure" in
   let _ = L.struct_set_body list_closure
     [| list_t;
@@ -343,40 +347,33 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
         in 
         L.build_store e'' steven builder 
 
-  | SList(ses) ->
-      let list_len = List.length ses in
-      let array_type = L.array_type (L.pointer_type i8_t) list_len in
-      (* let array_initialized = Array.make list_len (L.const_int i8_t 0) in 
-      let array_mem = L.const_array array_type array_initialized in *)
-      let array_ptr = L.build_array_malloc array_type (L.const_int i32_t list_len) 
-                                                        "array" builder in 
-      (* let _ = L.dump_value array_ptr in *)
-      let rec add_elems idx es array_p = (match es with
-          [] -> 0
-        | (typ, e) :: es -> let llvm_val = expr (builder, stable) (typ, e) in
-                    let llvm_ptr = L.build_malloc (ltype_of_typ typ) "arr_val" builder in
-                    let _ = L.build_store llvm_val llvm_ptr builder in
-                    let array_idx = L.build_in_bounds_gep array_p [| (L.const_int i32_t 0);
-                                                                      (L.const_int i32_t idx) |] 
-                                                                      "arr_idx" builder in 
-                    let cast_val = L.build_pointercast llvm_ptr (L.pointer_type i8_t) "val_ptr" builder in
-                    let _ = L.build_store cast_val array_idx builder in
-                    add_elems (idx + 1) es array_p
-                    ) 
-      in 
-      let _ = add_elems 0 ses array_ptr in 
-      (* let array_idx = L.build_in_bounds_gep array_ptr [| (L.const_int i32_t 0);
-                                                          (L.const_int i32_t 2) |] 
-                                                              "arr_idx" builder in
-      let value = L.build_load array_idx "value" builder in
-      let uncast = L.build_pointercast value (L.pointer_type i32_t) "arr_val" builder in
-      let valuenew = L.build_load uncast "actual" builder in 
-      let _ = L.build_call printf_func [| int_format_str builder ; valuenew |] "printf" builder in *)
-      (* let _ = L.dump_value value in  *)
-                     (* let array_ind = L.build_in_bounds_gep array_p  *)
-      (* let _ = L.dump_value array_ptr in  *)
-      array_ptr
-      (* L.build_pointercast array_ptr (L.pointer_type i8_t) "array_pointer" builder *)
+        | SList(ses) ->
+          let list_head = L.build_malloc list_t "new_list" builder in
+    
+          let rec link_list idx es prev_node = (match es with 
+                [] -> 0
+              | (typ, e) :: es -> let llvm_val = expr (builder, stable) (typ, e) in
+                                let llvm_ptr = L.build_malloc (ltype_of_typ typ) "arr_val" builder in
+                                let _ = L.build_store llvm_val llvm_ptr builder in
+                                let array_node = L.const_named_struct list_node [| L.const_pointer_null (L.pointer_type i8_t); L.const_pointer_null (L.pointer_type list_node); |] in 
+                                (** insert the llvm value into the node **)
+                                let gen_val = L.build_pointercast llvm_ptr (L.pointer_type i8_t) "i8ptr" builder in
+                                let node_p = L.build_malloc list_node "node_p" builder in 
+                                let val_ptr = L.build_struct_gep node_p 0 "valloc" builder in
+                                let _ = L.build_store array_node node_p builder in
+                                let _ = L.build_store gen_val val_ptr builder in
+                                (** store the pointer to the next node **)
+                                let _ = (if (idx = 0)
+                                            then 
+                                              (L.build_store node_p list_head builder)
+                                            else let p = L.build_struct_gep prev_node 1 "temp" builder in
+                                                  L.build_store node_p p builder) in
+                                (* let s = L.build_struct_gep node_p 0 "temp" builder in
+                                let l = L.build_pointercast (L.build_load s "val" builder) (L.pointer_type i32_t) "intval" builder in
+                                let _ = L.dump_value l in *)
+                                link_list (idx + 1) es node_p) in 
+          let _ = link_list 0 ses (L.const_pointer_null list_node) in 
+          L.build_load list_head "temp" builder
 
   | SDotCall(ds_name, meth, args) -> 
       let ds = find_variable stable ds_name in (match ds with 
