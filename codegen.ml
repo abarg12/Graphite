@@ -45,6 +45,7 @@ let translate decls =
          node_t; 
          L.i32_type context|] false
     in
+  let edge_t = Llvm.pointer_type edge_struct in
   let graph_t = L.named_struct_type context "graph_t" in
     let _ = Llvm.struct_set_body graph_t
       [|
