@@ -32,6 +32,8 @@ declare i32 @printf(i8*, ...)
 
 declare i8* @array_get(i8*, i32, ...)
 
+declare i8* @array_set(i8*, i32, i8*, ...)
+
 define i32 @main() {
 entry:
   %malloccall = tail call i8* @malloc(i32 ptrtoint (%edge_t* getelementptr (%edge_t, %edge_t* null, i32 1) to i32))
