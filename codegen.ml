@@ -44,13 +44,13 @@ let translate decls =
       [| node_t;
          node_t; 
          L.i32_type context|] false
-    in 
+    in   
   let edge_t = Llvm.pointer_type edge_struct in
-  let list_t   = L.pointer_type (L.i8_type context)
-  and list_closure = L.named_struct_type context "list_closure" in
-  let _ = L.struct_set_body list_closure
-    [| list_t;
-       L.i32_type context |] false
+  let list_node = L.named_struct_type context "list_node" in 
+    let _ = L.struct_set_body list_node
+            [| L.pointer_type (L.i8_type context); L.pointer_type list_node |] false
+    in
+  let list_t = L.pointer_type list_node    
   and i32_t    = L.i32_type context
   and i8_t     = L.i8_type context
   and i1_t     = L.i1_type context
@@ -144,6 +144,11 @@ let array_get_func =
   L.declare_function "array_get" array_get_t the_module in 
 
 
+let array_set_t = 
+  L.var_arg_function_type (L.pointer_type i8_t) [| L.pointer_type i8_t; i32_t; L.pointer_type i8_t |] in
+let array_set_func =
+  L.declare_function "array_set" array_set_t the_module in
+
 (* let add_node_t : L.lltype = 
   L.var_arg_function_type void_t [| L.pointer_type i8_t ; L.pointer_type i8_t |] in *)
 (* let add_node_func : L.llvalue = 
@@ -234,7 +239,6 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
           SCall("array_get", _) -> let e' = expr (builder, stable) (typ, sexp) in
                                 let e_cast = L.build_pointercast e' (L.type_of (find_variable stable s)) "li_conv" builder in
                                 let e_cast_val = L.build_load e_cast "val_ptr" builder in
-                                (* let _ = L.dump_value (find_variable stable s) in  *)
                                 let _ = L.build_store e_cast_val (find_variable stable s) builder in 
                                 e'
         | _ -> let e' = expr (builder, stable) (typ, sexp) in
@@ -250,23 +254,13 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
   | SCall (name, args) -> 
       (match name with  
           "array_get" -> array_get_def (builder, stable) args 
+        | "array_set" -> array_set_def (builder, stable) args
         | _ -> let (fdecl_opt, llvm_decl) = find_func stable name in
           let sfdecl = (match fdecl_opt with
                         Some(f) -> f
                       | _ -> raise (Failure "No function definition found"))
           in 
-          (* let _ = List.map L.dump_value (Array.to_list (L.params llvm_decl)) in *)
-          let proc_args arg = (match arg with 
-                                  (A.List_t, SId s) -> let arr_ptr = L.build_load (find_variable stable s) s builder in
-                                                          L.const_named_struct list_closure
-                                                              [| L.build_pointercast arr_ptr list_t "list_arg" builder; 
-                                                                 L.const_int i32_t (L.array_length (L.type_of arr_ptr)) |]
-                                | (A.List_t, _) -> let arr_ptr = expr (builder, stable) arg in
-                                                      L.const_named_struct list_closure
-                                                        [| L.build_pointercast arr_ptr list_t "list_arg" builder; 
-                                                          L.const_int i32_t (L.array_length (L.type_of arr_ptr)) |]
-                                | _ -> expr (builder, stable) arg) in
-          (* let proc_args arg = expr (builder, stable) arg in                       *)
+          let proc_args arg = expr (builder, stable) arg in
           let llargs = List.rev (List.map proc_args (List.rev args)) in
           let result = (match sfdecl.styp with 
                             A.Void -> ""
@@ -342,39 +336,32 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
         L.build_store e'' steven builder 
 
   | SList(ses) ->
-      let list_len = List.length ses in
-      let array_type = L.array_type (L.pointer_type i8_t) list_len in
-      (* let array_initialized = Array.make list_len (L.const_int i8_t 0) in 
-      let array_mem = L.const_array array_type array_initialized in *)
-      let array_ptr = L.build_array_malloc array_type (L.const_int i32_t list_len) 
-                                                        "array" builder in 
-      (* let _ = L.dump_value array_ptr in *)
-      let rec add_elems idx es array_p = (match es with
-          [] -> 0
-        | (typ, e) :: es -> let llvm_val = expr (builder, stable) (typ, e) in
-                    let llvm_ptr = L.build_malloc (ltype_of_typ typ) "arr_val" builder in
-                    let _ = L.build_store llvm_val llvm_ptr builder in
-                    let array_idx = L.build_in_bounds_gep array_p [| (L.const_int i32_t 0);
-                                                                      (L.const_int i32_t idx) |] 
-                                                                      "arr_idx" builder in 
-                    let cast_val = L.build_pointercast llvm_ptr (L.pointer_type i8_t) "val_ptr" builder in
-                    let _ = L.build_store cast_val array_idx builder in
-                    add_elems (idx + 1) es array_p
-                    ) 
-      in 
-      let _ = add_elems 0 ses array_ptr in 
-      (* let array_idx = L.build_in_bounds_gep array_ptr [| (L.const_int i32_t 0);
-                                                          (L.const_int i32_t 2) |] 
-                                                              "arr_idx" builder in
-      let value = L.build_load array_idx "value" builder in
-      let uncast = L.build_pointercast value (L.pointer_type i32_t) "arr_val" builder in
-      let valuenew = L.build_load uncast "actual" builder in 
-      let _ = L.build_call printf_func [| int_format_str builder ; valuenew |] "printf" builder in *)
-      (* let _ = L.dump_value value in  *)
-                     (* let array_ind = L.build_in_bounds_gep array_p  *)
-      (* let _ = L.dump_value array_ptr in  *)
-      array_ptr
-      (* L.build_pointercast array_ptr (L.pointer_type i8_t) "array_pointer" builder *)
+      let list_head = L.build_malloc list_t "new_list" builder in
+
+      let rec link_list idx es prev_node = (match es with 
+            [] -> 0
+          | (typ, e) :: es -> let llvm_val = expr (builder, stable) (typ, e) in
+                            let llvm_ptr = L.build_malloc (ltype_of_typ typ) "arr_val" builder in
+                            let _ = L.build_store llvm_val llvm_ptr builder in
+                            let array_node = L.const_named_struct list_node [| L.const_pointer_null (L.pointer_type i8_t); L.const_pointer_null (L.pointer_type list_node); |] in 
+                            (** insert the llvm value into the node **)
+                            let gen_val = L.build_pointercast llvm_ptr (L.pointer_type i8_t) "i8ptr" builder in
+                            let node_p = L.build_malloc list_node "node_p" builder in 
+                            let val_ptr = L.build_struct_gep node_p 0 "valloc" builder in
+                            let _ = L.build_store array_node node_p builder in
+                            let _ = L.build_store gen_val val_ptr builder in
+                            (** store the pointer to the next node **)
+                            let _ = (if (idx = 0)
+                                        then 
+                                          (L.build_store node_p list_head builder)
+                                        else let p = L.build_struct_gep prev_node 1 "temp" builder in
+                                              L.build_store node_p p builder) in
+                            (* let s = L.build_struct_gep node_p 0 "temp" builder in
+                            let l = L.build_pointercast (L.build_load s "val" builder) (L.pointer_type i32_t) "intval" builder in
+                            let _ = L.dump_value l in *)
+                            link_list (idx + 1) es node_p) in 
+      let _ = link_list 0 ses (L.const_pointer_null list_node) in 
+      L.build_load list_head "temp" builder
       
 
   | SEdge(n1, n2) -> 
@@ -400,21 +387,45 @@ and array_get_def (builder, stable) args =
             let list_dp = find_variable stable list_id in 
             let list_p = L.build_load list_dp "list" builder in
             let idx = expr (builder, stable) index in
-            (* let array_idx = L.build_in_bounds_gep list_p [| (L.const_int i32_t 0); (L.const_int i32_t 0) |]  *)
-                                                                    (* "arr_idx" builder in  *)
-            (* L.build_load array_idx "val" builder *)
-            (* L.const_int i8_t 0 *)
-
-            let array_idx = L.build_in_bounds_gep list_p [| (L.const_int i32_t 0); idx |] 
-                                                                  "arr_idx" builder 
+            let int64_idx = L.int64_of_const idx in
+            let int_idx = (match int64_idx with
+                                Some(i) -> Int64.to_int i 
+                              | None -> raise (Failure "no integer index") )
             in
-            L.build_load array_idx "value" builder
-            (* let value = L.build_load array_idx "value" builder in *)
-            (* let uncast = L.build_pointercast value (L.pointer_type i32_t) "arr_val" builder in *)
-            (* L.build_load uncast "actual" builder *)
+            let rec traverse_x x curr_node = (match x with 
+                                              0 -> curr_node 
+                                            | _ -> traverse_x (x - 1) (L.build_load (L.build_struct_gep curr_node 1 "temp" builder) "temp" builder))
+            in
+            let target = traverse_x int_idx list_p in
+            let targetptr = L.build_struct_gep target 0 "temp" builder in
+            L.build_load targetptr "retval" builder
 
-      | _ -> raise (Failure("wrong args to array_get")))
-in 
+      | _ -> raise (Failure("wrong args to array_get"))) 
+
+and array_set_def (builder, stable) args =
+    match args with
+        (typ, SId(list_id)) :: index :: (vtyp, exp) :: [] ->
+            let llvm_val = expr (builder, stable) (vtyp, exp) in
+            let llvm_ptr = L.build_malloc (ltype_of_typ vtyp) "arr_val" builder in
+            let _ = L.build_store llvm_val llvm_ptr builder in
+            let llvm_i8 = L.build_pointercast llvm_ptr (L.pointer_type i8_t) "i8ptr" builder in
+            let list_dp = find_variable stable list_id in 
+            let list_p = L.build_load list_dp "list" builder in
+            let idx = expr (builder, stable) index in
+            let int64_idx = L.int64_of_const idx in
+            let int_idx = (match int64_idx with
+                                Some(i) -> Int64.to_int i 
+                              | None -> raise (Failure "no integer index") )
+            in
+            let rec traverse_x x curr_node = (match x with 
+                                              0 -> curr_node 
+                                            | _ -> traverse_x (x - 1) (L.build_load (L.build_struct_gep curr_node 1 "temp" builder) "temp" builder))
+            in
+            let target = traverse_x int_idx list_p in
+            let targetptr = L.build_struct_gep target 0 "temp" builder in 
+            L.build_store llvm_i8 targetptr builder
+        | _ -> raise (Failure "wrong args to array_set")
+in       
 
 (*** end built-in func defs ***)
 
@@ -570,8 +581,6 @@ and bindassign (builder, stable) = function
                 (_, SCall("array_get", _)) -> let exp = expr (builder, stable) e in
                               let e_cast = L.build_pointercast exp (L.pointer_type (ltype_of_typ typ)) "li_conv" builder in
                               L.build_load e_cast "val_ptr" builder
-                              (* let _ = L.dump_value values in
-                              values  *)
               | _ -> expr (builder, stable) e) in
 
     if stable.parent = None then
@@ -627,10 +636,7 @@ and bindassign (builder, stable) = function
 
 and fdecl (builder, stable) f =
         let name = f.sfname in 
-        let formal_types = Array.of_list (List.map (fun (t, _) -> match t with
-                                                                      A.List_t -> list_closure
-                                                                    | _ -> ltype_of_typ t) 
-                                            f.sformals) in
+        let formal_types = Array.of_list (List.map (fun (t, _) -> ltype_of_typ t) f.sformals) in
         let ftype = L.function_type (ltype_of_typ f.styp) formal_types in
         let llvm_func = L.define_function name ftype the_module in
         let stable' = add_func name (Some f, llvm_func) stable in
@@ -675,6 +681,7 @@ let empty_stable = {
 let init_stable = add_func "main" (None, global_main) empty_stable in 
 let init_stable = add_func "printf" (None, printf_func) init_stable in 
 let init_stable = add_func "array_get" (None, array_get_func) init_stable in
+let init_stable = add_func "array_set" (None, array_set_func) init_stable in
 let (builder', stable') = program (builder, init_stable) decls in 
 (* let _ = L.build_ret_int builder in  *)
 let _ = L.build_ret (L.const_int i32_t 0) builder' in

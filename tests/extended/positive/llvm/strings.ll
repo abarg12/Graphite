@@ -16,17 +16,19 @@ declare i32 @printf(i8*, ...)
 
 declare i8* @array_get(i8*, i32, ...)
 
+declare i8* @array_set(i8*, i32, i8*, ...)
+
 define i32 @main() {
 entry:
-  store i8* getelementptr inbounds ([9 x i8], [9 x i8]* @0, i32 0, i32 0), i8** @a, align 8
-  store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0), i8** @b, align 8
-  store i8* getelementptr inbounds ([18 x i8], [18 x i8]* @2, i32 0, i32 0), i8** @c, align 8
+  store i8* getelementptr inbounds ([9 x i8], [9 x i8]* @0, i32 0, i32 0), i8** @a
+  store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0), i8** @b
+  store i8* getelementptr inbounds ([18 x i8], [18 x i8]* @2, i32 0, i32 0), i8** @c
   %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([7 x i8], [7 x i8]* @3, i32 0, i32 0))
-  %a = load i8*, i8** @a, align 8
+  %a = load i8*, i8** @a
   %printf1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i8* %a)
-  %b = load i8*, i8** @b, align 8
+  %b = load i8*, i8** @b
   %printf2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.1, i32 0, i32 0), i8* %b)
-  %c = load i8*, i8** @c, align 8
+  %c = load i8*, i8** @c
   %printf3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.2, i32 0, i32 0), i8* %c)
   ret i32 0
 }
