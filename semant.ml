@@ -40,11 +40,11 @@ let check (decls) =
   (* TODO: make it so that you can search built in methods for graphs, etc. *)
   let built_in_graph_meths =
     let add_bind map (name, ty, forms) = StringMap.add name {
-      typ = Graph(Uninitialized, ["none"]);
+      typ = ty;
       fname = name;
       formals = forms;
       body = Block[] } map
-    in List.fold_left add_bind StringMap.empty [ ("add", Graph(Uninitialized, ["none"]), [(Node(Uninitialized), "to_add")]); ]
+    in List.fold_left add_bind StringMap.empty [ ("add", Graph(Int, []), [(Node(Int), "to_add")]); ]
   in
 
   let built_in_node_meths =
@@ -94,9 +94,9 @@ let check (decls) =
   let find_method m data_structs scope = 
     let ds = find_loc_variable scope data_structs in (*data_structs is the name, we need the actual type of it *)
     let meths = (match ds with 
-        Graph(Uninitialized, []) -> graph_meths
-      | Node(Uninitialized) -> node_meths
-      | _ -> raise (Failure ("Data Struc " ^ data_structs ^ " not found")))
+        Graph(_, _) -> graph_meths
+      | Node(_) -> node_meths
+      | _ -> raise (Failure ("Data Struct " ^ string_of_typ ds ^ " not found")))
     in  
     try StringMap.find m meths
     with Not_found -> raise (Failure ("method " ^ m ^ " not found in data struct")) 
@@ -298,22 +298,21 @@ let check (decls) =
         in
         let sexprs = check_args scope (args, f.formals) in
         (f.typ, SCall(fname, sexprs))
-    (* | DotCall(ds, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
+    | DotCall(ds, mname, args) ->
       let md = find_method mname ds scope in 
       let rec check_args m (actuals, formals) = match (actuals, formals) with
         ([], []) -> []
       | (x::xs, y::ys) ->
         let (rt, _) = y in
-        let (m', lsexpr) = expr m funcs x in
+        let lsexpr = expr m funcs x in
         let (lt, le) = lsexpr in
-        if lt = rt then lsexpr::check_args m' (xs, ys)
-        else raise (Failure("invalid args: " ^ string_of_typ lt ^ " != " ^ string_of_typ rt))
+        if lt = rt then lsexpr::check_args m (xs, ys)
+        else raise (Failure("invalid dotcall args: " ^ string_of_typ lt ^ " != " ^ string_of_typ rt))
       | _ -> raise (Failure("invalid number of args"))
       in let sexprs = check_args scope (args, md.formals)
       in
-      (scope, (md.typ, SDotCall(ds, mname, sexprs)))
-        (f.typ, SCall(fname, sexprs)) *)
-    | DotCall(oname, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
+      (md.typ, SDotCall(ds, mname, sexprs))
+    (* | DotCall(oname, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
       (* graph_name.add(node_name); *)
 
       (* why do we need to check this by hardcoding?
@@ -339,19 +338,7 @@ let check (decls) =
             (* (scope, (node_ty, SDotCall(oname, mname, sargs))) *)
             )
         | _ -> raise (Failure("dotcall: non-graph not yet implemented"))
-      )
-      (* let md = find_method mname ds in 
-      let param_length = List.length md.formals in
-        if List.length args != param_length then raise (Failure ("wrong arg num"))
-        else let check_call (mt, _) e =
-          let (new_scope, (et, e')) = expr scope funcs e in
-          (* double check that this wildcard is fine here*)
-            if mt = et then (mt, e')
-            else raise (Failure ("wrong formal type"))
-      in let args' = List.map2 check_call md.formals args
-      in
-      (scope, (md.typ, SDotCall(ds, mname, args'))) *)
-      (* TODO: figure out way to make scope here is new_scope*)
+      )*)
     | List(elist) ->
         let rec convert_es es scope funcs = match es with
             [] -> []
@@ -359,7 +346,7 @@ let check (decls) =
                             se :: convert_es es scope funcs
         in
         (List_t, SList(convert_es elist scope funcs))
-    | _ -> raise (Failure("expr: not implemented"))
+    | _ -> raise (Failure("expr: " ^ string_of_expr e ^ " not implemented"))
 in
 
 

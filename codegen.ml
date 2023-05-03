@@ -43,7 +43,14 @@ let translate decls =
       [| node_t;
          node_t; 
          L.i32_type context|] false
-    in 
+    in
+  let graph_t = L.named_struct_type context "graph_t" in
+    let _ = Llvm.struct_set_body graph_t
+      [|
+        Llvm.pointer_type (L.i8_type context);
+        Llvm.pointer_type (L.i8_type context);
+      |] false
+  in
   let list_t   = L.pointer_type (L.i8_type context)
   and list_closure = L.named_struct_type context "list_closure" in
   let _ = L.struct_set_body list_closure
@@ -67,6 +74,7 @@ let ltype_of_typ = function
   | A.String -> string_t 
   | A.Node(typ) -> node_t
   | A.Edge(typ) -> edge_t
+  | A.Graph(typ) -> graph_t
   | A.List_t -> list_t
   | _ -> raise (Unfinished "not all types implemented")
 in
@@ -76,7 +84,7 @@ in
 let bind_var (scope : symbol_table) x v  =
   if scope.parent = None
   then 
-    { variables = scope.variables;
+  { variables = scope.variables;
               parent = scope.parent;
               funcs = scope.funcs;
               curr_func = scope.curr_func; 
@@ -381,32 +389,45 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       (* let _ = L.dump_value array_ptr in  *)
       array_ptr
       (* L.build_pointercast array_ptr (L.pointer_type i8_t) "array_pointer" builder *)
+
+  | SDotCall(ds_name, meth, args) -> 
+      let ds = find_variable stable ds_name in (match ds with 
+        graph_t -> raise (Failure ("working on this ds methods rn"))
+      | _ -> raise (Failure ("mm whoops")))
+
       
 
   | _ -> raise (Failure("expr: not implemented"))
 
 (*** begin built-in func defs ***)
 and array_get_def (builder, stable) args = 
-    (match args with
-      (typ, SId(list_id)) :: index :: [] -> 
-            (* let list_p = expr (builder, stable) list_id in *)
-            let list_dp = find_variable stable list_id in 
-            let list_p = L.build_load list_dp "list" builder in
-            let idx = expr (builder, stable) index in
-            (* let array_idx = L.build_in_bounds_gep list_p [| (L.const_int i32_t 0); (L.const_int i32_t 0) |]  *)
-                                                                    (* "arr_idx" builder in  *)
-            (* L.build_load array_idx "val" builder *)
-            (* L.const_int i8_t 0 *)
+  (match args with
+    (typ, SId(list_id)) :: index :: [] -> 
+      (* let list_p = expr (builder, stable) list_id in *)
+      let list_dp = find_variable stable list_id in 
+      let list_p = L.build_load list_dp "list" builder in
+      let idx = expr (builder, stable) index in
+      (* let array_idx = L.build_in_bounds_gep list_p [| (L.const_int i32_t 0); (L.const_int i32_t 0) |]  *)
+                                                              (* "arr_idx" builder in  *)
+      (* L.build_load array_idx "val" builder *)
+      (* L.const_int i8_t 0 *)
 
-            let array_idx = L.build_in_bounds_gep list_p [| (L.const_int i32_t 0); idx |] 
-                                                                  "arr_idx" builder 
-            in
-            L.build_load array_idx "value" builder
-            (* let value = L.build_load array_idx "value" builder in *)
-            (* let uncast = L.build_pointercast value (L.pointer_type i32_t) "arr_val" builder in *)
-            (* L.build_load uncast "actual" builder *)
+      let array_idx = L.build_in_bounds_gep list_p [| (L.const_int i32_t 0); idx |] 
+                                                            "arr_idx" builder 
+      in
+      L.build_load array_idx "value" builder
+      (* let value = L.build_load array_idx "value" builder in *)
+      (* let uncast = L.build_pointercast value (L.pointer_type i32_t) "arr_val" builder in *)
+      (* L.build_load uncast "actual" builder *)
 
-      | _ -> raise (Failure("wrong args to array_get")))
+  | _ -> raise (Failure("wrong args to array_get")))
+
+and graph_add_def (builder, stable) ds args =
+(* turn every node that we get into a special cool node that is part of a linked list, i.e. tracks the next node *)
+  let 
+  
+  
+
 in 
 
 (*** end built-in func defs ***)
@@ -489,7 +510,10 @@ and  bind (builder, stable) = function
             | A.Node(typ) -> L.const_named_struct node_t
                                       [| (L.const_int i8_t 0); 
                                           (L.const_int i1_t 0); 
-                                          (L.const_int i8_t 0); |] 
+                                          (L.const_int i8_t 0); |]
+            | A.Graph(typ, slist) -> L.const_named_struct graph_t
+                                      [| L.const_pointer_null (L.pointer_type i8_t);
+                                      L.const_pointer_null (L.pointer_type i8_t)|]
             | A.List_t -> L.const_pointer_null (L.pointer_type i8_t)
             | _ -> raise (Failure "no global default value set")
           in 
