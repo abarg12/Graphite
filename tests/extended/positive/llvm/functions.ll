@@ -4,17 +4,22 @@ source_filename = "Graphite"
 @first = global double 0.000000e+00
 @second = global double 0.000000e+00
 @result = global double 0.000000e+00
-@0 = private unnamed_addr constant [28 x i8] c"addThings function result:\0A\00", align 1
+@0 = private unnamed_addr constant [27 x i8] c"addThings function result:\00", align 1
+@1 = private unnamed_addr constant [28 x i8] c"addThings function result:\0A\00", align 1
 @fmt = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
 @result2 = global i1 false
-@1 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
-@2 = private unnamed_addr constant [29 x i8] c"testThings function result:\0A\00", align 1
+@2 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
+@3 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
+@4 = private unnamed_addr constant [28 x i8] c"testThings function result:\00", align 1
+@5 = private unnamed_addr constant [29 x i8] c"testThings function result:\0A\00", align 1
 @fmt.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @x = global i32 0
 @y = global i32 0
 @result3 = global i32 0
-@3 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
-@4 = private unnamed_addr constant [30 x i8] c"scopeTester function result:\0A\00", align 1
+@6 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
+@7 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
+@8 = private unnamed_addr constant [29 x i8] c"scopeTester function result:\00", align 1
+@9 = private unnamed_addr constant [30 x i8] c"scopeTester function result:\0A\00", align 1
 @fmt.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 
 declare i32 @printf(i8*, ...)
@@ -22,6 +27,8 @@ declare i32 @printf(i8*, ...)
 declare i8* @array_get(i8*, i32, ...)
 
 declare i8* @array_set(i8*, i32, i8*, ...)
+
+declare i8* @array_add(i8*, i32, i8*, ...)
 
 define i32 @main() {
 entry:
@@ -31,22 +38,22 @@ entry:
   %first = load double, double* @first
   %addThings_result = call double @addThings(double %first, double %second)
   store double %addThings_result, double* @result
-  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([28 x i8], [28 x i8]* @0, i32 0, i32 0))
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([28 x i8], [28 x i8]* @1, i32 0, i32 0))
   %result = load double, double* @result
   %printf1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), double %result)
   %result2 = load double, double* @result
   %testThings_result = call i1 @testThings(double %result2, double 1.000000e+01, i1 true)
   store i1 %testThings_result, i1* @result2
-  %printf3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @1, i32 0, i32 0))
-  %printf4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([29 x i8], [29 x i8]* @2, i32 0, i32 0))
+  %printf3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @3, i32 0, i32 0))
+  %printf4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([29 x i8], [29 x i8]* @5, i32 0, i32 0))
   %result25 = load i1, i1* @result2
   %printf6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.1, i32 0, i32 0), i1 %result25)
   store i32 1, i32* @x
   store i32 2, i32* @y
   %scopeTester_result = call i32 @scopeTester(i32 3, i32 4)
   store i32 %scopeTester_result, i32* @result3
-  %printf7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @3, i32 0, i32 0))
-  %printf8 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([30 x i8], [30 x i8]* @4, i32 0, i32 0))
+  %printf7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @7, i32 0, i32 0))
+  %printf8 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([30 x i8], [30 x i8]* @9, i32 0, i32 0))
   %result3 = load i32, i32* @result3
   %printf9 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.2, i32 0, i32 0), i32 %result3)
   ret i32 0
