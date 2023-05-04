@@ -575,7 +575,8 @@ and add_node_def (builder, stable) styp ds_name [to_add] =
   L.build_store new_node nodes builder
 and add_edge_def (builder, stable) styp ds_name [to_add] =
   let e_to_add = expr (builder, stable) to_add in
-  let ds = find_variable stable ds_name in 
+  let ds = find_variable stable ds_name in
+  let _ = check_valid_edge (builder, stable) ds_name e_to_add in (* checks the nodes exist in the graph before adding edge*)
   let edges = L.build_struct_gep ds 1 "edges" builder in (*ptr to our linked list of nodes*)
   let edges_hd = L.build_load edges "edges_hd" builder in (*the head of our linked list*)
   
@@ -672,8 +673,8 @@ and node_exists_def (builder, stable) ds_name [to_find] =
   
   (* placeholder *)
   let (_, funCall) = find_func stable "nodeExists" in 
-  let proc_args arg = expr (builder, stable) arg in 
-  let llargs = List.rev (List.map proc_args (List.rev [to_find])) in
+  (* let proc_args arg = expr (builder, stable) arg in  *)
+  (* let llargs = List.rev (List.map proc_args (List.rev [to_find])) in *)
   L.build_load ret_ptr "returnVal" builder
 and edge_exists_def (builder, stable) ds_name [to_find] =
   (* added so we can just return once  *)
