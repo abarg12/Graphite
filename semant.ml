@@ -50,7 +50,7 @@ let check (decls) =
     in List.fold_left add_bind StringMap.empty [ ("addNode", Graph(Uninitialized, []), [(Node(Uninitialized), "to_add")]);
                                                  ("nameExists", Graph(Uninitialized, []), [(String, "toFind")]); 
                                                  ("getByName", Graph(Uninitialized, []), [(String, "toFind")]); 
-                                                 ("nodeExists", Graph(Uninitialized, []), [(Node(Uninitialized), "toFind")]); 
+                                                 ("nodeExists", Bool, [(Node(Uninitialized), "toFind")]); 
                                                  ("getNode", Graph(Uninitialized, []), [(Node(Uninitialized), "toFind")]); ]
   in
   let built_in_node_meths =
