@@ -33,7 +33,8 @@ let check (decls) =
       fname = name; 
       formals = fs;
       body = Block[] } map
-    in List.fold_left add_bind StringMap.empty [ ("printf", Int, [(Int, "x")]); 
+    in List.fold_left add_bind StringMap.empty [ ("printf", Int, [(Int, "x")]);
+                                                 ("strcmp", Int, [(String, "s1"); (String, "s2")]);
                                                  ("array_get", List_t, [(List_t, "arr");(Int, "idx")]);
                                                  ("array_set", List_t, [(List_t, "arr");(Int, "idx");(Void, "poly")]);
                                                  ("array_add", List_t, [(List_t, "arr");(Int, "idx");(Void, "poly")]);
@@ -50,10 +51,15 @@ let check (decls) =
     in List.fold_left add_bind StringMap.empty [ ("addNode", Void, [(Node(Uninitialized), "to_add")]);
                                                  ("addEdge", Void, [(Edge(Uninitialized), "to_add")]);
                                                  ("edgeExists", Bool, [(Edge(Uninitialized), "to_find")]);
-                                                 ("nameExists", Graph(Uninitialized, []), [(String, "toFind")]); 
-                                                 ("getByName", Graph(Uninitialized, []), [(String, "toFind")]); 
+                                                 (*("nameExists", Graph(Uninitialized, []), [(Node(Uninitialized), "toFind")]); *)
+                                                 ("removeEdge", Bool, [(Edge(Uninitialized), "toFind")]); 
+                                                 ("getEdgesOf", List_t, [(Node(Uninitialized), "toFind")]);
                                                  ("nodeExists", Bool, [(Node(Uninitialized), "toFind")]); 
-                                                 ("getNode", Node(Uninitialized), [(Node(Uninitialized), "toFind")]); ]
+                                                 ("removeNode", Bool, [(Node(Uninitialized), "toFind")]); 
+                                                 
+                                                (* ("getByName", Graph(Uninitialized, []), [(String, "toFind")]); 
+                                                 ("nodeExists", Bool, [(Node(Uninitialized), "toFind")]); 
+                                                 ("getNode", Node(Uninitialized), [(Node(Uninitialized), "toFind")]); *)]
   in
   let built_in_node_meths =
     let add_bind map (name, ty, forms) = StringMap.add name {
