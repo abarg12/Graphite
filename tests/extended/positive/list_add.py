@@ -1,20 +1,15 @@
 list l = [];
-list l2 = [false, 1, 2.2, "three"];
+list l2 = ["false", 1, 2.2, "three", false];
 
 # array_add(l, 0, "whats");
-int j = 2;
+int j = 3;
 string s = "sillystring";
-s = array_get(l2, 3);
-float f = array_get(l2, 2);
+s = array_get(l2, j);
 printf(s);
 
-# float f = array_get(l2, 2);
-# printf(f);
-# array_add(l2, 2, "new");
-
-# int i;
-# for (i = 0; i < 5; i = i+1) {
-#     f = array_get(l2, i);
-#     printf(f);
-# }
+float f = array_get(l2, 2);
+printf(f);
+array_set(l2, 2, "new");
+bool s2 = array_get(l2, 4);
+printf(s2);
 
