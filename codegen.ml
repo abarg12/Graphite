@@ -519,6 +519,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       (* is the curr node null?  *)
       let pred_bb = L.append_block context "while" currLLVMfunc in
       let _ = L.builder_at_end context pred_bb in
+      let null_for_compare = L.const_pointer_null node_node in 
       let pred_builder = L.builder_at_end context pred_bb in
       let bool_val = L.build_is_not_null llNodes "curr" pred_builder in
 
@@ -556,15 +557,15 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
 
       (* get the head of our node linked list *)
       let llNodesPtr = L.build_struct_gep llNodes 1 "nodes" else_builder in
-      let llNodes = L.build_load llNodesPtr "nodes_head" else_builder in
+      let llNodes = L.build_load llNodesPtr "head" else_builder in
       let branch_instr = L.build_br pred_bb else_builder in
 
       
       (* make sure merge bb returns a FALSE if we get to it, i.e. if we did not find the node*)
       let merge_builder = L.builder_at_end context merge_bb in
       (* if we get to the end of list without finding node *)
-      let retFalse = L.const_int (ltype_of_typ A.Bool) 0 in
-      let _ = L.build_store retFalse ret_ptr merge_builder in
+      (*let retFalse = L.const_int (ltype_of_typ A.Bool) 0 in*)
+      (*let _ = L.build_store retFalse ret_ptr merge_builder in*)
 
       (* took away return *)
       (*let _ = L.build_ret ret_ptr merge_builder in *)
