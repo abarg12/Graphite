@@ -464,7 +464,53 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
 
       
 
-    | SDotCall(ds_name, "exists", [to_find]) -> raise (Failure ("to implement"))
+    | SDotCall(ds_name, "nodeExists", [to_find]) ->
+      let n_to_add = expr (builder, stable) to_find in
+      let ds = find_variable stable ds_name in
+      let node_to_find = expr (builder, stable) to_find in
+      let nodes = L.build_struct_gep ds 0 "nodes" builder in
+      let nodes_head = L.build_load nodes "head" builder in
+      let stored_node = L.build_struct_gep nodes_head 0 "nodes" builder in
+      let stored_node' = L.build_load stored_node "stored_node'" builder in
+
+      let (_, currLLVMfunc) = find_func stable stable.curr_func in
+      (* first create the predicate block-- while curr != NULL *)
+      let predicate_bb = L.append_block context "while" currLLVMfunc in
+      let _ = L.builder_at_end context predicate_bb in
+      let body_bb = L.append_block context "while_body" currLLVMfunc in
+      (* here's where i build the body of the while, including the if/else *)
+      let body_builder = L.builder_at_end context body_bb in
+      let if_found_bool_val = L.build_icmp L.Icmp.Eq stored_node node_to_find "found?" body_builder in
+      let then_bb = L.append_block context "then" currLLVMfunc in
+      let then_builder = L.builder_at_end context then_bb in
+      let ret_ptr = L.build_alloca i1_t "ret_true" then_builder in
+      let bool = L.const_int (ltype_of_typ A.Bool) 1 in
+      let _ = L.build_store bool ret_ptr then_builder in (*SBoolLit??????????*)
+      let _ = L.build_ret ret_ptr then_builder in (*hopefully this builds the proper return*)
+      let else_bb = L.append_block context "else" currLLVMfunc in
+      
+      let else_builder = L.builder_at_end context else_bb in
+
+      let rst_nodes = L.build_struct_gep nodes_head 1 "nodes" else_builder in
+      let nodes_head = L.build_load rst_nodes "nodes_head" else_builder in
+      let stored_node = L.build_struct_gep nodes_head 0 "nodes" else_builder in
+      
+      let stored_node' = L.build_load stored_node "stored_node'" else_builder in
+
+      (* let else_builder = IMPORTANT: this is where we iterate, curr = curr->next and loop again *)
+
+(* tie it all together at the end by finishing building the pred br *)
+      let pred_builder = L.builder_at_end context predicate_bb in
+      let bool_val = L.build_is_not_null nodes_head "curr" pred_builder in
+      let merge_bb = L.append_block context "merge" currLLVMfunc in
+      (* make sure merge bb returns a FALSE if we get to it, i.e. if we did not find the node*)
+      let br_while = L.build_cond_br bool_val body_bb merge_bb pred_builder in
+      let _ = L.position_at_end merge_bb builder in
+      let bool = L.const_int (ltype_of_typ A.Bool) 0 in
+      let _ = L.build_store bool ret_ptr then_builder in (*SBoolLit??????????*)
+      L.build_ret ret_ptr then_builder(*hopefully this builds the proper return*)
+
+
 
 
 
@@ -696,7 +742,8 @@ and  bind (builder, stable) = function
           
 (* Bind assignments are declaration-assignment one-liners *)
 and bindassign (builder, stable) = function 
-  (typ, s, e) ->    
+  (typ, s, e) ->   
+ 
     let e' =
         (match e with
                 (_, SCall("array_get", _)) -> let exp = expr (builder, stable) e in
