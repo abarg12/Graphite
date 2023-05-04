@@ -73,12 +73,19 @@ let translate decls =
     | flag::rest ->
       let err = action ^ " failed on " ^ flag ^ " graph " ^ gname in
       (match (flag, action) with
-          (* adding node to a tree won't break any rules *)
+          (* adding node to a tree won't break any rules. always true *)
           ("tree", "addNode") -> enforce_invariants gname rest action
 
+          (* prob need to do dfs  *)
         | ("tree", "addEdge") -> raise (Failure ("addEdge to tree cannot be enforced yet"))
+
+        (* adding node to a connected graph will always create a disconnected node. always false  *)
         | ("connected", "addNode") -> raise (Failure (err))
+
+          (* 1. either node x or y must be in graph -> need to search vertex list
+          2.  *)
         | ("connected", "addEdge") -> raise (Failure ("addEdge to connected cannot be enforced yet"))
+
       )
   in
 
@@ -406,11 +413,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
           L.build_load list_head "temp" builder
 
   | SDotCall(ds_name, "addNode", [to_add]) ->
-      let flags = match styp with
-          Graph(t, flags) -> flags
-        | _ -> raise (Failure ("unimplemented"))
-      in
-      let _ = enforce_invariants ds_name flags "addNode" in
+
       let n_to_add = expr (builder, stable) to_add in
       let ds = find_variable stable ds_name in 
       let nodes = L.build_struct_gep ds 0 "nodes" builder in (*ptr to our linked list of nodes*)
@@ -420,7 +423,17 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       let node_ptr = L.build_struct_gep new_node 0 "node_ptr" builder in (* where we will point to node being added *)
       let _ = L.build_store nodes_hd lst_rst builder in (* add ptr to rest of nodes list *)
       let _ = L.build_store n_to_add node_ptr builder in (* point to newly added node *)
+
+      (* BEGIN INVARIANT *)
+      let flags = match styp with
+          Graph(t, flags) -> flags
+        | _ -> raise (Failure ("SDotCall not supported for non-graphs"))
+      in
+      let _ = enforce_invariants ds_name flags "addNode" in
+      (* END INVARIANT *)
+
       L.build_store new_node nodes builder
+    (* | SDotCall(ds_name, "addEdge", [ast_edge]) -> *)
 
     | SDotCall(ds_name, "findName", [toFind]) -> raise (Failure ("unimplemented"))
 

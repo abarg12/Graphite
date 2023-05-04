@@ -331,15 +331,17 @@ let check (decls) =
            | (Graph(ty1, invars), Graph(ty2, invars2)) -> ty1 = dsIntTy (* TODO might have to change later to check invars*)
            | (Edge(ty1), Edge(ty2)) -> ty1 = dsIntTy
            | (ty1, ty2) -> ty1 = ty2
-           | _ -> raise (Failure ("impropper argument type"))
+           | _ -> raise (Failure ("improper argument type"))
         in
         if sameTy then lsexpr::check_args m (xs, ys)
         else raise (Failure("invalid dotcall args: " ^ string_of_typ lt ^ " != " ^ string_of_typ rt))
       | _ -> raise (Failure("invalid number of args"))
       in let sexprs = check_args scope (args, md.formals)
       in
-      (dsty, SDotCall(ds, mname, sexprs)) (* codegen might need the flags info *)
-      (* (md.typ, SDotCall(ds, mname, sexprs)) *)
+      (match mname with
+          "addNode" -> (dsty, SDotCall(ds, mname, sexprs)) (* codegen might need the flags info *)
+        | "addEdge" -> (dsty, SDotCall(ds, mname, sexprs)) (* codegen might need the flags info *)
+        | _ -> (md.typ, SDotCall(ds, mname, sexprs)))
     (* | DotCall(oname, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
       (* graph_name.add(node_name); *)
 
