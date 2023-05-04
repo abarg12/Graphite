@@ -9,10 +9,15 @@ source_filename = "Graphite"
 
 @n = global %node_struct* null
 @n2 = global %node_struct* null
+@n4 = global %node_struct* null
 @n3 = global %node_struct* null
 @g = global %graph_t zeroinitializer
+@llNodes = global %node_node* null
 @found = global i1 false
+@llNodes.1 = global %node_node* null
+@found2 = global i1 false
 @fmt = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@fmt.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 
 declare i32 @printf(i8*, ...)
 
@@ -64,42 +69,67 @@ entry:
   %"data'22" = getelementptr inbounds %node_struct, %node_struct* %node14, i32 0, i32 2
   store i8* %name_ptr20, i8** %"name'21", align 8
   store i8* %data_ptr19, i8** %"data'22", align 8
-  store %node_struct* %node14, %node_struct** @n3, align 8
+  store %node_struct* %node14, %node_struct** @n4, align 8
+  %malloccall23 = tail call i8* @malloc(i32 ptrtoint (%node_struct* getelementptr (%node_struct, %node_struct* null, i32 1) to i32))
+  %node24 = bitcast i8* %malloccall23 to %node_struct*
+  %malloccall25 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
+  %data26 = bitcast i8* %malloccall25 to i32*
+  %malloccall27 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
+  %name28 = bitcast i8* %malloccall27 to i8**
+  %data_ptr29 = bitcast i32* %data26 to i8*
+  %name_ptr30 = bitcast i8** %name28 to i8*
+  %"name'31" = getelementptr inbounds %node_struct, %node_struct* %node24, i32 0, i32 0
+  %"data'32" = getelementptr inbounds %node_struct, %node_struct* %node24, i32 0, i32 2
+  store i8* %name_ptr30, i8** %"name'31", align 8
+  store i8* %data_ptr29, i8** %"data'32", align 8
+  store %node_struct* %node24, %node_struct** @n3, align 8
   %n = load %node_struct*, %node_struct** @n, align 8
   %nodes_hd = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %malloccall23 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
-  %new_node = bitcast i8* %malloccall23 to %node_node*
+  %malloccall33 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
+  %new_node = bitcast i8* %malloccall33 to %node_node*
   %"lst_rst'" = getelementptr inbounds %node_node, %node_node* %new_node, i32 0, i32 1
   %node_ptr = getelementptr inbounds %node_node, %node_node* %new_node, i32 0, i32 0
   store %node_node* %nodes_hd, %node_node** %"lst_rst'", align 8
   store %node_struct* %n, %node_struct** %node_ptr, align 8
   store %node_node* %new_node, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
   %n2 = load %node_struct*, %node_struct** @n2, align 8
-  %nodes_hd24 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %malloccall25 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
-  %new_node26 = bitcast i8* %malloccall25 to %node_node*
-  %"lst_rst'27" = getelementptr inbounds %node_node, %node_node* %new_node26, i32 0, i32 1
-  %node_ptr28 = getelementptr inbounds %node_node, %node_node* %new_node26, i32 0, i32 0
-  store %node_node* %nodes_hd24, %node_node** %"lst_rst'27", align 8
-  store %node_struct* %n2, %node_struct** %node_ptr28, align 8
-  store %node_node* %new_node26, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
+  %nodes_hd34 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
+  %malloccall35 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
+  %new_node36 = bitcast i8* %malloccall35 to %node_node*
+  %"lst_rst'37" = getelementptr inbounds %node_node, %node_node* %new_node36, i32 0, i32 1
+  %node_ptr38 = getelementptr inbounds %node_node, %node_node* %new_node36, i32 0, i32 0
+  store %node_node* %nodes_hd34, %node_node** %"lst_rst'37", align 8
+  store %node_struct* %n2, %node_struct** %node_ptr38, align 8
+  store %node_node* %new_node36, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
+  %n3 = load %node_struct*, %node_struct** @n3, align 8
+  %nodes_hd39 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
+  %malloccall40 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
+  %new_node41 = bitcast i8* %malloccall40 to %node_node*
+  %"lst_rst'42" = getelementptr inbounds %node_node, %node_node* %new_node41, i32 0, i32 1
+  %node_ptr43 = getelementptr inbounds %node_node, %node_node* %new_node41, i32 0, i32 0
+  store %node_node* %nodes_hd39, %node_node** %"lst_rst'42", align 8
+  store %node_struct* %n3, %node_struct** %node_ptr43, align 8
+  store %node_node* %new_node41, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
   %ret_true = alloca i1, align 1
   store i1 false, i1* %ret_true, align 1
-  %n3 = load %node_struct*, %node_struct** @n3, align 8
+  %n4 = load %node_struct*, %node_struct** @n4, align 8
   %head = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
+  store %node_node* %head, %node_node** @llNodes, align 8
   br label %while
 
 while:                                            ; preds = %entry, %else
-  %curr = icmp ne %node_node* %head, null
+  %putMeHere = load %node_node*, %node_node** @llNodes, align 8
+  %curr = icmp ne %node_node* %putMeHere, null
   br i1 %curr, label %while_body, label %merge
 
 while_body:                                       ; preds = %while
-  %nodes = getelementptr inbounds %node_node, %node_node* %head, i32 0, i32 0
+  %putMeHere44 = load %node_node*, %node_node** @llNodes, align 8
+  %nodes = getelementptr inbounds %node_node, %node_node* %putMeHere44, i32 0, i32 0
   %"stored_node'" = load %node_struct*, %node_struct** %nodes, align 8
   br label %if
 
 if:                                               ; preds = %while_body
-  %"found?" = icmp eq %node_struct* %"stored_node'", %n3
+  %"found?" = icmp eq %node_struct* %"stored_node'", %n4
   br i1 %"found?", label %then, label %else
 
 then:                                             ; preds = %if
@@ -107,16 +137,57 @@ then:                                             ; preds = %if
   br label %merge
 
 else:                                             ; preds = %if
-  %nodes29 = getelementptr inbounds %node_node, %node_node* %head, i32 0, i32 1
-  %head30 = load %node_node*, %node_node** %nodes29, align 8
+  %toBeHere = load %node_node*, %node_node** @llNodes, align 8
+  %llNodesPtr = getelementptr inbounds %node_node, %node_node* %toBeHere, i32 0, i32 1
+  %toBeHerenow = load %node_node*, %node_node** %llNodesPtr, align 8
+  store %node_node* %toBeHerenow, %node_node** @llNodes, align 8
   br label %while
 
 merge:                                            ; preds = %while, %then
-  %n331 = load %node_struct*, %node_struct** @n3, align 8
+  %n445 = load %node_struct*, %node_struct** @n4, align 8
   %returnVal = load i1, i1* %ret_true, align 1
   store i1 %returnVal, i1* @found, align 1
+  %ret_true46 = alloca i1, align 1
+  store i1 false, i1* %ret_true46, align 1
+  %n347 = load %node_struct*, %node_struct** @n3, align 8
+  %head48 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
+  store %node_node* %head48, %node_node** @llNodes.1, align 8
+  br label %while49
+
+while49:                                          ; preds = %merge, %else58
+  %putMeHere50 = load %node_node*, %node_node** @llNodes.1, align 8
+  %curr51 = icmp ne %node_node* %putMeHere50, null
+  br i1 %curr51, label %while_body52, label %merge59
+
+while_body52:                                     ; preds = %while49
+  %putMeHere53 = load %node_node*, %node_node** @llNodes.1, align 8
+  %nodes54 = getelementptr inbounds %node_node, %node_node* %putMeHere53, i32 0, i32 0
+  %"stored_node'55" = load %node_struct*, %node_struct** %nodes54, align 8
+  br label %if56
+
+if56:                                             ; preds = %while_body52
+  %"found?60" = icmp eq %node_struct* %"stored_node'55", %n347
+  br i1 %"found?60", label %then57, label %else58
+
+then57:                                           ; preds = %if56
+  store i1 true, i1* %ret_true46, align 1
+  br label %merge59
+
+else58:                                           ; preds = %if56
+  %toBeHere61 = load %node_node*, %node_node** @llNodes.1, align 8
+  %llNodesPtr62 = getelementptr inbounds %node_node, %node_node* %toBeHere61, i32 0, i32 1
+  %toBeHerenow63 = load %node_node*, %node_node** %llNodesPtr62, align 8
+  store %node_node* %toBeHerenow63, %node_node** @llNodes.1, align 8
+  br label %while49
+
+merge59:                                          ; preds = %while49, %then57
+  %n364 = load %node_struct*, %node_struct** @n3, align 8
+  %returnVal65 = load i1, i1* %ret_true46, align 1
+  store i1 %returnVal65, i1* @found2, align 1
   %found = load i1, i1* @found, align 1
   %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i1 %found)
+  %found2 = load i1, i1* @found2, align 1
+  %printf66 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.2, i32 0, i32 0), i1 %found2)
   ret i32 0
 }
 

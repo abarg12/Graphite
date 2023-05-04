@@ -513,24 +513,28 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       (* get the head of our node linked list *)
       let llNodesPtr = L.build_struct_gep ds 0 "nodes" builder in
       let llNodes = L.build_load llNodesPtr "head" builder in
+      let llNodes' = L.define_global "llNodes" (L.const_pointer_null (L.pointer_type node_node)) the_module in
+      let _ = L.build_store llNodes llNodes' builder in
 
       let (_, currLLVMfunc) = find_func stable stable.curr_func in
 
       (* is the curr node null?  *)
       let pred_bb = L.append_block context "while" currLLVMfunc in
       let _ = L.builder_at_end context pred_bb in
-      let null_for_compare = L.const_pointer_null node_node in 
       let pred_builder = L.builder_at_end context pred_bb in
-      let bool_val = L.build_is_not_null llNodes "curr" pred_builder in
+      let x = L.build_load llNodes' "putMeHere" pred_builder in
+      let bool_val = L.build_is_not_null x "curr" pred_builder in
 
       (* body of the while, including the if/else *)
       let body_bb = L.append_block context "while_body" currLLVMfunc in
       let body_builder = L.builder_at_end context body_bb in
-      
+
       (* conditional for if currNode*)
-      let currNodePtr = L.build_struct_gep llNodes 0 "nodes" body_builder in
+      let load_struct_ptr = L.build_load llNodes' "putMeHere" body_builder in
+      let currNodePtr = L.build_struct_gep load_struct_ptr 0 "nodes" body_builder in
       let currNode = L.build_load currNodePtr "stored_node'" body_builder in
       (* labelling the blocks for if else *)
+
       let if_bb = L.append_block context "if" currLLVMfunc in
       let then_bb = L.append_block context "then" currLLVMfunc in
       let else_bb = L.append_block context "else" currLLVMfunc in
@@ -556,19 +560,15 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       let else_builder = L.builder_at_end context else_bb in
 
       (* get the head of our node linked list *)
-      let llNodesPtr = L.build_struct_gep llNodes 1 "nodes" else_builder in
-      let llNodes = L.build_load llNodesPtr "head" else_builder in
+      let load_struct_ptr = L.build_load llNodes' "toBeHere" else_builder in
+      let llNodesPtr' = L.build_struct_gep load_struct_ptr 1 "llNodesPtr" else_builder in
+      let load_next_ptr = L.build_load llNodesPtr' "toBeHerenow" else_builder in
+      let _ = L.build_store load_next_ptr llNodes' else_builder in
       let branch_instr = L.build_br pred_bb else_builder in
 
       
       (* make sure merge bb returns a FALSE if we get to it, i.e. if we did not find the node*)
       let merge_builder = L.builder_at_end context merge_bb in
-      (* if we get to the end of list without finding node *)
-      (*let retFalse = L.const_int (ltype_of_typ A.Bool) 0 in*)
-      (*let _ = L.build_store retFalse ret_ptr merge_builder in*)
-
-      (* took away return *)
-      (*let _ = L.build_ret ret_ptr merge_builder in *)
 
       (* go to body if we still have nodes to check out, go to merge cond. if we are out of nodes *)
       let br_while = L.build_cond_br bool_val body_bb merge_bb pred_builder in
@@ -581,12 +581,6 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       let proc_args arg = expr (builder, stable) arg in 
       let llargs = List.rev (List.map proc_args (List.rev [to_find])) in
       L.build_load ret_ptr "returnVal" builder
-      (*L.build_call nodeExists_func (Array.of_list llargs) "" builder*)
-      
-      
-         (* L.build_call printf_func [| string_format_str builder ; (expr (builder, stable) e) |] "printf" builder *)
-       
-
 
   | SDotCall(ds_name, meth, args) -> raise (Failure ("Other dot methods are not currently implemented"))
 
