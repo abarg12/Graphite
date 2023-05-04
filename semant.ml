@@ -33,7 +33,8 @@ let check (decls) =
       fname = name; 
       formals = fs;
       body = Block[] } map
-    in List.fold_left add_bind StringMap.empty [ ("printf", Int, [(Int, "x")]); 
+    in List.fold_left add_bind StringMap.empty [ ("printf", Int, [(Int, "x")]);
+                                                 ("strcmp", Int, [(String, "s1"); (String, "s2")]);
                                                  ("array_get", List_t, [(List_t, "arr");(Int, "idx")]);
                                                  ("array_set", List_t, [(List_t, "arr");(Int, "idx");(Void, "poly")]);
                                                  ("array_add", List_t, [(List_t, "arr");(Int, "idx");(Void, "poly")]);
