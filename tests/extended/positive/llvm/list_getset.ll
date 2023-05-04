@@ -5,8 +5,17 @@ source_filename = "Graphite"
 
 @0 = private unnamed_addr constant [5 x i8] c"five\00", align 1
 @l = global %list_node* null
+@1 = global %list_node* null
+@2 = global i32 0
+@3 = global %list_node* null
 @f = global double 0.000000e+00
 @fmt = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
+@4 = global %list_node* null
+@5 = global i32 0
+@6 = global %list_node* null
+@7 = global %list_node* null
+@8 = global i32 0
+@9 = global %list_node* null
 @fmt.1 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
 
 declare i32 @printf(i8*, ...)
@@ -14,6 +23,8 @@ declare i32 @printf(i8*, ...)
 declare i8* @array_get(i8*, i32, ...)
 
 declare i8* @array_set(i8*, i32, i8*, ...)
+
+declare i8* @array_add(i8*, i32, i8*, ...)
 
 define i32 @main() {
 entry:

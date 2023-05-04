@@ -18,6 +18,8 @@ declare i8* @array_get(i8*, i32, ...)
 
 declare i8* @array_set(i8*, i32, i8*, ...)
 
+declare i8* @array_add(i8*, i32, i8*, ...)
+
 define i32 @main() {
 entry:
   store i8* getelementptr inbounds ([9 x i8], [9 x i8]* @0, i32 0, i32 0), i8** @a, align 8

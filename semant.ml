@@ -35,7 +35,8 @@ let check (decls) =
       body = Block[] } map
     in List.fold_left add_bind StringMap.empty [ ("printf", Int, [(Int, "x")]); 
                                                  ("array_get", List_t, [(List_t, "arr");(Int, "idx")]);
-                                                 ("array_set", List_t, [(List_t, "arr");(Int, "idx"); (Void, "poly")]);
+                                                 ("array_set", List_t, [(List_t, "arr");(Int, "idx");(Void, "poly")]);
+                                                 ("array_add", List_t, [(List_t, "arr");(Int, "idx");(Void, "poly")]);
                                                  ]
   in
 
@@ -288,7 +289,7 @@ let check (decls) =
         let sexp = expr scope funcs arg1 in
         (f.typ, SCall(fname, [sexp]))
       else
-      if fname = "array_set"
+      if (fname = "array_set") || (fname = "array_add")
       then
         let [list_name; idx; value;] = args in
         let a1 = expr scope funcs list_name in
