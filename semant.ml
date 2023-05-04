@@ -50,10 +50,15 @@ let check (decls) =
     in List.fold_left add_bind StringMap.empty [ ("addNode", Void, [(Node(Uninitialized), "to_add")]);
                                                  ("addEdge", Void, [(Edge(Uninitialized), "to_add")]);
                                                  ("edgeExists", Bool, [(Edge(Uninitialized), "to_find")]);
-                                                 ("nameExists", Graph(Uninitialized, []), [(String, "toFind")]); 
-                                                 ("getByName", Graph(Uninitialized, []), [(String, "toFind")]); 
+                                                 (*("nameExists", Graph(Uninitialized, []), [(Node(Uninitialized), "toFind")]); *)
+                                                 ("removeEdge", Bool, [(Edge(Uninitialized), "toFind")]); 
+                                                 ("getEdgesOf", List_t, [(Node(Uninitialized), "toFind")]);
                                                  ("nodeExists", Bool, [(Node(Uninitialized), "toFind")]); 
-                                                 ("getNode", Node(Uninitialized), [(Node(Uninitialized), "toFind")]); ]
+                                                 ("removeNode", Bool, [(Node(Uninitialized), "toFind")]); 
+                                                 
+                                                (* ("getByName", Graph(Uninitialized, []), [(String, "toFind")]); 
+                                                 ("nodeExists", Bool, [(Node(Uninitialized), "toFind")]); 
+                                                 ("getNode", Node(Uninitialized), [(Node(Uninitialized), "toFind")]); *)]
   in
   let built_in_node_meths =
     let add_bind map (name, ty, forms) = StringMap.add name {
