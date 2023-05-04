@@ -346,31 +346,22 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
         | "weight" -> L.build_struct_gep lvar' 2 "temp" builder
         | _ -> raise (Failure ("syntax error caught post parsing. Nonexistent field " ^ field))
     in 
-    
-          let rec link_list idx es prev_node = (match es with 
-                [] -> 0
-              | (typ, e) :: es -> let llvm_val = expr (builder, stable) (typ, e) in
-                                let llvm_ptr = L.build_malloc (ltype_of_typ typ) "arr_val" builder in
-                                let _ = L.build_store llvm_val llvm_ptr builder in
-                                let array_node = L.const_named_struct list_node [| L.const_pointer_null (L.pointer_type i8_t); L.const_pointer_null (L.pointer_type list_node); |] in 
-                                (** insert the llvm value into the node **)
-                                let gen_val = L.build_pointercast llvm_ptr (L.pointer_type i8_t) "i8ptr" builder in
-                                let node_p = L.build_malloc list_node "node_p" builder in 
-                                let val_ptr = L.build_struct_gep node_p 0 "valloc" builder in
-                                let _ = L.build_store array_node node_p builder in
-                                let _ = L.build_store gen_val val_ptr builder in
-                                (** store the pointer to the next node **)
-                                let _ = (if (idx = 0)
-                                            then 
-                                              (L.build_store node_p list_head builder)
-                                            else let p = L.build_struct_gep prev_node 1 "temp" builder in
-                                                  L.build_store node_p p builder) in
-                                (* let s = L.build_struct_gep node_p 0 "temp" builder in
-                                let l = L.build_pointercast (L.build_load s "val" builder) (L.pointer_type i32_t) "intval" builder in
-                                let _ = L.dump_value l in *)
-                                link_list (idx + 1) es node_p) in 
-          let _ = link_list 0 ses (L.const_pointer_null list_node) in 
-          L.build_load list_head "temp" builder
+
+    let steven' = match styp with 
+          Uninitialized -> raise (Failure ("something went wrong " ^ field))
+        | _ -> L.build_load steven (var ^ "." ^ field) builder 
+    in
+    (match field with 
+          "flag" -> L.build_load steven (var ^ "." ^ field) builder 
+        | "weight" -> L.build_load steven (var ^ "." ^ field) builder 
+        | "src" -> 
+          L.build_load steven "srcNode" builder
+        | "dst" -> 
+          L.build_load steven "srcNode" builder
+        | _ ->
+          let llvm_ty = ltype_of_typ styp in
+          let new_ptr = L.build_pointercast steven' (L.pointer_type (llvm_ty)) "new_ptr" builder in
+          L.build_load new_ptr (var ^ "." ^ field) builder)
   | SDotCall(ds_name, "removeNode", [to_remove]) ->
 
     let ret_ptr = L.build_alloca i1_t "ret_true" builder in
@@ -614,23 +605,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
     (* placeholder *)
 
     L.build_load ret_ptr "returnVal" builder
- 
- 
-    let steven' = match styp with 
-          Uninitialized -> raise (Failure ("something went wrong " ^ field))
-        | _ -> L.build_load steven (var ^ "." ^ field) builder 
-    in
-    (match field with 
-          "flag" -> L.build_load steven (var ^ "." ^ field) builder 
-        | "weight" -> L.build_load steven (var ^ "." ^ field) builder 
-        | "src" -> 
-          L.build_load steven "srcNode" builder
-        | "dst" -> 
-          L.build_load steven "srcNode" builder
-        | _ ->
-          let llvm_ty = ltype_of_typ styp in
-          let new_ptr = L.build_pointercast steven' (L.pointer_type (llvm_ty)) "new_ptr" builder in
-          L.build_load new_ptr (var ^ "." ^ field) builder)
+    
   | SDotAssign(var, field, e) -> 
     let e' = expr (builder, stable) e in
     let (my_typ, expr) = e in
@@ -673,27 +648,30 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
   | SList(ses) ->
     let list_head = L.build_malloc list_t "new_list" builder in
 
-      let n_to_add = expr (builder, stable) to_add in
-      let ds = find_variable stable ds_name in 
-      let nodes = L.build_struct_gep ds 0 "nodes" builder in (*ptr to our linked list of nodes*)
-      let nodes_hd = L.build_load nodes "nodes_hd" builder in (*the head of our linked list*)
-      
-      let new_node = L.build_malloc node_node "new_node" builder in (*create a new node head to add*)
-      let lst_rst = L.build_struct_gep new_node 1 "lst_rst'" builder in (* where we will put the rest of the list *)
-      let node_ptr = L.build_struct_gep new_node 0 "node_ptr" builder in (* where we will point to node being added *)
-      let _ = L.build_store nodes_hd lst_rst builder in (* add ptr to rest of nodes list *)
-      let _ = L.build_store n_to_add node_ptr builder in (* point to newly added node *)
-
-      (* BEGIN INVARIANT *)
-      let flags = match styp with
-          Graph(t, flags) -> flags
-        | _ -> raise (Failure ("SDotCall not supported for non-graphs"))
-      in
-      let _ = enforce_invariants ds_name flags "addNode" in
-      (* END INVARIANT *)
-
-      L.build_store new_node nodes builder
-    (* | SDotCall(ds_name, "addEdge", [ast_edge]) -> *)
+    let rec link_list idx es prev_node = (match es with 
+        [] -> 0
+      | (typ, e) :: es -> let llvm_val = expr (builder, stable) (typ, e) in
+        let llvm_ptr = L.build_malloc (ltype_of_typ typ) "arr_val" builder in
+        let _ = L.build_store llvm_val llvm_ptr builder in
+        let array_node = L.const_named_struct list_node [| L.const_pointer_null (L.pointer_type i8_t); L.const_pointer_null (L.pointer_type list_node); |] in 
+        (** insert the llvm value into the node **)
+        let gen_val = L.build_pointercast llvm_ptr (L.pointer_type i8_t) "i8ptr" builder in
+        let node_p = L.build_malloc list_node "node_p" builder in 
+        let val_ptr = L.build_struct_gep node_p 0 "valloc" builder in
+        let _ = L.build_store array_node node_p builder in
+        let _ = L.build_store gen_val val_ptr builder in
+        (** store the pointer to the next node **)
+        let _ = (if (idx = 0)
+                    then 
+                      (L.build_store node_p list_head builder)
+                    else let p = L.build_struct_gep prev_node 1 "temp" builder in
+                          L.build_store node_p p builder) in
+        (* let s = L.build_struct_gep node_p 0 "temp" builder in
+        let l = L.build_pointercast (L.build_load s "val" builder) (L.pointer_type i32_t) "intval" builder in
+        let _ = L.dump_value l in *)
+        link_list (idx + 1) es node_p) in 
+      let _ = link_list 0 ses (L.const_pointer_null list_node) in 
+      L.build_load list_head "temp" builder
 
     | SDotCall(ds_name, "addEdge", [to_add]) ->
 
@@ -982,32 +960,6 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       L.build_load ret_ptr "returnVal" builder
 
   | SDotCall(ds_name, meth, args) -> raise (Failure ("Other dot methods are not currently implemented"))
-
-      
-    let rec link_list idx es prev_node = (match es with 
-        [] -> 0
-      | (typ, e) :: es -> let llvm_val = expr (builder, stable) (typ, e) in
-        let llvm_ptr = L.build_malloc (ltype_of_typ typ) "arr_val" builder in
-        let _ = L.build_store llvm_val llvm_ptr builder in
-        let array_node = L.const_named_struct list_node [| L.const_pointer_null (L.pointer_type i8_t); L.const_pointer_null (L.pointer_type list_node); |] in 
-        (** insert the llvm value into the node **)
-        let gen_val = L.build_pointercast llvm_ptr (L.pointer_type i8_t) "i8ptr" builder in
-        let node_p = L.build_malloc list_node "node_p" builder in 
-        let val_ptr = L.build_struct_gep node_p 0 "valloc" builder in
-        let _ = L.build_store array_node node_p builder in
-        let _ = L.build_store gen_val val_ptr builder in
-        (** store the pointer to the next node **)
-        let _ = (if (idx = 0)
-                    then 
-                      (L.build_store node_p list_head builder)
-                    else let p = L.build_struct_gep prev_node 1 "temp" builder in
-                          L.build_store node_p p builder) in
-        (* let s = L.build_struct_gep node_p 0 "temp" builder in
-        let l = L.build_pointercast (L.build_load s "val" builder) (L.pointer_type i32_t) "intval" builder in
-        let _ = L.dump_value l in *)
-        link_list (idx + 1) es node_p) in 
-      let _ = link_list 0 ses (L.const_pointer_null list_node) in 
-      L.build_load list_head "temp" builder
 
   | SDotCall(ds_name, mname, args) ->
     (match mname with 

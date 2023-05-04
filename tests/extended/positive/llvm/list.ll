@@ -2,6 +2,7 @@
 source_filename = "Graphite"
 
 %list_node = type { i8*, %list_node* }
+%node_struct = type { i8*, i1, i8* }
 
 @l = global %list_node* null
 @a = global double 0.000000e+00
@@ -27,9 +28,13 @@ source_filename = "Graphite"
 
 declare i32 @printf(i8*, ...)
 
+declare i32 @strcmp(i8*, i8*)
+
 declare i8* @array_get(i8*, i32, ...)
 
 declare i8* @array_set(i8*, i32, i8*, ...)
+
+declare i8 @nodeExists(%node_struct*, ...)
 
 declare i8* @array_add(i8*, i32, i8*, ...)
 

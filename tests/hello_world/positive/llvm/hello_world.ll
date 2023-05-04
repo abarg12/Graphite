@@ -1,6 +1,8 @@
 ; ModuleID = 'Graphite'
 source_filename = "Graphite"
 
+%node_struct = type { i8*, i1, i8* }
+
 @i = global i32 0
 @0 = private unnamed_addr constant [14 x i8] c"howdy Richard\00", align 1
 @x = global i8* null
@@ -8,9 +10,13 @@ source_filename = "Graphite"
 
 declare i32 @printf(i8*, ...)
 
+declare i32 @strcmp(i8*, i8*)
+
 declare i8* @array_get(i8*, i32, ...)
 
 declare i8* @array_set(i8*, i32, i8*, ...)
+
+declare i8 @nodeExists(%node_struct*, ...)
 
 declare i8* @array_add(i8*, i32, i8*, ...)
 
