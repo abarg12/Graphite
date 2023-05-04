@@ -178,7 +178,10 @@ let printf_t : L.lltype =
   L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
 let printf_func : L.llvalue = 
   L.declare_function "printf" printf_t the_module in  
-
+let strcmp_t : L.lltype =
+  L.function_type i32_t [| L.pointer_type i8_t; L.pointer_type i8_t |] in
+let strcmp_func : L.llvalue =
+  L.declare_function "strcmp" strcmp_t the_module in
 let array_get_t = 
   L.var_arg_function_type (L.pointer_type i8_t) [| L.pointer_type i8_t; i32_t |] in
 let array_get_func = 
@@ -301,7 +304,18 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
     | (String, SId s) -> L.build_call printf_func [| string_format_str builder ; (expr (builder, stable) e) |] "printf" builder
     | (Bool, SId s) -> L.build_call printf_func [| int_format_str builder ; (expr (builder, stable) e) |] "printf" builder
     | _ -> L.build_call printf_func [| (expr (builder, stable) (A.String, (to_string styp e))) |] "printf" builder )
-  | SCall (name, args) -> 
+  | SCall("strcmp", _) ->
+    let hello_str = "hello" in
+    let world_str = "world" in
+    let s1_ptr = L.build_global_stringptr hello_str hello_str builder in
+    let s2_ptr = L.build_global_stringptr hello_str hello_str builder in
+    (* let s2_ptr = L.build_global_stringptr world_str world_str builder in *)
+    (* uncomment above line for -15  *)
+      L.build_call strcmp_func [|
+        s1_ptr;
+        s2_ptr
+      |] "strcmp" builder
+    | SCall (name, args) -> 
       (match name with  
           "array_get" -> array_get_def (builder, stable) args 
         | "array_set" -> array_set_def (builder, stable) args
@@ -1009,7 +1023,8 @@ let empty_stable = {
   global_vars = StringMap.empty;
 } in
 let init_stable = add_func "main" (None, global_main) empty_stable in 
-let init_stable = add_func "printf" (None, printf_func) init_stable in 
+let init_stable = add_func "printf" (None, printf_func) init_stable in
+let init_stable = add_func "strcmp" (None, strcmp_func) init_stable in
 let init_stable = add_func "array_get" (None, array_get_func) init_stable in
 let init_stable = add_func "array_set" (None, array_set_func) init_stable in
 let init_stable = add_func "array_add" (None, array_add_func) init_stable in
