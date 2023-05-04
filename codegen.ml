@@ -1121,7 +1121,6 @@ and add_node_def (builder, stable) styp ds_name [to_add] =
 and add_edge_def (builder, stable) styp ds_name [to_add] =
   let e_to_add = expr (builder, stable) to_add in
   let ds = find_variable stable ds_name in
-  let _ = check_valid_edge (builder, stable) ds_name e_to_add in (* checks the nodes exist in the graph before adding edge*)
   let edges = L.build_struct_gep ds 1 "edges" builder in (*ptr to our linked list of nodes*)
   let edges_hd = L.build_load edges "edges_hd" builder in (*the head of our linked list*)
   
