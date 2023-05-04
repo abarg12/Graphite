@@ -35,7 +35,8 @@ let check (decls) =
       body = Block[] } map
     in List.fold_left add_bind StringMap.empty [ ("printf", Int, [(Int, "x")]); 
                                                  ("array_get", List_t, [(List_t, "arr");(Int, "idx")]);
-                                                 ("array_set", List_t, [(List_t, "arr");(Int, "idx"); (Void, "poly")]);
+                                                 ("array_set", List_t, [(List_t, "arr");(Int, "idx");(Void, "poly")]);
+                                                 ("array_add", List_t, [(List_t, "arr");(Int, "idx");(Void, "poly")]);
                                                  ]
   in
 
@@ -49,7 +50,7 @@ let check (decls) =
     in List.fold_left add_bind StringMap.empty [ ("addNode", Graph(Uninitialized, []), [(Node(Uninitialized), "to_add")]);
                                                  ("nameExists", Graph(Uninitialized, []), [(String, "toFind")]); 
                                                  ("getByName", Graph(Uninitialized, []), [(String, "toFind")]); 
-                                                 ("nodeExists", Graph(Uninitialized, []), [(Node(Uninitialized), "toFind")]); 
+                                                 ("nodeExists", Bool, [(Node(Uninitialized), "toFind")]); 
                                                  ("getNode", Graph(Uninitialized, []), [(Node(Uninitialized), "toFind")]); ]
   in
   let built_in_node_meths =
@@ -288,7 +289,7 @@ let check (decls) =
         let sexp = expr scope funcs arg1 in
         (f.typ, SCall(fname, [sexp]))
       else
-      if fname = "array_set"
+      if (fname = "array_set") || (fname = "array_add")
       then
         let [list_name; idx; value;] = args in
         let a1 = expr scope funcs list_name in
@@ -331,15 +332,17 @@ let check (decls) =
            | (Graph(ty1, invars), Graph(ty2, invars2)) -> ty1 = dsIntTy (* TODO might have to change later to check invars*)
            | (Edge(ty1), Edge(ty2)) -> ty1 = dsIntTy
            | (ty1, ty2) -> ty1 = ty2
-           | _ -> raise (Failure ("impropper argument type"))
+           | _ -> raise (Failure ("improper argument type"))
         in
         if sameTy then lsexpr::check_args m (xs, ys)
         else raise (Failure("invalid dotcall args: " ^ string_of_typ lt ^ " != " ^ string_of_typ rt))
       | _ -> raise (Failure("invalid number of args"))
       in let sexprs = check_args scope (args, md.formals)
       in
-      (dsty, SDotCall(ds, mname, sexprs)) (* codegen might need the flags info *)
-      (* (md.typ, SDotCall(ds, mname, sexprs)) *)
+      (match mname with
+          "addNode" -> (dsty, SDotCall(ds, mname, sexprs)) (* codegen might need the flags info *)
+        | "addEdge" -> (dsty, SDotCall(ds, mname, sexprs)) (* codegen might need the flags info *)
+        | _ -> (md.typ, SDotCall(ds, mname, sexprs)))
     (* | DotCall(oname, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
       (* graph_name.add(node_name); *)
 

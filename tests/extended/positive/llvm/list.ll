@@ -5,24 +5,51 @@ source_filename = "Graphite"
 
 @l = global %list_node* null
 @a = global double 0.000000e+00
+@0 = global %list_node* null
+@1 = global i32 0
+@2 = global %list_node* null
 @fmt = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
 @l2 = global %list_node* null
+@3 = global %list_node* null
+@4 = global i32 0
+@5 = global %list_node* null
 @b = global i32 0
 @fmt.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @l3 = global %list_node* null
-@0 = private unnamed_addr constant [4 x i8] c"one\00", align 1
-@1 = private unnamed_addr constant [6 x i8] c"three\00", align 1
+@6 = private unnamed_addr constant [4 x i8] c"one\00", align 1
+@7 = private unnamed_addr constant [6 x i8] c"three\00", align 1
 @l4 = global %list_node* null
+@8 = global %list_node* null
+@9 = global i32 0
+@10 = global %list_node* null
 @abc = global i1 false
 @fmt.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@11 = global %list_node* null
+@12 = global i32 0
+@13 = global %list_node* null
 @bcd = global i8* null
 @fmt.3 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@2 = private unnamed_addr constant [9 x i8] c"badbunny\00", align 1
+@14 = private unnamed_addr constant [9 x i8] c"badbunny\00", align 1
+@15 = global %list_node* null
+@16 = global i32 0
+@17 = global %list_node* null
+@18 = global %list_node* null
+@19 = global i32 0
+@20 = global %list_node* null
 @fmt.4 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @fmt.5 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@21 = global %list_node* null
+@22 = global i32 0
+@23 = global %list_node* null
 @fmt.6 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-@3 = private unnamed_addr constant [4 x i8] c"set\00", align 1
+@24 = private unnamed_addr constant [4 x i8] c"set\00", align 1
+@25 = global %list_node* null
+@26 = global i32 0
+@27 = global %list_node* null
 @fmt.7 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@28 = global %list_node* null
+@29 = global i32 0
+@30 = global %list_node* null
 @fmt.8 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 
 declare i32 @printf(i8*, ...)
@@ -30,6 +57,8 @@ declare i32 @printf(i8*, ...)
 declare i8* @array_get(i8*, i32, ...)
 
 declare i8* @array_set(i8*, i32, i8*, ...)
+
+declare i8* @array_add(i8*, i32, i8*, ...)
 
 define i32 @main() {
 entry:
