@@ -959,7 +959,6 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       let llargs = List.rev (List.map proc_args (List.rev [to_find])) in
       L.build_load ret_ptr "returnVal" builder
 
-  | SDotCall(ds_name, meth, args) -> raise (Failure ("Other dot methods are not currently implemented"))
 
   | SDotCall(ds_name, mname, args) ->
     (match mname with 
@@ -972,7 +971,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
     | "nodeExists" -> node_exists_def (builder, stable) ds_name args
     | "edgeExists" -> edge_exists_def (builder, stable) ds_name args
     | _ -> raise (Failure ("invalid methods")))
-
+  | SDotCall(ds_name, meth, args) -> raise (Failure ("Other dot methods are not currently implemented"))
   | SEdge(n1, n2) -> 
       let n1' = expr (builder, stable) n1 in
       let n2' = expr (builder, stable) n2 in
