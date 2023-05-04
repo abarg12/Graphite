@@ -47,11 +47,13 @@ let check (decls) =
       fname = name;
       formals = forms;
       body = Block[] } map
-    in List.fold_left add_bind StringMap.empty [ ("addNode", Graph(Uninitialized, []), [(Node(Uninitialized), "to_add")]);
+    in List.fold_left add_bind StringMap.empty [ ("addNode", Void, [(Node(Uninitialized), "to_add")]);
+                                                 ("addEdge", Void, [(Edge(Uninitialized), "to_add")]);
+                                                 ("edgeExists", Bool, [(Edge(Uninitialized), "to_find")]);
                                                  ("nameExists", Graph(Uninitialized, []), [(String, "toFind")]); 
                                                  ("getByName", Graph(Uninitialized, []), [(String, "toFind")]); 
                                                  ("nodeExists", Bool, [(Node(Uninitialized), "toFind")]); 
-                                                 ("getNode", Graph(Uninitialized, []), [(Node(Uninitialized), "toFind")]); ]
+                                                 ("getNode", Node(Uninitialized), [(Node(Uninitialized), "toFind")]); ]
   in
   let built_in_node_meths =
     let add_bind map (name, ty, forms) = StringMap.add name {
@@ -339,10 +341,14 @@ let check (decls) =
       | _ -> raise (Failure("invalid number of args"))
       in let sexprs = check_args scope (args, md.formals)
       in
+      let retTy = match md.typ with 
+          Node(x) -> Node(dsIntTy)
+        | _ -> md.typ
+      in
       (match mname with
           "addNode" -> (dsty, SDotCall(ds, mname, sexprs)) (* codegen might need the flags info *)
         | "addEdge" -> (dsty, SDotCall(ds, mname, sexprs)) (* codegen might need the flags info *)
-        | _ -> (md.typ, SDotCall(ds, mname, sexprs)))
+        | _ -> (retTy, SDotCall(ds, mname, sexprs)))
     (* | DotCall(oname, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
       (* graph_name.add(node_name); *)
 
