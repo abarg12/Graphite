@@ -451,24 +451,42 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
 
       
 
-    | SDotCall(ds_name, "exists", [to_find]) -> raise (Failure ("to implement"))
+    | SDotCall(ds_name, "nodeExists", [to_find]) ->
+      let ds = find_variable stable ds_name in
+      let node_to_find = expr (builder, stable) to_find in
+      let nodes = L.build_struct_gep ds 0 "nodes" builder in
+      let nodes_head = L.build_load nodes "head" builder in
+      let stored_node = L.build_struct_gep nodes_head 0 "nodes" builder in
+      let stored_node' = L.build_load stored_node "stored_node'" builder in
+      let (_, currLLVMfunc) = find_func stable stable.curr_func in
+      (* first create the predicate block-- while curr != NULL *)
+      let predicate_bb = L.append_block context "while" currLLVMfunc in
+      let _ = L.builder_at_end context predicate_bb in
+      let body_bb = L.append_block context "while_body" currLLVMfunc in
+      (* here's where i build the body of the while, including the if/else *)
+      let body_builder = L.builder_at_end context body_bb in
+      let if_found_bool_val = L.build_icmp L.Icmp.Eq stored_node node_to_find "found?" body_builder in
+      let then_bb = L.append_block context "then" currLLVMfunc in
+      let then_builder = L.builder_at_end context then_bb in
+      let ret_ptr = L.build_alloca i1_t "ret_true" then_builder in
+      let true_bool = L.const_int (ltype_of_typ A.Bool) 1 in
+      let _ = L.build_store true_bool ret_ptr then_builder in (*SBoolLit??????????*)
+      let _ = L.build_ret ret_ptr then_builder in (*hopefully this builds the proper return*)
+      let else_bb = L.append_block context "else" currLLVMfunc in
+      (* let else_builder = IMPORTANT: this is where we iterate, curr = curr->next and loop again *)
 
-
-
-      (* let n_to_add = expr (builder, stable) to_add in
-      let ds = find_variable stable ds_name in 
-      let nodes = L.build_struct_gep ds 0 "nodes" builder in (*ptr to our linked list of nodes*)
-      let nodes_hd = L.build_load nodes "nodes_hd" builder in (*the head of our linked list*)
-
-      let new_node = L.build_malloc node_node "new_node" builder in (*create a new node head to add*)
-      let lst_rst = L.build_struct_gep new_node 1 "lst_rst'" builder in (* where we will put the rest of the list *)
-      let node_ptr = L.build_struct_gep new_node 0 "node_ptr" builder in (* where we will point to node being added *)
-      let _ = L.build_store nodes_hd lst_rst builder in (* add ptr to rest of nodes list *)
-      let _ = L.build_store n_to_add node_ptr builder in (* point to newly added node *)
-      L.build_store new_node nodes builder *)
-
-
-  | SDotCall(ds_name, meth, args) -> raise (Failure ("Other dot methods are not currently implemented"))
+      (* tie it all together at the end by finishing building the pred br *)
+      let pred_builder = L.builder_at_end context predicate_bb in
+      let bool_val = L.build_is_not_null nodes_head "curr" pred_builder in
+      let merge_bb = L.append_block context "merge" currLLVMfunc in
+      let merge_builder = L.builder_at_end context merge_bb in
+      let false_bool = L.const_int (ltype_of_typ A.Bool) 0 in
+      let _ = L.build_store false_bool ret_ptr merge_builder in
+      let _ = L.build_ret ret_ptr merge_builder in
+      let _ = L.position_at_end merge_bb builder in
+      let () = add_terminal merge_builder (L.build_br predicate_bb) in (*CHECK THIS WHEN MORE AWAKE*)
+      L.build_cond_br bool_val body_bb merge_bb pred_builder
+    | SDotCall(ds_name, meth, args) -> raise (Failure ("Other dot methods are not currently implemented"))
 
       
 
