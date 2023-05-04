@@ -1,8 +1,7 @@
 ; ModuleID = 'Graphite'
 source_filename = "Graphite"
 
-@0 = private unnamed_addr constant [3 x i8] c"hi\00", align 1
-@1 = private unnamed_addr constant [4 x i8] c"hi\0A\00", align 1
+@0 = private unnamed_addr constant [4 x i8] c"hi\0A\00", align 1
 @fmt = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 
 declare i32 @printf(i8*, ...)
@@ -46,7 +45,7 @@ merge:                                            ; preds = %else, %then
   ret i32 42
 
 then:                                             ; preds = %entry
-  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @1, i32 0, i32 0))
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0))
   br label %merge
 
 else:                                             ; preds = %entry

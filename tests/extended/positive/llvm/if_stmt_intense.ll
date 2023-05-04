@@ -2,12 +2,9 @@
 source_filename = "Graphite"
 
 @a = global i32 0
-@0 = private unnamed_addr constant [22 x i8] c"your number is 4!!!!!\00", align 1
-@1 = private unnamed_addr constant [23 x i8] c"your number is 4!!!!!\0A\00", align 1
-@2 = private unnamed_addr constant [23 x i8] c"your number is too big\00", align 1
-@3 = private unnamed_addr constant [24 x i8] c"your number is too big\0A\00", align 1
-@4 = private unnamed_addr constant [25 x i8] c"your number is too small\00", align 1
-@5 = private unnamed_addr constant [26 x i8] c"your number is too small\0A\00", align 1
+@0 = private unnamed_addr constant [23 x i8] c"your number is 4!!!!!\0A\00", align 1
+@1 = private unnamed_addr constant [24 x i8] c"your number is too big\0A\00", align 1
+@2 = private unnamed_addr constant [26 x i8] c"your number is too small\0A\00", align 1
 @fmt = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 
 declare i32 @printf(i8*, ...)
@@ -77,15 +74,15 @@ then8:                                            ; preds = %then
   %tmp11 = icmp sgt i32 %d9, %b10
   %i = alloca i1
   store i1 %tmp11, i1* %i
-  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @1, i32 0, i32 0))
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @0, i32 0, i32 0))
   ret i32 1
 
 else:                                             ; preds = %then
-  %printf12 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @3, i32 0, i32 0))
+  %printf12 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([24 x i8], [24 x i8]* @1, i32 0, i32 0))
   br label %merge7
 
 else13:                                           ; preds = %entry
-  %printf14 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([26 x i8], [26 x i8]* @5, i32 0, i32 0))
+  %printf14 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([26 x i8], [26 x i8]* @2, i32 0, i32 0))
   %a = load i32, i32* @a
   ret i32 %a
 }
