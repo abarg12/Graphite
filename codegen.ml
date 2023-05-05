@@ -453,6 +453,10 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
     | "removeNode" -> remove_node_def (builder, stable) ds_name args
     | "removeEdge" -> remove_edge_def (builder, stable) ds_name args
     | "getEdgesOf" -> get_edges_of_def (builder, stable) ds_name args
+    | "set" -> array_set_def (builder, stable) ((List_t, SId(ds_name))::args)
+    | "add" -> array_add_def (builder, stable) ((List_t, SId(ds_name))::args)
+    | "get" -> array_get_def (builder, stable) ((List_t, SId(ds_name))::args) 
+    | "len" -> array_len_def (builder, stable) ((List_t, SId(ds_name))::args) 
     | _ -> raise (Failure ("invalid methods")))
   | SEdge(n1, n2) -> 
       let n1' = expr (builder, stable) n1 in
@@ -1970,6 +1974,9 @@ and bindassign (builder, stable) = function
                 (_, SCall("array_get", _)) -> let exp = expr (builder, stable) e in
                               let e_cast = L.build_pointercast exp (L.pointer_type (ltype_of_typ typ)) "li_conv" builder in
                               L.build_load e_cast "val_ptr" builder
+              | (_, SDotCall(_, "get", _)) -> let exp = expr (builder, stable) e in
+                                              let e_cast = L.build_pointercast exp (L.pointer_type (ltype_of_typ typ)) "li_conv" builder in
+                                              L.build_load e_cast "val_ptr" builder
               | _ -> expr (builder, stable) e) in
 
     if stable.parent = None then
