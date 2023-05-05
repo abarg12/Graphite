@@ -155,7 +155,7 @@ let rec find_func (scope : symbol_table) (name : string) =
   with Not_found ->
     match scope.parent with
       Some p -> find_func p name
-    | None -> raise Not_found
+    | None -> let _ = L.dump_value (L.const_int i32_t 0) in raise Not_found
 in
 
 (* Add function name to symbol table *)
