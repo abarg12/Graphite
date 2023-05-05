@@ -623,6 +623,7 @@ and array_len_def (builder, stable) args =
         let llvm_ptr = L.build_malloc (ltype_of_typ vtyp) "arr_val" builder in
         let _ = L.build_store llvm_val llvm_ptr builder in
         let zeroval = L.const_int i32_t 0 in 
+        let oneval  = L.const_int i32_t 1 in
 
         let array_node = L.const_named_struct list_node [| L.const_pointer_null (L.pointer_type i8_t); L.const_pointer_null (L.pointer_type list_node); |] in 
         (** generalize the value to an i8_t pointer **)
