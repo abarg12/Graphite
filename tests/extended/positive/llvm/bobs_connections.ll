@@ -785,36 +785,47 @@ merge369:                                         ; preds = %while360
   %0 = bitcast i8* %malloccall380 to %list_node**
   %malloccall381 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
   %1 = bitcast i8* %malloccall381 to i32*
-  store %list_node* %list, %list_node** %0, align 8
   store i32 0, i32* %1, align 4
-  br label %traverse_loop
+  store %list_node* %list, %list_node** %0, align 8
+  %2 = icmp eq %list_node* %list, null
+  br i1 %2, label %then383, label %else384
 
-traverse_loop:                                    ; preds = %while_body382, %merge369
-  %2 = load %list_node*, %list_node** %0, align 8
-  %3 = icmp ne %list_node* %2, null
-  br i1 %3, label %while_body382, label %merge385
-
-while_body382:                                    ; preds = %traverse_loop
-  %4 = load %list_node*, %list_node** %0, align 8
-  %temp383 = getelementptr inbounds %list_node, %list_node* %4, i32 0, i32 1
-  %temp384 = load %list_node*, %list_node** %temp383, align 8
-  %5 = load i32, i32* %1, align 4
-  %add = add i32 %5, 1
-  store i32 %add, i32* %1, align 4
-  store %list_node* %temp384, %list_node** %0, align 8
-  br label %traverse_loop
-
-merge385:                                         ; preds = %traverse_loop
-  %6 = load i32, i32* %1, align 4
-  store i32 %6, i32* @num_bobs_connections, align 4
+merge382:                                         ; preds = %merge388, %then383
+  %3 = load i32, i32* %1, align 4
+  store i32 %3, i32* @num_bobs_connections, align 4
   %num_bobs_connections = load i32, i32* @num_bobs_connections, align 4
   %tmp = sub i32 %num_bobs_connections, 1
   store i32 %tmp, i32* @num_bobs_connections, align 4
   %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @5, i32 0, i32 0))
-  %num_bobs_connections386 = load i32, i32* @num_bobs_connections, align 4
-  %printf387 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i32 %num_bobs_connections386)
-  %printf388 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([13 x i8], [13 x i8]* @6, i32 0, i32 0))
+  %num_bobs_connections389 = load i32, i32* @num_bobs_connections, align 4
+  %printf390 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i32 %num_bobs_connections389)
+  %printf391 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([13 x i8], [13 x i8]* @6, i32 0, i32 0))
   ret i32 0
+
+then383:                                          ; preds = %merge369
+  store i32 0, i32* %1, align 4
+  br label %merge382
+
+else384:                                          ; preds = %merge369
+  br label %traverse_loop
+
+traverse_loop:                                    ; preds = %while_body385, %else384
+  %4 = load %list_node*, %list_node** %0, align 8
+  %5 = icmp ne %list_node* %4, null
+  br i1 %5, label %while_body385, label %merge388
+
+while_body385:                                    ; preds = %traverse_loop
+  %6 = load %list_node*, %list_node** %0, align 8
+  %temp386 = getelementptr inbounds %list_node, %list_node* %6, i32 0, i32 1
+  %temp387 = load %list_node*, %list_node** %temp386, align 8
+  %7 = load i32, i32* %1, align 4
+  %add = add i32 %7, 1
+  store i32 %add, i32* %1, align 4
+  store %list_node* %temp387, %list_node** %0, align 8
+  br label %traverse_loop
+
+merge388:                                         ; preds = %traverse_loop
+  br label %merge382
 }
 
 declare noalias i8* @malloc(i32)

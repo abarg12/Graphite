@@ -462,38 +462,49 @@ merge187:                                         ; preds = %while178
   %0 = bitcast i8* %malloccall198 to %list_node**
   %malloccall199 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
   %1 = bitcast i8* %malloccall199 to i32*
-  store %list_node* %list, %list_node** %0, align 8
   store i32 0, i32* %1, align 4
-  br label %traverse_loop
+  store %list_node* %list, %list_node** %0, align 8
+  %2 = icmp eq %list_node* %list, null
+  br i1 %2, label %then201, label %else202
 
-traverse_loop:                                    ; preds = %while_body200, %merge187
-  %2 = load %list_node*, %list_node** %0, align 8
-  %3 = icmp ne %list_node* %2, null
-  br i1 %3, label %while_body200, label %merge203
-
-while_body200:                                    ; preds = %traverse_loop
-  %4 = load %list_node*, %list_node** %0, align 8
-  %temp201 = getelementptr inbounds %list_node, %list_node* %4, i32 0, i32 1
-  %temp202 = load %list_node*, %list_node** %temp201, align 8
-  %5 = load i32, i32* %1, align 4
-  %add = add i32 %5, 1
-  store i32 %add, i32* %1, align 4
-  store %list_node* %temp202, %list_node** %0, align 8
-  br label %traverse_loop
-
-merge203:                                         ; preds = %traverse_loop
-  %6 = load i32, i32* %1, align 4
-  store i32 %6, i32* @list_length, align 4
+merge200:                                         ; preds = %merge206, %then201
+  %3 = load i32, i32* %1, align 4
+  store i32 %3, i32* @list_length, align 4
   %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([27 x i8], [27 x i8]* @0, i32 0, i32 0))
   %list_length = load i32, i32* @list_length, align 4
-  %printf204 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i32 %list_length)
+  %printf207 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i32 %list_length)
   %edges_of_n = load %list_node*, %list_node** @edges_of_n, align 8
   %edge_weight_sum_result = call i32 @edge_weight_sum(%list_node* %edges_of_n)
   store i32 %edge_weight_sum_result, i32* @total_weight, align 4
-  %printf205 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([34 x i8], [34 x i8]* @1, i32 0, i32 0))
+  %printf208 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([34 x i8], [34 x i8]* @1, i32 0, i32 0))
   %total_weight = load i32, i32* @total_weight, align 4
-  %printf206 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.4, i32 0, i32 0), i32 %total_weight)
+  %printf209 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.4, i32 0, i32 0), i32 %total_weight)
   ret i32 0
+
+then201:                                          ; preds = %merge187
+  store i32 0, i32* %1, align 4
+  br label %merge200
+
+else202:                                          ; preds = %merge187
+  br label %traverse_loop
+
+traverse_loop:                                    ; preds = %while_body203, %else202
+  %4 = load %list_node*, %list_node** %0, align 8
+  %5 = icmp ne %list_node* %4, null
+  br i1 %5, label %while_body203, label %merge206
+
+while_body203:                                    ; preds = %traverse_loop
+  %6 = load %list_node*, %list_node** %0, align 8
+  %temp204 = getelementptr inbounds %list_node, %list_node* %6, i32 0, i32 1
+  %temp205 = load %list_node*, %list_node** %temp204, align 8
+  %7 = load i32, i32* %1, align 4
+  %add = add i32 %7, 1
+  store i32 %add, i32* %1, align 4
+  store %list_node* %temp205, %list_node** %0, align 8
+  br label %traverse_loop
+
+merge206:                                         ; preds = %traverse_loop
+  br label %merge200
 }
 
 define i32 @edge_weight_sum(%list_node* %edges1) {
