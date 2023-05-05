@@ -514,14 +514,17 @@ and array_get_def (builder, stable) args =
       (typ, SId(list_id)) :: index :: [] -> 
             (* let list_p = expr (builder, stable) list_id in *)
             let list_dp = find_variable stable list_id in 
+            (* let _ = L.dump_value list_dp in  *)
             let list_p = L.build_load list_dp "list" builder in
             let idx = expr (builder, stable) index in
 
             let targetv = traverse_isteps idx list_p (builder, stable) in
             let target = L.build_load targetv "" builder in
+            (* let _ = L.dump_value target in *)
             (* let target = traverse_x int_idx list_p in *)
             let targetptr = L.build_struct_gep target 0 "temp" builder in
-            L.build_load targetptr "retval" builder
+            let value = L.build_load targetptr "retval" builder in
+            value
 
       | _ -> raise (Failure("wrong args to array_get"))) 
 
@@ -1024,7 +1027,7 @@ and get_edges_of_def (builder, stable) ds_name [to_find] =
   let to_find' = expr (builder, stable) to_find in
   let ds = find_variable stable ds_name in 
 
-  let edgesList = L.define_global "edgesList" (L.const_pointer_null (L.pointer_type list_node)) the_module in 
+  let edgesList = L.define_global "edgesList" (L.const_pointer_null (list_t)) the_module in 
 
   let llEdgesPtr = L.build_struct_gep ds 1 "edges" builder in
   let llEdges = L.build_load llEdgesPtr "head" builder in
@@ -1047,7 +1050,7 @@ and get_edges_of_def (builder, stable) ds_name [to_find] =
   (* conditional for if currNode*)
   let load_struct_ptr = L.build_load llEdges' "putMeHere" body_builder in
   let currEdgePtr = L.build_struct_gep load_struct_ptr 0 "nodes" body_builder in
-  let currEdge = L.build_load currEdgePtr "stored_node'" body_builder in
+  let currEdge = L.build_load currEdgePtr "stored_nodeA'" body_builder in
   (* labelling the blocks for if else *)
 
   let if_bb = L.append_block context "if" currLLVMfunc in
@@ -1061,7 +1064,7 @@ and get_edges_of_def (builder, stable) ds_name [to_find] =
   let currEdgeSrcPtr = L.build_struct_gep currEdge 0 "nodes" if_builder in
   let currEdgeDstPtr = L.build_struct_gep currEdge 1 "nodes" if_builder in
   let currEdgeSrc = L.build_load currEdgeSrcPtr "currEdgeSrc'" if_builder in
-
+  
   let currEdgeDst = L.build_load currEdgeDstPtr "currEdgeDst'" if_builder in
     
   let if_src = L.build_icmp L.Icmp.Eq currEdgeSrc to_find' "foundSrc?" if_builder in
@@ -1076,7 +1079,9 @@ and get_edges_of_def (builder, stable) ds_name [to_find] =
   let curr_edge = L.build_malloc list_node "node" then_builder in 
   let curr_edge_ptr_ptr = L.build_struct_gep curr_edge 0 "nodes" then_builder in
   let curr_edge_next_ptr = L.build_struct_gep curr_edge 1 "nodes" then_builder in
-  let currEdgeVoidPtr = L.build_pointercast currEdge (L.pointer_type i8_t) "currEdgeVoidPtr" then_builder in 
+  let edgeForList = L.build_malloc edge_t "please_work" then_builder in
+  let _ = L.build_store currEdge edgeForList then_builder in 
+  let currEdgeVoidPtr = L.build_pointercast edgeForList (L.pointer_type i8_t) "currEdgeVoidPtr" then_builder in 
   let _ = L.build_store currEdgeVoidPtr curr_edge_ptr_ptr then_builder in 
   let next = L.build_load edgesList "nextEdges" then_builder in 
   let _ = L.build_store next curr_edge_next_ptr then_builder in
@@ -1109,7 +1114,7 @@ and get_edges_of_def (builder, stable) ds_name [to_find] =
   let (_, funCall) = find_func stable "nodeExists" in 
   let proc_args arg = expr (builder, stable) arg in 
   let llargs = List.rev (List.map proc_args (List.rev [to_find])) in
-  edgesList 
+  L.build_load edgesList "return" builder  
 in
 
 (*** end built-in func defs ***)
@@ -1125,8 +1130,9 @@ let rec sb_lines (builder, stable) (ls : sb_line list) = match ls with
 and stmt (builder, stable) = function
     SExpr (typ, sexp) -> 
       (match (typ, sexp) with
-          (A.List_t, SAssign(s,(typ,SList(es)))) -> bindassign (builder, stable) 
-                                                          (A.List_t, s, (typ, SList(es)))
+          (A.List_t, SAssign(s, (typ, SDotCall(ds, "getEdgesOf", args)))) -> bindassign (builder, stable) (A.List_t, s, (typ, SDotCall(ds, "getEdgesOf", args)))
+        | (A.List_t, SAssign(s,(typ,SList(es)))) -> bindassign (builder, stable) 
+                                                    (A.List_t, s, (typ, SList(es)))
         | _ -> let _ = expr (builder, stable) (typ, sexp) in (builder, stable))
 
   | SBlock ls -> let stable' = {
