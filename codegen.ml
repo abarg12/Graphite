@@ -314,17 +314,6 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
     | (String, SId s) -> L.build_call printf_func [| string_format_str builder ; (expr (builder, stable) e) |] "printf" builder
     | (Bool, SId s) -> L.build_call printf_func [| int_format_str builder ; (expr (builder, stable) e) |] "printf" builder
     | _ -> L.build_call printf_func [| (expr (builder, stable) (A.String, (to_string styp e))) |] "printf" builder )
-  | SCall("strcmp", _) ->
-    let hello_str = "hello" in
-    let world_str = "world" in
-    let s1_ptr = L.build_global_stringptr hello_str hello_str builder in
-    let s2_ptr = L.build_global_stringptr hello_str hello_str builder in
-    (* let s2_ptr = L.build_global_stringptr world_str world_str builder in *)
-    (* uncomment above line for -15  *)
-      L.build_call strcmp_func [|
-        s1_ptr;
-        s2_ptr
-      |] "strcmp" builder
     | SCall (name, args) -> 
       (match name with  
           "array_get" -> array_get_def (builder, stable) args 
