@@ -412,7 +412,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
 
   | SList(ses) ->
     let list_head = L.build_malloc list_t "new_list" builder in
-    (* let _ = L.build_store (L.const_pointer_null list_t)  *)
+    let _ = L.build_store (L.const_pointer_null (L.pointer_type list_node)) list_head builder in
 
     let rec link_list idx es prev_node = (match es with 
         [] -> 0
@@ -434,7 +434,6 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
                           L.build_store node_p p builder) in
       link_list (idx + 1) es node_p) in 
       let _ = link_list 0 ses (L.const_pointer_null list_node) in 
-      (* let _ = L.dump_value (L.build_load list_head "temp" builder) in  *)
       L.build_load list_head "temp" builder
 
 
@@ -541,7 +540,6 @@ and count_steps list (builder, stable) =
 
         let else_bb_if = L.append_block context "else" currLLVMfunc in
         let else_builder_if = L.builder_at_end context else_bb_if in
-        let _ = L.build_call printf_func [| int_format_str else_builder_if ; (L.const_int i32_t 69) |] "printf" else_builder_if in
             let pred_bb = L.append_block context "traverse_loop" currLLVMfunc in
             let _ = L.build_br pred_bb else_builder_if in
 
@@ -604,7 +602,6 @@ and array_get_def (builder, stable) args =
     (match args with
       (typ, SId(list_id)) :: index :: [] -> 
             let list_dp = find_variable stable list_id in 
-            (* let _ = L.dump_value list_dp in  *)
             let list_p = L.build_load list_dp "list" builder in
             let idx = expr (builder, stable) index in
             let targetv = traverse_isteps idx list_p (builder, stable) in
@@ -634,11 +631,8 @@ and array_set_def (builder, stable) args =
 and array_len_def (builder, stable) args =
     match args with
         (typ, SId(list_id)) :: [] ->
-          let _ = L.build_call printf_func [| int_format_str builder ; (L.const_int i32_t 69) |] "printf" builder in
             let list_dp = find_variable stable list_id in 
-            let _ = L.dump_value list_dp in 
             let list_p = L.build_load list_dp "list" builder in
-            let _ = L.dump_value list_dp in 
 
             let counterp = count_steps list_p (builder, stable) in
             let counter = L.build_load counterp "" builder in
@@ -1904,7 +1898,7 @@ and  bind (builder, stable) = function
             | A.Graph(t, invars) -> Llvm.const_named_struct graph_t
                           [| L.const_pointer_null node_node; 
                              L.const_pointer_null edge_node; |] 
-            | A.List_t -> L.const_pointer_null (L.pointer_type i8_t)
+            | A.List_t -> L.const_pointer_null (L.pointer_type list_node)
             | _ -> raise (Failure "no global default value set")
           in 
           let new_glob = L.define_global s init the_module in
@@ -1989,7 +1983,7 @@ and bindassign (builder, stable) = function
                      L.const_pointer_null edge_node; |] 
             | A.Node(t) -> L.const_pointer_null node_t           
             | A.Edge(t) -> L.const_pointer_null edge_t   
-            | A.List_t -> L.const_pointer_null (L.type_of e')
+            | A.List_t -> L.const_pointer_null (L.pointer_type list_node)
             | _ -> raise (Failure "no global default value set")
           in 
           let new_glob = L.define_global s init the_module in
