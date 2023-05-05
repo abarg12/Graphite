@@ -38,6 +38,12 @@ void funcy(list l) {
     s = array_get(l4, 0);
     printf(s);
 
+    string s2;
+    s2 = "test";
+    array_set(l4, 1, s2);
+    s = array_get(l4, 1);
+    printf(s);
+
     bool b = array_get(l3, 5);
     printf(b);
     return;

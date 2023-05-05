@@ -38,6 +38,8 @@ let check (decls) =
                                                  ("array_get", List_t, [(List_t, "arr");(Int, "idx")]);
                                                  ("array_set", List_t, [(List_t, "arr");(Int, "idx");(Void, "poly")]);
                                                  ("array_add", List_t, [(List_t, "arr");(Int, "idx");(Void, "poly")]);
+                                                 ("array_delete", List_t, [(List_t, "arr");(Int, "idx");]);
+                                                 ("array_len", Int, [(List_t, "arr")]);
                                                  ]
   in
 
@@ -73,7 +75,6 @@ let check (decls) =
 
   (* this is where we're gonna add more invariants later heeheehoohoo*)
   let invariants = ["tree"; "connected"; "uniqueName"]  in
-  let fields = ["flag"; "data"; "name"] in
   let graph_meths = built_in_graph_meths in
   let node_meths = built_in_node_meths in 
   let node_fields = ["flag"; "data"; "name"] in
@@ -189,11 +190,16 @@ let check (decls) =
           (Node(_src_dty), Node(_dst_dty)) -> (_src_dty, _dst_dty)
         | _ -> raise (Failure ("semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " cannot form an edge"))
       in
-      let src_data_ty = match src_ty with 
-          _ when src_ty = dst_ty -> 
+      if src_dty = dst_dty then
+      let src_data_ty = match src_ty with
+          Node(t) -> t
+            if dty = 
+        | _ -> raise (Failure ("semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " must point to node types"))
+          (* _ when src_ty = dst_ty -> 
               match dst_ty with 
                 Node(x) -> x
-              | _ -> raise (Failure ("semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " must point to node types"))
+              | _ -> raise (Failure ("semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " must point to node types")) *)
+      
       in
       (Edge(src_data_ty), (SEdge((src_ty, src_sx), (dst_ty, dst_sx))))
     | Assign(x, e) ->
@@ -297,7 +303,7 @@ let check (decls) =
         let sexp = expr scope funcs arg1 in
         (f.typ, SCall(fname, [sexp]))
       else
-      if (fname = "array_set") || (fname = "array_add")
+      if (fname = "array_set") || (fname = "array_add") 
       then
         let [list_name; idx; value;] = args in
         let a1 = expr scope funcs list_name in
@@ -326,6 +332,7 @@ let check (decls) =
           Node(ty) -> ty 
         | Graph(ty, invars) -> ty
         | Edge(ty) -> ty 
+        | _ -> raise(Failure("semant/DotCall: invalid dsty"))
       in 
       let rec check_args m (actuals, formals) = match (actuals, formals) with
         ([], []) -> []
@@ -340,7 +347,6 @@ let check (decls) =
            | (Graph(ty1, invars), Graph(ty2, invars2)) -> ty1 = dsIntTy (* TODO might have to change later to check invars*)
            | (Edge(ty1), Edge(ty2)) -> ty1 = dsIntTy
            | (ty1, ty2) -> ty1 = ty2
-           | _ -> raise (Failure ("improper argument type"))
         in
         if sameTy then lsexpr::check_args m (xs, ys)
         else raise (Failure("invalid dotcall args: " ^ string_of_typ lt ^ " != " ^ string_of_typ rt))
