@@ -190,18 +190,20 @@ let check (decls) =
           (Node(_src_dty), Node(_dst_dty)) -> (_src_dty, _dst_dty)
         | _ -> raise (Failure ("semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " cannot form an edge"))
       in
-      if src_dty = dst_dty then
-      let src_data_ty = match src_ty with
+      let err = "semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " must point to node types" in
+      if src_dty = dst_dty
+        then (Edge(src_dty), (SEdge((src_ty, src_sx), (dst_ty, dst_sx))))
+    else raise (Failure (err))
+      (* let src_data_ty = match src_ty with
           Node(t) -> t
-            if dty = 
-        | _ -> raise (Failure ("semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " must point to node types"))
+        | _ -> raise (Failure ("semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " must point to node types")) *)
           (* _ when src_ty = dst_ty -> 
               match dst_ty with 
                 Node(x) -> x
               | _ -> raise (Failure ("semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " must point to node types")) *)
       
-      in
-      (Edge(src_data_ty), (SEdge((src_ty, src_sx), (dst_ty, dst_sx))))
+      (* in
+      (Edge(src_data_ty), (SEdge((src_ty, src_sx), (dst_ty, dst_sx)))) *)
     | Assign(x, e) ->
       (match e with 
           Call("array_get", _) -> 
