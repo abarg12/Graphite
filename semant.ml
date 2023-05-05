@@ -1,4 +1,3 @@
-(* Semantic checking for the MicroC compiler *)
 
 open Ast
 open Sast
@@ -325,6 +324,16 @@ let check (decls) =
         in
         let sexprs = check_args scope (args, f.formals) in
         (f.typ, SCall(fname, sexprs))
+    | DotCall(ds, "addEdge", [edg]) ->
+      let gt = find_variable scope ds in
+      let _ = match gt with
+          Graph(x) -> x
+      in
+      let (edg_t, edg_sx) = expr scope funcs edg in
+      let dt = match edg_t with
+          Edge(dt) -> dt
+      in
+      (dt, SDotCall(ds, "addEdge", [(edg_t, edg_sx)]))
     | DotCall(ds, mname, args) ->
       let md = find_method mname ds scope in 
       let dsty = find_variable scope ds in
@@ -363,7 +372,6 @@ let check (decls) =
         | _ -> (retTy, SDotCall(ds, mname, sexprs)))
     (* | DotCall(oname, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
       (* graph_name.add(node_name); *)
-
       (* why do we need to check this by hardcoding?
       graph methods should be able to handle any node
       we cannot expect a node<?> because we don't know <?> *)
@@ -619,4 +627,4 @@ in
   in 
   let globals = { variables = StringMap.empty; parent = None; curr_func = None } in
 
- check_decls globals functions decls 
+ check_decls globals functions decls
