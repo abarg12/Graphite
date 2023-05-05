@@ -3,7 +3,7 @@ source_filename = "Graphite"
 
 %node_struct = type { i8*, i1, i8* }
 %edge_t = type { %node_struct*, %node_struct*, i32 }
-%graph_t = type { %node_node*, %edge_node* }
+%graph_tt = type { %node_node*, %edge_node* }
 %node_node = type { %node_struct*, %node_node* }
 %edge_node = type { %edge_t*, %edge_node* }
 %list_node = type { i8*, %list_node* }
@@ -23,7 +23,7 @@ source_filename = "Graphite"
 @edge1 = global %edge_t* null
 @edge2 = global %edge_t* null
 @edge3 = global %edge_t* null
-@g = global %graph_t zeroinitializer
+@g = global %graph_tt* null
 @llNodes = global %node_node* null
 @llNodes.1 = global %node_node* null
 @llNodes.2 = global %node_node* null
@@ -227,67 +227,88 @@ entry:
   %"lvar'93" = load %edge_t*, %edge_t** @edge3, align 8
   %temp94 = getelementptr inbounds %edge_t, %edge_t* %"lvar'93", i32 0, i32 2
   store i32 9, i32* %temp94, align 4
-  %node195 = load %node_struct*, %node_struct** @node1, align 8
-  %nodes_hd = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %malloccall96 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
-  %new_node = bitcast i8* %malloccall96 to %node_node*
+  %malloccall95 = tail call i8* @malloc(i32 ptrtoint (%graph_tt* getelementptr (%graph_tt, %graph_tt* null, i32 1) to i32))
+  %node96 = bitcast i8* %malloccall95 to %graph_tt*
+  %"name'97" = getelementptr inbounds %graph_tt, %graph_tt* %node96, i32 0, i32 0
+  %"data'98" = getelementptr inbounds %graph_tt, %graph_tt* %node96, i32 0, i32 1
+  store %node_node* null, %node_node** %"name'97", align 8
+  store %edge_node* null, %edge_node** %"data'98", align 8
+  store %graph_tt* %node96, %graph_tt** @g, align 8
+  %node199 = load %node_struct*, %node_struct** @node1, align 8
+  %graph_ptr = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr, i32 0, i32 0
+  %nodes_hd = load %node_node*, %node_node** %nodes, align 8
+  %malloccall100 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
+  %new_node = bitcast i8* %malloccall100 to %node_node*
   %"lst_rst'" = getelementptr inbounds %node_node, %node_node* %new_node, i32 0, i32 1
   %node_ptr = getelementptr inbounds %node_node, %node_node* %new_node, i32 0, i32 0
   store %node_node* %nodes_hd, %node_node** %"lst_rst'", align 8
-  store %node_struct* %node195, %node_struct** %node_ptr, align 8
-  store %node_node* %new_node, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %node297 = load %node_struct*, %node_struct** @node2, align 8
-  %nodes_hd98 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %malloccall99 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
-  %new_node100 = bitcast i8* %malloccall99 to %node_node*
-  %"lst_rst'101" = getelementptr inbounds %node_node, %node_node* %new_node100, i32 0, i32 1
-  %node_ptr102 = getelementptr inbounds %node_node, %node_node* %new_node100, i32 0, i32 0
-  store %node_node* %nodes_hd98, %node_node** %"lst_rst'101", align 8
-  store %node_struct* %node297, %node_struct** %node_ptr102, align 8
-  store %node_node* %new_node100, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %node3103 = load %node_struct*, %node_struct** @node3, align 8
-  %nodes_hd104 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
+  store %node_struct* %node199, %node_struct** %node_ptr, align 8
+  store %node_node* %new_node, %node_node** %nodes, align 8
+  %node2101 = load %node_struct*, %node_struct** @node2, align 8
+  %graph_ptr102 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes103 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr102, i32 0, i32 0
+  %nodes_hd104 = load %node_node*, %node_node** %nodes103, align 8
   %malloccall105 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
   %new_node106 = bitcast i8* %malloccall105 to %node_node*
   %"lst_rst'107" = getelementptr inbounds %node_node, %node_node* %new_node106, i32 0, i32 1
   %node_ptr108 = getelementptr inbounds %node_node, %node_node* %new_node106, i32 0, i32 0
   store %node_node* %nodes_hd104, %node_node** %"lst_rst'107", align 8
-  store %node_struct* %node3103, %node_struct** %node_ptr108, align 8
-  store %node_node* %new_node106, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %node4109 = load %node_struct*, %node_struct** @node4, align 8
-  %nodes_hd110 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %malloccall111 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
-  %new_node112 = bitcast i8* %malloccall111 to %node_node*
-  %"lst_rst'113" = getelementptr inbounds %node_node, %node_node* %new_node112, i32 0, i32 1
-  %node_ptr114 = getelementptr inbounds %node_node, %node_node* %new_node112, i32 0, i32 0
-  store %node_node* %nodes_hd110, %node_node** %"lst_rst'113", align 8
-  store %node_struct* %node4109, %node_struct** %node_ptr114, align 8
-  store %node_node* %new_node112, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %node5115 = load %node_struct*, %node_struct** @node5, align 8
-  %nodes_hd116 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %malloccall117 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
-  %new_node118 = bitcast i8* %malloccall117 to %node_node*
-  %"lst_rst'119" = getelementptr inbounds %node_node, %node_node* %new_node118, i32 0, i32 1
-  %node_ptr120 = getelementptr inbounds %node_node, %node_node* %new_node118, i32 0, i32 0
-  store %node_node* %nodes_hd116, %node_node** %"lst_rst'119", align 8
-  store %node_struct* %node5115, %node_struct** %node_ptr120, align 8
-  store %node_node* %new_node118, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %node6121 = load %node_struct*, %node_struct** @node6, align 8
-  %nodes_hd122 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %malloccall123 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
-  %new_node124 = bitcast i8* %malloccall123 to %node_node*
-  %"lst_rst'125" = getelementptr inbounds %node_node, %node_node* %new_node124, i32 0, i32 1
-  %node_ptr126 = getelementptr inbounds %node_node, %node_node* %new_node124, i32 0, i32 0
-  store %node_node* %nodes_hd122, %node_node** %"lst_rst'125", align 8
-  store %node_struct* %node6121, %node_struct** %node_ptr126, align 8
-  store %node_node* %new_node124, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
+  store %node_struct* %node2101, %node_struct** %node_ptr108, align 8
+  store %node_node* %new_node106, %node_node** %nodes103, align 8
+  %node3109 = load %node_struct*, %node_struct** @node3, align 8
+  %graph_ptr110 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes111 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr110, i32 0, i32 0
+  %nodes_hd112 = load %node_node*, %node_node** %nodes111, align 8
+  %malloccall113 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
+  %new_node114 = bitcast i8* %malloccall113 to %node_node*
+  %"lst_rst'115" = getelementptr inbounds %node_node, %node_node* %new_node114, i32 0, i32 1
+  %node_ptr116 = getelementptr inbounds %node_node, %node_node* %new_node114, i32 0, i32 0
+  store %node_node* %nodes_hd112, %node_node** %"lst_rst'115", align 8
+  store %node_struct* %node3109, %node_struct** %node_ptr116, align 8
+  store %node_node* %new_node114, %node_node** %nodes111, align 8
+  %node4117 = load %node_struct*, %node_struct** @node4, align 8
+  %graph_ptr118 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes119 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr118, i32 0, i32 0
+  %nodes_hd120 = load %node_node*, %node_node** %nodes119, align 8
+  %malloccall121 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
+  %new_node122 = bitcast i8* %malloccall121 to %node_node*
+  %"lst_rst'123" = getelementptr inbounds %node_node, %node_node* %new_node122, i32 0, i32 1
+  %node_ptr124 = getelementptr inbounds %node_node, %node_node* %new_node122, i32 0, i32 0
+  store %node_node* %nodes_hd120, %node_node** %"lst_rst'123", align 8
+  store %node_struct* %node4117, %node_struct** %node_ptr124, align 8
+  store %node_node* %new_node122, %node_node** %nodes119, align 8
+  %node5125 = load %node_struct*, %node_struct** @node5, align 8
+  %graph_ptr126 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes127 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr126, i32 0, i32 0
+  %nodes_hd128 = load %node_node*, %node_node** %nodes127, align 8
+  %malloccall129 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
+  %new_node130 = bitcast i8* %malloccall129 to %node_node*
+  %"lst_rst'131" = getelementptr inbounds %node_node, %node_node* %new_node130, i32 0, i32 1
+  %node_ptr132 = getelementptr inbounds %node_node, %node_node* %new_node130, i32 0, i32 0
+  store %node_node* %nodes_hd128, %node_node** %"lst_rst'131", align 8
+  store %node_struct* %node5125, %node_struct** %node_ptr132, align 8
+  store %node_node* %new_node130, %node_node** %nodes127, align 8
+  %node6133 = load %node_struct*, %node_struct** @node6, align 8
+  %graph_ptr134 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes135 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr134, i32 0, i32 0
+  %nodes_hd136 = load %node_node*, %node_node** %nodes135, align 8
+  %malloccall137 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
+  %new_node138 = bitcast i8* %malloccall137 to %node_node*
+  %"lst_rst'139" = getelementptr inbounds %node_node, %node_node* %new_node138, i32 0, i32 1
+  %node_ptr140 = getelementptr inbounds %node_node, %node_node* %new_node138, i32 0, i32 0
+  store %node_node* %nodes_hd136, %node_node** %"lst_rst'139", align 8
+  store %node_struct* %node6133, %node_struct** %node_ptr140, align 8
+  store %node_node* %new_node138, %node_node** %nodes135, align 8
   %edge1 = load %edge_t*, %edge_t** @edge1, align 8
-  %edges_hd = load %edge_node*, %edge_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 1), align 8
-  %malloccall127 = tail call i8* @malloc(i32 ptrtoint (%edge_node* getelementptr (%edge_node, %edge_node* null, i32 1) to i32))
-  %new_edge = bitcast i8* %malloccall127 to %edge_node*
-  %"lst_rst'128" = getelementptr inbounds %edge_node, %edge_node* %new_edge, i32 0, i32 1
+  %graph_ptr141 = load %graph_tt*, %graph_tt** @g, align 8
+  %edges = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr141, i32 0, i32 1
+  %edges_hd = load %edge_node*, %edge_node** %edges, align 8
+  %malloccall142 = tail call i8* @malloc(i32 ptrtoint (%edge_node* getelementptr (%edge_node, %edge_node* null, i32 1) to i32))
+  %new_edge = bitcast i8* %malloccall142 to %edge_node*
+  %"lst_rst'143" = getelementptr inbounds %edge_node, %edge_node* %new_edge, i32 0, i32 1
   %edge_ptr = getelementptr inbounds %edge_node, %edge_node* %new_edge, i32 0, i32 0
-  store %edge_node* %edges_hd, %edge_node** %"lst_rst'128", align 8
+  store %edge_node* %edges_hd, %edge_node** %"lst_rst'143", align 8
   store %edge_t* %edge1, %edge_t** %edge_ptr, align 8
   %src_ptr = getelementptr inbounds %edge_t, %edge_t* %edge1, i32 0, i32 0
   %dst_ptr = getelementptr inbounds %edge_t, %edge_t* %edge1, i32 0, i32 1
@@ -295,7 +316,9 @@ entry:
   %"dst'" = load %node_struct*, %node_struct** %dst_ptr, align 8
   %ret_true = alloca i1, align 1
   store i1 false, i1* %ret_true, align 1
-  %head = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
+  %graph_ptr144 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes145 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr144, i32 0, i32 0
+  %head = load %node_node*, %node_node** %nodes145, align 8
   store %node_node* %head, %node_node** @llNodes, align 8
   br label %while
 
@@ -305,9 +328,9 @@ while:                                            ; preds = %entry, %else
   br i1 %curr, label %while_body, label %merge
 
 while_body:                                       ; preds = %while
-  %putMeHere129 = load %node_node*, %node_node** @llNodes, align 8
-  %nodes = getelementptr inbounds %node_node, %node_node* %putMeHere129, i32 0, i32 0
-  %"stored_node'" = load %node_struct*, %node_struct** %nodes, align 8
+  %putMeHere146 = load %node_node*, %node_node** @llNodes, align 8
+  %nodes147 = getelementptr inbounds %node_node, %node_node* %putMeHere146, i32 0, i32 0
+  %"stored_node'" = load %node_struct*, %node_struct** %nodes147, align 8
   br label %if
 
 if:                                               ; preds = %while_body
@@ -327,651 +350,679 @@ else:                                             ; preds = %if
 
 merge:                                            ; preds = %while, %then
   %returnVal = load i1, i1* %ret_true, align 1
-  %ret_true130 = alloca i1, align 1
-  store i1 false, i1* %ret_true130, align 1
-  %head131 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  store %node_node* %head131, %node_node** @llNodes.1, align 8
-  br label %while132
+  %ret_true148 = alloca i1, align 1
+  store i1 false, i1* %ret_true148, align 1
+  %graph_ptr149 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes150 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr149, i32 0, i32 0
+  %head151 = load %node_node*, %node_node** %nodes150, align 8
+  store %node_node* %head151, %node_node** @llNodes.1, align 8
+  br label %while152
 
-while132:                                         ; preds = %merge, %else141
-  %putMeHere133 = load %node_node*, %node_node** @llNodes.1, align 8
-  %curr134 = icmp ne %node_node* %putMeHere133, null
-  br i1 %curr134, label %while_body135, label %merge142
+while152:                                         ; preds = %merge, %else161
+  %putMeHere153 = load %node_node*, %node_node** @llNodes.1, align 8
+  %curr154 = icmp ne %node_node* %putMeHere153, null
+  br i1 %curr154, label %while_body155, label %merge162
 
-while_body135:                                    ; preds = %while132
-  %putMeHere136 = load %node_node*, %node_node** @llNodes.1, align 8
-  %nodes137 = getelementptr inbounds %node_node, %node_node* %putMeHere136, i32 0, i32 0
-  %"stored_node'138" = load %node_struct*, %node_struct** %nodes137, align 8
-  br label %if139
+while_body155:                                    ; preds = %while152
+  %putMeHere156 = load %node_node*, %node_node** @llNodes.1, align 8
+  %nodes157 = getelementptr inbounds %node_node, %node_node* %putMeHere156, i32 0, i32 0
+  %"stored_node'158" = load %node_struct*, %node_struct** %nodes157, align 8
+  br label %if159
 
-if139:                                            ; preds = %while_body135
-  %"found?143" = icmp eq %node_struct* %"stored_node'138", %"dst'"
-  br i1 %"found?143", label %then140, label %else141
+if159:                                            ; preds = %while_body155
+  %"found?163" = icmp eq %node_struct* %"stored_node'158", %"dst'"
+  br i1 %"found?163", label %then160, label %else161
 
-then140:                                          ; preds = %if139
-  store i1 true, i1* %ret_true130, align 1
-  br label %merge142
+then160:                                          ; preds = %if159
+  store i1 true, i1* %ret_true148, align 1
+  br label %merge162
 
-else141:                                          ; preds = %if139
-  %toBeHere144 = load %node_node*, %node_node** @llNodes.1, align 8
-  %llNodesPtr145 = getelementptr inbounds %node_node, %node_node* %toBeHere144, i32 0, i32 1
-  %toBeHerenow146 = load %node_node*, %node_node** %llNodesPtr145, align 8
-  store %node_node* %toBeHerenow146, %node_node** @llNodes.1, align 8
-  br label %while132
+else161:                                          ; preds = %if159
+  %toBeHere164 = load %node_node*, %node_node** @llNodes.1, align 8
+  %llNodesPtr165 = getelementptr inbounds %node_node, %node_node* %toBeHere164, i32 0, i32 1
+  %toBeHerenow166 = load %node_node*, %node_node** %llNodesPtr165, align 8
+  store %node_node* %toBeHerenow166, %node_node** @llNodes.1, align 8
+  br label %while152
 
-merge142:                                         ; preds = %while132, %then140
-  %returnVal147 = load i1, i1* %ret_true130, align 1
-  br label %if148
+merge162:                                         ; preds = %while152, %then160
+  %returnVal167 = load i1, i1* %ret_true148, align 1
+  br label %if168
 
-if148:                                            ; preds = %merge142
-  br i1 %returnVal, label %merge150, label %else149
+if168:                                            ; preds = %merge162
+  br i1 %returnVal, label %merge170, label %else169
 
-else149:                                          ; preds = %if148
-  %nodes_hd151 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %malloccall152 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
-  %new_node153 = bitcast i8* %malloccall152 to %node_node*
-  %"lst_rst'154" = getelementptr inbounds %node_node, %node_node* %new_node153, i32 0, i32 1
-  %node_ptr155 = getelementptr inbounds %node_node, %node_node* %new_node153, i32 0, i32 0
-  store %node_node* %nodes_hd151, %node_node** %"lst_rst'154", align 8
-  store %node_struct* %"src'", %node_struct** %node_ptr155, align 8
-  store %node_node* %new_node153, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  br label %merge150
+else169:                                          ; preds = %if168
+  %graph_ptr171 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes172 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr171, i32 0, i32 0
+  %nodes_hd173 = load %node_node*, %node_node** %nodes172, align 8
+  %malloccall174 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
+  %new_node175 = bitcast i8* %malloccall174 to %node_node*
+  %"lst_rst'176" = getelementptr inbounds %node_node, %node_node* %new_node175, i32 0, i32 1
+  %node_ptr177 = getelementptr inbounds %node_node, %node_node* %new_node175, i32 0, i32 0
+  store %node_node* %nodes_hd173, %node_node** %"lst_rst'176", align 8
+  store %node_struct* %"src'", %node_struct** %node_ptr177, align 8
+  store %node_node* %new_node175, %node_node** %nodes172, align 8
+  br label %merge170
 
-merge150:                                         ; preds = %else149, %if148
-  br label %if156
+merge170:                                         ; preds = %else169, %if168
+  br label %if178
 
-if156:                                            ; preds = %merge150
-  br i1 %returnVal147, label %merge158, label %else157
+if178:                                            ; preds = %merge170
+  br i1 %returnVal167, label %merge180, label %else179
 
-else157:                                          ; preds = %if156
-  %nodes_hd159 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %malloccall160 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
-  %new_node161 = bitcast i8* %malloccall160 to %node_node*
-  %"lst_rst'162" = getelementptr inbounds %node_node, %node_node* %new_node161, i32 0, i32 1
-  %node_ptr163 = getelementptr inbounds %node_node, %node_node* %new_node161, i32 0, i32 0
-  store %node_node* %nodes_hd159, %node_node** %"lst_rst'162", align 8
-  store %node_struct* %"dst'", %node_struct** %node_ptr163, align 8
-  store %node_node* %new_node161, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  br label %merge158
+else179:                                          ; preds = %if178
+  %graph_ptr181 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes182 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr181, i32 0, i32 0
+  %nodes_hd183 = load %node_node*, %node_node** %nodes182, align 8
+  %malloccall184 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
+  %new_node185 = bitcast i8* %malloccall184 to %node_node*
+  %"lst_rst'186" = getelementptr inbounds %node_node, %node_node* %new_node185, i32 0, i32 1
+  %node_ptr187 = getelementptr inbounds %node_node, %node_node* %new_node185, i32 0, i32 0
+  store %node_node* %nodes_hd183, %node_node** %"lst_rst'186", align 8
+  store %node_struct* %"dst'", %node_struct** %node_ptr187, align 8
+  store %node_node* %new_node185, %node_node** %nodes182, align 8
+  br label %merge180
 
-merge158:                                         ; preds = %else157, %if156
-  store %edge_node* %new_edge, %edge_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 1), align 8
+merge180:                                         ; preds = %else179, %if178
+  store %edge_node* %new_edge, %edge_node** %edges, align 8
   %edge2 = load %edge_t*, %edge_t** @edge2, align 8
-  %edges_hd164 = load %edge_node*, %edge_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 1), align 8
-  %malloccall165 = tail call i8* @malloc(i32 ptrtoint (%edge_node* getelementptr (%edge_node, %edge_node* null, i32 1) to i32))
-  %new_edge166 = bitcast i8* %malloccall165 to %edge_node*
-  %"lst_rst'167" = getelementptr inbounds %edge_node, %edge_node* %new_edge166, i32 0, i32 1
-  %edge_ptr168 = getelementptr inbounds %edge_node, %edge_node* %new_edge166, i32 0, i32 0
-  store %edge_node* %edges_hd164, %edge_node** %"lst_rst'167", align 8
-  store %edge_t* %edge2, %edge_t** %edge_ptr168, align 8
-  %src_ptr169 = getelementptr inbounds %edge_t, %edge_t* %edge2, i32 0, i32 0
-  %dst_ptr170 = getelementptr inbounds %edge_t, %edge_t* %edge2, i32 0, i32 1
-  %"src'171" = load %node_struct*, %node_struct** %src_ptr169, align 8
-  %"dst'172" = load %node_struct*, %node_struct** %dst_ptr170, align 8
-  %ret_true173 = alloca i1, align 1
-  store i1 false, i1* %ret_true173, align 1
-  %head174 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  store %node_node* %head174, %node_node** @llNodes.2, align 8
-  br label %while175
+  %graph_ptr188 = load %graph_tt*, %graph_tt** @g, align 8
+  %edges189 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr188, i32 0, i32 1
+  %edges_hd190 = load %edge_node*, %edge_node** %edges189, align 8
+  %malloccall191 = tail call i8* @malloc(i32 ptrtoint (%edge_node* getelementptr (%edge_node, %edge_node* null, i32 1) to i32))
+  %new_edge192 = bitcast i8* %malloccall191 to %edge_node*
+  %"lst_rst'193" = getelementptr inbounds %edge_node, %edge_node* %new_edge192, i32 0, i32 1
+  %edge_ptr194 = getelementptr inbounds %edge_node, %edge_node* %new_edge192, i32 0, i32 0
+  store %edge_node* %edges_hd190, %edge_node** %"lst_rst'193", align 8
+  store %edge_t* %edge2, %edge_t** %edge_ptr194, align 8
+  %src_ptr195 = getelementptr inbounds %edge_t, %edge_t* %edge2, i32 0, i32 0
+  %dst_ptr196 = getelementptr inbounds %edge_t, %edge_t* %edge2, i32 0, i32 1
+  %"src'197" = load %node_struct*, %node_struct** %src_ptr195, align 8
+  %"dst'198" = load %node_struct*, %node_struct** %dst_ptr196, align 8
+  %ret_true199 = alloca i1, align 1
+  store i1 false, i1* %ret_true199, align 1
+  %graph_ptr200 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes201 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr200, i32 0, i32 0
+  %head202 = load %node_node*, %node_node** %nodes201, align 8
+  store %node_node* %head202, %node_node** @llNodes.2, align 8
+  br label %while203
 
-while175:                                         ; preds = %merge158, %else184
-  %putMeHere176 = load %node_node*, %node_node** @llNodes.2, align 8
-  %curr177 = icmp ne %node_node* %putMeHere176, null
-  br i1 %curr177, label %while_body178, label %merge185
+while203:                                         ; preds = %merge180, %else212
+  %putMeHere204 = load %node_node*, %node_node** @llNodes.2, align 8
+  %curr205 = icmp ne %node_node* %putMeHere204, null
+  br i1 %curr205, label %while_body206, label %merge213
 
-while_body178:                                    ; preds = %while175
-  %putMeHere179 = load %node_node*, %node_node** @llNodes.2, align 8
-  %nodes180 = getelementptr inbounds %node_node, %node_node* %putMeHere179, i32 0, i32 0
-  %"stored_node'181" = load %node_struct*, %node_struct** %nodes180, align 8
-  br label %if182
+while_body206:                                    ; preds = %while203
+  %putMeHere207 = load %node_node*, %node_node** @llNodes.2, align 8
+  %nodes208 = getelementptr inbounds %node_node, %node_node* %putMeHere207, i32 0, i32 0
+  %"stored_node'209" = load %node_struct*, %node_struct** %nodes208, align 8
+  br label %if210
 
-if182:                                            ; preds = %while_body178
-  %"found?186" = icmp eq %node_struct* %"stored_node'181", %"src'171"
-  br i1 %"found?186", label %then183, label %else184
+if210:                                            ; preds = %while_body206
+  %"found?214" = icmp eq %node_struct* %"stored_node'209", %"src'197"
+  br i1 %"found?214", label %then211, label %else212
 
-then183:                                          ; preds = %if182
-  store i1 true, i1* %ret_true173, align 1
-  br label %merge185
+then211:                                          ; preds = %if210
+  store i1 true, i1* %ret_true199, align 1
+  br label %merge213
 
-else184:                                          ; preds = %if182
-  %toBeHere187 = load %node_node*, %node_node** @llNodes.2, align 8
-  %llNodesPtr188 = getelementptr inbounds %node_node, %node_node* %toBeHere187, i32 0, i32 1
-  %toBeHerenow189 = load %node_node*, %node_node** %llNodesPtr188, align 8
-  store %node_node* %toBeHerenow189, %node_node** @llNodes.2, align 8
-  br label %while175
+else212:                                          ; preds = %if210
+  %toBeHere215 = load %node_node*, %node_node** @llNodes.2, align 8
+  %llNodesPtr216 = getelementptr inbounds %node_node, %node_node* %toBeHere215, i32 0, i32 1
+  %toBeHerenow217 = load %node_node*, %node_node** %llNodesPtr216, align 8
+  store %node_node* %toBeHerenow217, %node_node** @llNodes.2, align 8
+  br label %while203
 
-merge185:                                         ; preds = %while175, %then183
-  %returnVal190 = load i1, i1* %ret_true173, align 1
-  %ret_true191 = alloca i1, align 1
-  store i1 false, i1* %ret_true191, align 1
-  %head192 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  store %node_node* %head192, %node_node** @llNodes.3, align 8
-  br label %while193
+merge213:                                         ; preds = %while203, %then211
+  %returnVal218 = load i1, i1* %ret_true199, align 1
+  %ret_true219 = alloca i1, align 1
+  store i1 false, i1* %ret_true219, align 1
+  %graph_ptr220 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes221 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr220, i32 0, i32 0
+  %head222 = load %node_node*, %node_node** %nodes221, align 8
+  store %node_node* %head222, %node_node** @llNodes.3, align 8
+  br label %while223
 
-while193:                                         ; preds = %merge185, %else202
-  %putMeHere194 = load %node_node*, %node_node** @llNodes.3, align 8
-  %curr195 = icmp ne %node_node* %putMeHere194, null
-  br i1 %curr195, label %while_body196, label %merge203
+while223:                                         ; preds = %merge213, %else232
+  %putMeHere224 = load %node_node*, %node_node** @llNodes.3, align 8
+  %curr225 = icmp ne %node_node* %putMeHere224, null
+  br i1 %curr225, label %while_body226, label %merge233
 
-while_body196:                                    ; preds = %while193
-  %putMeHere197 = load %node_node*, %node_node** @llNodes.3, align 8
-  %nodes198 = getelementptr inbounds %node_node, %node_node* %putMeHere197, i32 0, i32 0
-  %"stored_node'199" = load %node_struct*, %node_struct** %nodes198, align 8
-  br label %if200
+while_body226:                                    ; preds = %while223
+  %putMeHere227 = load %node_node*, %node_node** @llNodes.3, align 8
+  %nodes228 = getelementptr inbounds %node_node, %node_node* %putMeHere227, i32 0, i32 0
+  %"stored_node'229" = load %node_struct*, %node_struct** %nodes228, align 8
+  br label %if230
 
-if200:                                            ; preds = %while_body196
-  %"found?204" = icmp eq %node_struct* %"stored_node'199", %"dst'172"
-  br i1 %"found?204", label %then201, label %else202
+if230:                                            ; preds = %while_body226
+  %"found?234" = icmp eq %node_struct* %"stored_node'229", %"dst'198"
+  br i1 %"found?234", label %then231, label %else232
 
-then201:                                          ; preds = %if200
-  store i1 true, i1* %ret_true191, align 1
-  br label %merge203
+then231:                                          ; preds = %if230
+  store i1 true, i1* %ret_true219, align 1
+  br label %merge233
 
-else202:                                          ; preds = %if200
-  %toBeHere205 = load %node_node*, %node_node** @llNodes.3, align 8
-  %llNodesPtr206 = getelementptr inbounds %node_node, %node_node* %toBeHere205, i32 0, i32 1
-  %toBeHerenow207 = load %node_node*, %node_node** %llNodesPtr206, align 8
-  store %node_node* %toBeHerenow207, %node_node** @llNodes.3, align 8
-  br label %while193
+else232:                                          ; preds = %if230
+  %toBeHere235 = load %node_node*, %node_node** @llNodes.3, align 8
+  %llNodesPtr236 = getelementptr inbounds %node_node, %node_node* %toBeHere235, i32 0, i32 1
+  %toBeHerenow237 = load %node_node*, %node_node** %llNodesPtr236, align 8
+  store %node_node* %toBeHerenow237, %node_node** @llNodes.3, align 8
+  br label %while223
 
-merge203:                                         ; preds = %while193, %then201
-  %returnVal208 = load i1, i1* %ret_true191, align 1
-  br label %if209
+merge233:                                         ; preds = %while223, %then231
+  %returnVal238 = load i1, i1* %ret_true219, align 1
+  br label %if239
 
-if209:                                            ; preds = %merge203
-  br i1 %returnVal190, label %merge211, label %else210
+if239:                                            ; preds = %merge233
+  br i1 %returnVal218, label %merge241, label %else240
 
-else210:                                          ; preds = %if209
-  %nodes_hd212 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %malloccall213 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
-  %new_node214 = bitcast i8* %malloccall213 to %node_node*
-  %"lst_rst'215" = getelementptr inbounds %node_node, %node_node* %new_node214, i32 0, i32 1
-  %node_ptr216 = getelementptr inbounds %node_node, %node_node* %new_node214, i32 0, i32 0
-  store %node_node* %nodes_hd212, %node_node** %"lst_rst'215", align 8
-  store %node_struct* %"src'171", %node_struct** %node_ptr216, align 8
-  store %node_node* %new_node214, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  br label %merge211
+else240:                                          ; preds = %if239
+  %graph_ptr242 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes243 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr242, i32 0, i32 0
+  %nodes_hd244 = load %node_node*, %node_node** %nodes243, align 8
+  %malloccall245 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
+  %new_node246 = bitcast i8* %malloccall245 to %node_node*
+  %"lst_rst'247" = getelementptr inbounds %node_node, %node_node* %new_node246, i32 0, i32 1
+  %node_ptr248 = getelementptr inbounds %node_node, %node_node* %new_node246, i32 0, i32 0
+  store %node_node* %nodes_hd244, %node_node** %"lst_rst'247", align 8
+  store %node_struct* %"src'197", %node_struct** %node_ptr248, align 8
+  store %node_node* %new_node246, %node_node** %nodes243, align 8
+  br label %merge241
 
-merge211:                                         ; preds = %else210, %if209
-  br label %if217
+merge241:                                         ; preds = %else240, %if239
+  br label %if249
 
-if217:                                            ; preds = %merge211
-  br i1 %returnVal208, label %merge219, label %else218
+if249:                                            ; preds = %merge241
+  br i1 %returnVal238, label %merge251, label %else250
 
-else218:                                          ; preds = %if217
-  %nodes_hd220 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %malloccall221 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
-  %new_node222 = bitcast i8* %malloccall221 to %node_node*
-  %"lst_rst'223" = getelementptr inbounds %node_node, %node_node* %new_node222, i32 0, i32 1
-  %node_ptr224 = getelementptr inbounds %node_node, %node_node* %new_node222, i32 0, i32 0
-  store %node_node* %nodes_hd220, %node_node** %"lst_rst'223", align 8
-  store %node_struct* %"dst'172", %node_struct** %node_ptr224, align 8
-  store %node_node* %new_node222, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  br label %merge219
+else250:                                          ; preds = %if249
+  %graph_ptr252 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes253 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr252, i32 0, i32 0
+  %nodes_hd254 = load %node_node*, %node_node** %nodes253, align 8
+  %malloccall255 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
+  %new_node256 = bitcast i8* %malloccall255 to %node_node*
+  %"lst_rst'257" = getelementptr inbounds %node_node, %node_node* %new_node256, i32 0, i32 1
+  %node_ptr258 = getelementptr inbounds %node_node, %node_node* %new_node256, i32 0, i32 0
+  store %node_node* %nodes_hd254, %node_node** %"lst_rst'257", align 8
+  store %node_struct* %"dst'198", %node_struct** %node_ptr258, align 8
+  store %node_node* %new_node256, %node_node** %nodes253, align 8
+  br label %merge251
 
-merge219:                                         ; preds = %else218, %if217
-  store %edge_node* %new_edge166, %edge_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 1), align 8
+merge251:                                         ; preds = %else250, %if249
+  store %edge_node* %new_edge192, %edge_node** %edges189, align 8
   %edge3 = load %edge_t*, %edge_t** @edge3, align 8
-  %edges_hd225 = load %edge_node*, %edge_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 1), align 8
-  %malloccall226 = tail call i8* @malloc(i32 ptrtoint (%edge_node* getelementptr (%edge_node, %edge_node* null, i32 1) to i32))
-  %new_edge227 = bitcast i8* %malloccall226 to %edge_node*
-  %"lst_rst'228" = getelementptr inbounds %edge_node, %edge_node* %new_edge227, i32 0, i32 1
-  %edge_ptr229 = getelementptr inbounds %edge_node, %edge_node* %new_edge227, i32 0, i32 0
-  store %edge_node* %edges_hd225, %edge_node** %"lst_rst'228", align 8
-  store %edge_t* %edge3, %edge_t** %edge_ptr229, align 8
-  %src_ptr230 = getelementptr inbounds %edge_t, %edge_t* %edge3, i32 0, i32 0
-  %dst_ptr231 = getelementptr inbounds %edge_t, %edge_t* %edge3, i32 0, i32 1
-  %"src'232" = load %node_struct*, %node_struct** %src_ptr230, align 8
-  %"dst'233" = load %node_struct*, %node_struct** %dst_ptr231, align 8
-  %ret_true234 = alloca i1, align 1
-  store i1 false, i1* %ret_true234, align 1
-  %head235 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  store %node_node* %head235, %node_node** @llNodes.4, align 8
-  br label %while236
+  %graph_ptr259 = load %graph_tt*, %graph_tt** @g, align 8
+  %edges260 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr259, i32 0, i32 1
+  %edges_hd261 = load %edge_node*, %edge_node** %edges260, align 8
+  %malloccall262 = tail call i8* @malloc(i32 ptrtoint (%edge_node* getelementptr (%edge_node, %edge_node* null, i32 1) to i32))
+  %new_edge263 = bitcast i8* %malloccall262 to %edge_node*
+  %"lst_rst'264" = getelementptr inbounds %edge_node, %edge_node* %new_edge263, i32 0, i32 1
+  %edge_ptr265 = getelementptr inbounds %edge_node, %edge_node* %new_edge263, i32 0, i32 0
+  store %edge_node* %edges_hd261, %edge_node** %"lst_rst'264", align 8
+  store %edge_t* %edge3, %edge_t** %edge_ptr265, align 8
+  %src_ptr266 = getelementptr inbounds %edge_t, %edge_t* %edge3, i32 0, i32 0
+  %dst_ptr267 = getelementptr inbounds %edge_t, %edge_t* %edge3, i32 0, i32 1
+  %"src'268" = load %node_struct*, %node_struct** %src_ptr266, align 8
+  %"dst'269" = load %node_struct*, %node_struct** %dst_ptr267, align 8
+  %ret_true270 = alloca i1, align 1
+  store i1 false, i1* %ret_true270, align 1
+  %graph_ptr271 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes272 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr271, i32 0, i32 0
+  %head273 = load %node_node*, %node_node** %nodes272, align 8
+  store %node_node* %head273, %node_node** @llNodes.4, align 8
+  br label %while274
 
-while236:                                         ; preds = %merge219, %else245
-  %putMeHere237 = load %node_node*, %node_node** @llNodes.4, align 8
-  %curr238 = icmp ne %node_node* %putMeHere237, null
-  br i1 %curr238, label %while_body239, label %merge246
+while274:                                         ; preds = %merge251, %else283
+  %putMeHere275 = load %node_node*, %node_node** @llNodes.4, align 8
+  %curr276 = icmp ne %node_node* %putMeHere275, null
+  br i1 %curr276, label %while_body277, label %merge284
 
-while_body239:                                    ; preds = %while236
-  %putMeHere240 = load %node_node*, %node_node** @llNodes.4, align 8
-  %nodes241 = getelementptr inbounds %node_node, %node_node* %putMeHere240, i32 0, i32 0
-  %"stored_node'242" = load %node_struct*, %node_struct** %nodes241, align 8
-  br label %if243
+while_body277:                                    ; preds = %while274
+  %putMeHere278 = load %node_node*, %node_node** @llNodes.4, align 8
+  %nodes279 = getelementptr inbounds %node_node, %node_node* %putMeHere278, i32 0, i32 0
+  %"stored_node'280" = load %node_struct*, %node_struct** %nodes279, align 8
+  br label %if281
 
-if243:                                            ; preds = %while_body239
-  %"found?247" = icmp eq %node_struct* %"stored_node'242", %"src'232"
-  br i1 %"found?247", label %then244, label %else245
+if281:                                            ; preds = %while_body277
+  %"found?285" = icmp eq %node_struct* %"stored_node'280", %"src'268"
+  br i1 %"found?285", label %then282, label %else283
 
-then244:                                          ; preds = %if243
-  store i1 true, i1* %ret_true234, align 1
-  br label %merge246
+then282:                                          ; preds = %if281
+  store i1 true, i1* %ret_true270, align 1
+  br label %merge284
 
-else245:                                          ; preds = %if243
-  %toBeHere248 = load %node_node*, %node_node** @llNodes.4, align 8
-  %llNodesPtr249 = getelementptr inbounds %node_node, %node_node* %toBeHere248, i32 0, i32 1
-  %toBeHerenow250 = load %node_node*, %node_node** %llNodesPtr249, align 8
-  store %node_node* %toBeHerenow250, %node_node** @llNodes.4, align 8
-  br label %while236
+else283:                                          ; preds = %if281
+  %toBeHere286 = load %node_node*, %node_node** @llNodes.4, align 8
+  %llNodesPtr287 = getelementptr inbounds %node_node, %node_node* %toBeHere286, i32 0, i32 1
+  %toBeHerenow288 = load %node_node*, %node_node** %llNodesPtr287, align 8
+  store %node_node* %toBeHerenow288, %node_node** @llNodes.4, align 8
+  br label %while274
 
-merge246:                                         ; preds = %while236, %then244
-  %returnVal251 = load i1, i1* %ret_true234, align 1
-  %ret_true252 = alloca i1, align 1
-  store i1 false, i1* %ret_true252, align 1
-  %head253 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  store %node_node* %head253, %node_node** @llNodes.5, align 8
-  br label %while254
+merge284:                                         ; preds = %while274, %then282
+  %returnVal289 = load i1, i1* %ret_true270, align 1
+  %ret_true290 = alloca i1, align 1
+  store i1 false, i1* %ret_true290, align 1
+  %graph_ptr291 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes292 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr291, i32 0, i32 0
+  %head293 = load %node_node*, %node_node** %nodes292, align 8
+  store %node_node* %head293, %node_node** @llNodes.5, align 8
+  br label %while294
 
-while254:                                         ; preds = %merge246, %else263
-  %putMeHere255 = load %node_node*, %node_node** @llNodes.5, align 8
-  %curr256 = icmp ne %node_node* %putMeHere255, null
-  br i1 %curr256, label %while_body257, label %merge264
+while294:                                         ; preds = %merge284, %else303
+  %putMeHere295 = load %node_node*, %node_node** @llNodes.5, align 8
+  %curr296 = icmp ne %node_node* %putMeHere295, null
+  br i1 %curr296, label %while_body297, label %merge304
 
-while_body257:                                    ; preds = %while254
-  %putMeHere258 = load %node_node*, %node_node** @llNodes.5, align 8
-  %nodes259 = getelementptr inbounds %node_node, %node_node* %putMeHere258, i32 0, i32 0
-  %"stored_node'260" = load %node_struct*, %node_struct** %nodes259, align 8
-  br label %if261
+while_body297:                                    ; preds = %while294
+  %putMeHere298 = load %node_node*, %node_node** @llNodes.5, align 8
+  %nodes299 = getelementptr inbounds %node_node, %node_node* %putMeHere298, i32 0, i32 0
+  %"stored_node'300" = load %node_struct*, %node_struct** %nodes299, align 8
+  br label %if301
 
-if261:                                            ; preds = %while_body257
-  %"found?265" = icmp eq %node_struct* %"stored_node'260", %"dst'233"
-  br i1 %"found?265", label %then262, label %else263
+if301:                                            ; preds = %while_body297
+  %"found?305" = icmp eq %node_struct* %"stored_node'300", %"dst'269"
+  br i1 %"found?305", label %then302, label %else303
 
-then262:                                          ; preds = %if261
-  store i1 true, i1* %ret_true252, align 1
-  br label %merge264
+then302:                                          ; preds = %if301
+  store i1 true, i1* %ret_true290, align 1
+  br label %merge304
 
-else263:                                          ; preds = %if261
-  %toBeHere266 = load %node_node*, %node_node** @llNodes.5, align 8
-  %llNodesPtr267 = getelementptr inbounds %node_node, %node_node* %toBeHere266, i32 0, i32 1
-  %toBeHerenow268 = load %node_node*, %node_node** %llNodesPtr267, align 8
-  store %node_node* %toBeHerenow268, %node_node** @llNodes.5, align 8
-  br label %while254
+else303:                                          ; preds = %if301
+  %toBeHere306 = load %node_node*, %node_node** @llNodes.5, align 8
+  %llNodesPtr307 = getelementptr inbounds %node_node, %node_node* %toBeHere306, i32 0, i32 1
+  %toBeHerenow308 = load %node_node*, %node_node** %llNodesPtr307, align 8
+  store %node_node* %toBeHerenow308, %node_node** @llNodes.5, align 8
+  br label %while294
 
-merge264:                                         ; preds = %while254, %then262
-  %returnVal269 = load i1, i1* %ret_true252, align 1
-  br label %if270
+merge304:                                         ; preds = %while294, %then302
+  %returnVal309 = load i1, i1* %ret_true290, align 1
+  br label %if310
 
-if270:                                            ; preds = %merge264
-  br i1 %returnVal251, label %merge272, label %else271
+if310:                                            ; preds = %merge304
+  br i1 %returnVal289, label %merge312, label %else311
 
-else271:                                          ; preds = %if270
-  %nodes_hd273 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %malloccall274 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
-  %new_node275 = bitcast i8* %malloccall274 to %node_node*
-  %"lst_rst'276" = getelementptr inbounds %node_node, %node_node* %new_node275, i32 0, i32 1
-  %node_ptr277 = getelementptr inbounds %node_node, %node_node* %new_node275, i32 0, i32 0
-  store %node_node* %nodes_hd273, %node_node** %"lst_rst'276", align 8
-  store %node_struct* %"src'232", %node_struct** %node_ptr277, align 8
-  store %node_node* %new_node275, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  br label %merge272
+else311:                                          ; preds = %if310
+  %graph_ptr313 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes314 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr313, i32 0, i32 0
+  %nodes_hd315 = load %node_node*, %node_node** %nodes314, align 8
+  %malloccall316 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
+  %new_node317 = bitcast i8* %malloccall316 to %node_node*
+  %"lst_rst'318" = getelementptr inbounds %node_node, %node_node* %new_node317, i32 0, i32 1
+  %node_ptr319 = getelementptr inbounds %node_node, %node_node* %new_node317, i32 0, i32 0
+  store %node_node* %nodes_hd315, %node_node** %"lst_rst'318", align 8
+  store %node_struct* %"src'268", %node_struct** %node_ptr319, align 8
+  store %node_node* %new_node317, %node_node** %nodes314, align 8
+  br label %merge312
 
-merge272:                                         ; preds = %else271, %if270
-  br label %if278
+merge312:                                         ; preds = %else311, %if310
+  br label %if320
 
-if278:                                            ; preds = %merge272
-  br i1 %returnVal269, label %merge280, label %else279
+if320:                                            ; preds = %merge312
+  br i1 %returnVal309, label %merge322, label %else321
 
-else279:                                          ; preds = %if278
-  %nodes_hd281 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  %malloccall282 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
-  %new_node283 = bitcast i8* %malloccall282 to %node_node*
-  %"lst_rst'284" = getelementptr inbounds %node_node, %node_node* %new_node283, i32 0, i32 1
-  %node_ptr285 = getelementptr inbounds %node_node, %node_node* %new_node283, i32 0, i32 0
-  store %node_node* %nodes_hd281, %node_node** %"lst_rst'284", align 8
-  store %node_struct* %"dst'233", %node_struct** %node_ptr285, align 8
-  store %node_node* %new_node283, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  br label %merge280
+else321:                                          ; preds = %if320
+  %graph_ptr323 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes324 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr323, i32 0, i32 0
+  %nodes_hd325 = load %node_node*, %node_node** %nodes324, align 8
+  %malloccall326 = tail call i8* @malloc(i32 ptrtoint (%node_node* getelementptr (%node_node, %node_node* null, i32 1) to i32))
+  %new_node327 = bitcast i8* %malloccall326 to %node_node*
+  %"lst_rst'328" = getelementptr inbounds %node_node, %node_node* %new_node327, i32 0, i32 1
+  %node_ptr329 = getelementptr inbounds %node_node, %node_node* %new_node327, i32 0, i32 0
+  store %node_node* %nodes_hd325, %node_node** %"lst_rst'328", align 8
+  store %node_struct* %"dst'269", %node_struct** %node_ptr329, align 8
+  store %node_node* %new_node327, %node_node** %nodes324, align 8
+  br label %merge322
 
-merge280:                                         ; preds = %else279, %if278
-  store %edge_node* %new_edge227, %edge_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 1), align 8
-  %head286 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 0), align 8
-  store %node_node* %head286, %node_node** @llNodes.6, align 8
-  br label %while287
+merge322:                                         ; preds = %else321, %if320
+  store %edge_node* %new_edge263, %edge_node** %edges260, align 8
+  %graph_ptr330 = load %graph_tt*, %graph_tt** @g, align 8
+  %nodes331 = getelementptr inbounds %graph_tt, %graph_tt* %graph_ptr330, i32 0, i32 0
+  %head332 = load %node_node*, %node_node** %nodes331, align 8
+  store %node_node* %head332, %node_node** @llNodes.6, align 8
+  br label %while333
 
-while287:                                         ; preds = %merge280, %else294
-  %putMeHere288 = load %node_node*, %node_node** @llNodes.6, align 8
-  %curr289 = icmp ne %node_node* %putMeHere288, null
-  br i1 %curr289, label %while_body290, label %merge295
+while333:                                         ; preds = %merge322, %else340
+  %putMeHere334 = load %node_node*, %node_node** @llNodes.6, align 8
+  %curr335 = icmp ne %node_node* %putMeHere334, null
+  br i1 %curr335, label %while_body336, label %merge341
 
-while_body290:                                    ; preds = %while287
-  %putMeHere291 = load %node_node*, %node_node** @llNodes.6, align 8
-  %nodes292 = getelementptr inbounds %node_node, %node_node* %putMeHere291, i32 0, i32 0
-  %"stored_nodeA'" = load %node_struct*, %node_struct** %nodes292, align 8
-  br label %then293
+while_body336:                                    ; preds = %while333
+  %putMeHere337 = load %node_node*, %node_node** @llNodes.6, align 8
+  %nodes338 = getelementptr inbounds %node_node, %node_node* %putMeHere337, i32 0, i32 0
+  %"stored_nodeA'" = load %node_struct*, %node_struct** %nodes338, align 8
+  br label %then339
 
-then293:                                          ; preds = %while_body290
-  %malloccall296 = tail call i8* @malloc(i32 ptrtoint (%list_node* getelementptr (%list_node, %list_node* null, i32 1) to i32))
-  %node298 = bitcast i8* %malloccall296 to %list_node*
-  %nodes299 = getelementptr inbounds %list_node, %list_node* %node298, i32 0, i32 0
-  %nodes300 = getelementptr inbounds %list_node, %list_node* %node298, i32 0, i32 1
-  %malloccall301 = tail call i8* @malloc(i32 ptrtoint (%node_struct** getelementptr (%node_struct*, %node_struct** null, i32 1) to i32))
-  %please_work = bitcast i8* %malloccall301 to %node_struct**
+then339:                                          ; preds = %while_body336
+  %malloccall342 = tail call i8* @malloc(i32 ptrtoint (%list_node* getelementptr (%list_node, %list_node* null, i32 1) to i32))
+  %node343 = bitcast i8* %malloccall342 to %list_node*
+  %nodes344 = getelementptr inbounds %list_node, %list_node* %node343, i32 0, i32 0
+  %nodes345 = getelementptr inbounds %list_node, %list_node* %node343, i32 0, i32 1
+  %malloccall346 = tail call i8* @malloc(i32 ptrtoint (%node_struct** getelementptr (%node_struct*, %node_struct** null, i32 1) to i32))
+  %please_work = bitcast i8* %malloccall346 to %node_struct**
   store %node_struct* %"stored_nodeA'", %node_struct** %please_work, align 8
   %currNodeVoidPtr = bitcast %node_struct** %please_work to i8*
-  store i8* %currNodeVoidPtr, i8** %nodes299, align 8
+  store i8* %currNodeVoidPtr, i8** %nodes344, align 8
   %nextNodes = load %list_node*, %list_node** @nodesList, align 8
-  store %list_node* %nextNodes, %list_node** %nodes300, align 8
-  store %list_node* %node298, %list_node** @nodesList, align 8
-  br label %else294
+  store %list_node* %nextNodes, %list_node** %nodes345, align 8
+  store %list_node* %node343, %list_node** @nodesList, align 8
+  br label %else340
 
-else294:                                          ; preds = %then293
-  %toBeHere302 = load %node_node*, %node_node** @llNodes.6, align 8
-  %llNodesPtr303 = getelementptr inbounds %node_node, %node_node* %toBeHere302, i32 0, i32 1
-  %toBeHerenow304 = load %node_node*, %node_node** %llNodesPtr303, align 8
-  store %node_node* %toBeHerenow304, %node_node** @llNodes.6, align 8
-  br label %while287
+else340:                                          ; preds = %then339
+  %toBeHere347 = load %node_node*, %node_node** @llNodes.6, align 8
+  %llNodesPtr348 = getelementptr inbounds %node_node, %node_node* %toBeHere347, i32 0, i32 1
+  %toBeHerenow349 = load %node_node*, %node_node** %llNodesPtr348, align 8
+  store %node_node* %toBeHerenow349, %node_node** @llNodes.6, align 8
+  br label %while333
 
-merge295:                                         ; preds = %while287
+merge341:                                         ; preds = %while333
   %return = load %list_node*, %list_node** @nodesList, align 8
   store %list_node* %return, %list_node** @l, align 8
   %list = load %list_node*, %list_node** @l, align 8
-  %malloccall305 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
-  %0 = bitcast i8* %malloccall305 to %list_node**
-  %malloccall306 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
-  %1 = bitcast i8* %malloccall306 to i32*
+  %malloccall350 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
+  %0 = bitcast i8* %malloccall350 to %list_node**
+  %malloccall351 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
+  %1 = bitcast i8* %malloccall351 to i32*
   store %list_node* %list, %list_node** %0, align 8
   store i32 0, i32* %1, align 4
   br label %traverse_loop
 
-traverse_loop:                                    ; preds = %while_body307, %merge295
+traverse_loop:                                    ; preds = %while_body352, %merge341
   %2 = load i32, i32* %1, align 4
-  %temp310 = icmp ne i32 %2, 0
-  br i1 %temp310, label %while_body307, label %merge311
+  %temp355 = icmp ne i32 %2, 0
+  br i1 %temp355, label %while_body352, label %merge356
 
-while_body307:                                    ; preds = %traverse_loop
+while_body352:                                    ; preds = %traverse_loop
   %3 = load %list_node*, %list_node** %0, align 8
-  %temp308 = getelementptr inbounds %list_node, %list_node* %3, i32 0, i32 1
-  %temp309 = load %list_node*, %list_node** %temp308, align 8
+  %temp353 = getelementptr inbounds %list_node, %list_node* %3, i32 0, i32 1
+  %temp354 = load %list_node*, %list_node** %temp353, align 8
   %4 = load i32, i32* %1, align 4
   %subtract = sub i32 %4, 1
   store i32 %subtract, i32* %1, align 4
-  store %list_node* %temp309, %list_node** %0, align 8
+  store %list_node* %temp354, %list_node** %0, align 8
   br label %traverse_loop
 
-merge311:                                         ; preds = %traverse_loop
+merge356:                                         ; preds = %traverse_loop
   %5 = load %list_node*, %list_node** %0, align 8
-  %temp312 = getelementptr inbounds %list_node, %list_node* %5, i32 0, i32 0
-  %retval = load i8*, i8** %temp312, align 8
+  %temp357 = getelementptr inbounds %list_node, %list_node* %5, i32 0, i32 0
+  %retval = load i8*, i8** %temp357, align 8
   %li_conv = bitcast i8* %retval to %node_struct**
   %val_ptr = load %node_struct*, %node_struct** %li_conv, align 8
-  %malloccall313 = tail call i8* @malloc(i32 ptrtoint (%node_struct* getelementptr (%node_struct, %node_struct* null, i32 1) to i32))
-  %node314 = bitcast i8* %malloccall313 to %node_struct*
-  %malloccall315 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
-  %data316 = bitcast i8* %malloccall315 to i8**
-  %malloccall317 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
-  %name318 = bitcast i8* %malloccall317 to i8**
-  %data_ptr319 = bitcast i8** %data316 to i8*
-  %name_ptr320 = bitcast i8** %name318 to i8*
-  %"name'321" = getelementptr inbounds %node_struct, %node_struct* %node314, i32 0, i32 0
-  %"data'322" = getelementptr inbounds %node_struct, %node_struct* %node314, i32 0, i32 2
-  store i8* %name_ptr320, i8** %"name'321", align 8
-  store i8* %data_ptr319, i8** %"data'322", align 8
-  store %node_struct* %node314, %node_struct** @node1_prime, align 8
+  %malloccall358 = tail call i8* @malloc(i32 ptrtoint (%node_struct* getelementptr (%node_struct, %node_struct* null, i32 1) to i32))
+  %node359 = bitcast i8* %malloccall358 to %node_struct*
+  %malloccall360 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
+  %data361 = bitcast i8* %malloccall360 to i8**
+  %malloccall362 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
+  %name363 = bitcast i8* %malloccall362 to i8**
+  %data_ptr364 = bitcast i8** %data361 to i8*
+  %name_ptr365 = bitcast i8** %name363 to i8*
+  %"name'366" = getelementptr inbounds %node_struct, %node_struct* %node359, i32 0, i32 0
+  %"data'367" = getelementptr inbounds %node_struct, %node_struct* %node359, i32 0, i32 2
+  store i8* %name_ptr365, i8** %"name'366", align 8
+  store i8* %data_ptr364, i8** %"data'367", align 8
+  store %node_struct* %node359, %node_struct** @node1_prime, align 8
   store %node_struct* %val_ptr, %node_struct** @node1_prime, align 8
-  %list323 = load %list_node*, %list_node** @l, align 8
-  %malloccall324 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
-  %6 = bitcast i8* %malloccall324 to %list_node**
-  %malloccall325 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
-  %7 = bitcast i8* %malloccall325 to i32*
-  store %list_node* %list323, %list_node** %6, align 8
+  %list368 = load %list_node*, %list_node** @l, align 8
+  %malloccall369 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
+  %6 = bitcast i8* %malloccall369 to %list_node**
+  %malloccall370 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
+  %7 = bitcast i8* %malloccall370 to i32*
+  store %list_node* %list368, %list_node** %6, align 8
   store i32 1, i32* %7, align 4
-  br label %traverse_loop326
+  br label %traverse_loop371
 
-traverse_loop326:                                 ; preds = %while_body327, %merge311
+traverse_loop371:                                 ; preds = %while_body372, %merge356
   %8 = load i32, i32* %7, align 4
-  %temp331 = icmp ne i32 %8, 0
-  br i1 %temp331, label %while_body327, label %merge332
+  %temp376 = icmp ne i32 %8, 0
+  br i1 %temp376, label %while_body372, label %merge377
 
-while_body327:                                    ; preds = %traverse_loop326
+while_body372:                                    ; preds = %traverse_loop371
   %9 = load %list_node*, %list_node** %6, align 8
-  %temp328 = getelementptr inbounds %list_node, %list_node* %9, i32 0, i32 1
-  %temp329 = load %list_node*, %list_node** %temp328, align 8
+  %temp373 = getelementptr inbounds %list_node, %list_node* %9, i32 0, i32 1
+  %temp374 = load %list_node*, %list_node** %temp373, align 8
   %10 = load i32, i32* %7, align 4
-  %subtract330 = sub i32 %10, 1
-  store i32 %subtract330, i32* %7, align 4
-  store %list_node* %temp329, %list_node** %6, align 8
-  br label %traverse_loop326
+  %subtract375 = sub i32 %10, 1
+  store i32 %subtract375, i32* %7, align 4
+  store %list_node* %temp374, %list_node** %6, align 8
+  br label %traverse_loop371
 
-merge332:                                         ; preds = %traverse_loop326
+merge377:                                         ; preds = %traverse_loop371
   %11 = load %list_node*, %list_node** %6, align 8
-  %temp333 = getelementptr inbounds %list_node, %list_node* %11, i32 0, i32 0
-  %retval334 = load i8*, i8** %temp333, align 8
-  %li_conv335 = bitcast i8* %retval334 to %node_struct**
-  %val_ptr336 = load %node_struct*, %node_struct** %li_conv335, align 8
-  %malloccall337 = tail call i8* @malloc(i32 ptrtoint (%node_struct* getelementptr (%node_struct, %node_struct* null, i32 1) to i32))
-  %node338 = bitcast i8* %malloccall337 to %node_struct*
-  %malloccall339 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
-  %data340 = bitcast i8* %malloccall339 to i8**
-  %malloccall341 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
-  %name342 = bitcast i8* %malloccall341 to i8**
-  %data_ptr343 = bitcast i8** %data340 to i8*
-  %name_ptr344 = bitcast i8** %name342 to i8*
-  %"name'345" = getelementptr inbounds %node_struct, %node_struct* %node338, i32 0, i32 0
-  %"data'346" = getelementptr inbounds %node_struct, %node_struct* %node338, i32 0, i32 2
-  store i8* %name_ptr344, i8** %"name'345", align 8
-  store i8* %data_ptr343, i8** %"data'346", align 8
-  store %node_struct* %node338, %node_struct** @node2_prime, align 8
-  store %node_struct* %val_ptr336, %node_struct** @node2_prime, align 8
-  %list347 = load %list_node*, %list_node** @l, align 8
-  %malloccall348 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
-  %12 = bitcast i8* %malloccall348 to %list_node**
-  %malloccall349 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
-  %13 = bitcast i8* %malloccall349 to i32*
-  store %list_node* %list347, %list_node** %12, align 8
-  store i32 2, i32* %13, align 4
-  br label %traverse_loop350
-
-traverse_loop350:                                 ; preds = %while_body351, %merge332
-  %14 = load i32, i32* %13, align 4
-  %temp355 = icmp ne i32 %14, 0
-  br i1 %temp355, label %while_body351, label %merge356
-
-while_body351:                                    ; preds = %traverse_loop350
-  %15 = load %list_node*, %list_node** %12, align 8
-  %temp352 = getelementptr inbounds %list_node, %list_node* %15, i32 0, i32 1
-  %temp353 = load %list_node*, %list_node** %temp352, align 8
-  %16 = load i32, i32* %13, align 4
-  %subtract354 = sub i32 %16, 1
-  store i32 %subtract354, i32* %13, align 4
-  store %list_node* %temp353, %list_node** %12, align 8
-  br label %traverse_loop350
-
-merge356:                                         ; preds = %traverse_loop350
-  %17 = load %list_node*, %list_node** %12, align 8
-  %temp357 = getelementptr inbounds %list_node, %list_node* %17, i32 0, i32 0
-  %retval358 = load i8*, i8** %temp357, align 8
-  %li_conv359 = bitcast i8* %retval358 to %node_struct**
-  %val_ptr360 = load %node_struct*, %node_struct** %li_conv359, align 8
-  %malloccall361 = tail call i8* @malloc(i32 ptrtoint (%node_struct* getelementptr (%node_struct, %node_struct* null, i32 1) to i32))
-  %node362 = bitcast i8* %malloccall361 to %node_struct*
-  %malloccall363 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
-  %data364 = bitcast i8* %malloccall363 to i8**
-  %malloccall365 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
-  %name366 = bitcast i8* %malloccall365 to i8**
-  %data_ptr367 = bitcast i8** %data364 to i8*
-  %name_ptr368 = bitcast i8** %name366 to i8*
-  %"name'369" = getelementptr inbounds %node_struct, %node_struct* %node362, i32 0, i32 0
-  %"data'370" = getelementptr inbounds %node_struct, %node_struct* %node362, i32 0, i32 2
-  store i8* %name_ptr368, i8** %"name'369", align 8
-  store i8* %data_ptr367, i8** %"data'370", align 8
-  store %node_struct* %node362, %node_struct** @node3_prime, align 8
-  store %node_struct* %val_ptr360, %node_struct** @node3_prime, align 8
-  %list371 = load %list_node*, %list_node** @l, align 8
-  %malloccall372 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
-  %18 = bitcast i8* %malloccall372 to %list_node**
-  %malloccall373 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
-  %19 = bitcast i8* %malloccall373 to i32*
-  store %list_node* %list371, %list_node** %18, align 8
-  store i32 3, i32* %19, align 4
-  br label %traverse_loop374
-
-traverse_loop374:                                 ; preds = %while_body375, %merge356
-  %20 = load i32, i32* %19, align 4
-  %temp379 = icmp ne i32 %20, 0
-  br i1 %temp379, label %while_body375, label %merge380
-
-while_body375:                                    ; preds = %traverse_loop374
-  %21 = load %list_node*, %list_node** %18, align 8
-  %temp376 = getelementptr inbounds %list_node, %list_node* %21, i32 0, i32 1
-  %temp377 = load %list_node*, %list_node** %temp376, align 8
-  %22 = load i32, i32* %19, align 4
-  %subtract378 = sub i32 %22, 1
-  store i32 %subtract378, i32* %19, align 4
-  store %list_node* %temp377, %list_node** %18, align 8
-  br label %traverse_loop374
-
-merge380:                                         ; preds = %traverse_loop374
-  %23 = load %list_node*, %list_node** %18, align 8
-  %temp381 = getelementptr inbounds %list_node, %list_node* %23, i32 0, i32 0
-  %retval382 = load i8*, i8** %temp381, align 8
-  %li_conv383 = bitcast i8* %retval382 to %node_struct**
-  %val_ptr384 = load %node_struct*, %node_struct** %li_conv383, align 8
-  %malloccall385 = tail call i8* @malloc(i32 ptrtoint (%node_struct* getelementptr (%node_struct, %node_struct* null, i32 1) to i32))
-  %node386 = bitcast i8* %malloccall385 to %node_struct*
+  %temp378 = getelementptr inbounds %list_node, %list_node* %11, i32 0, i32 0
+  %retval379 = load i8*, i8** %temp378, align 8
+  %li_conv380 = bitcast i8* %retval379 to %node_struct**
+  %val_ptr381 = load %node_struct*, %node_struct** %li_conv380, align 8
+  %malloccall382 = tail call i8* @malloc(i32 ptrtoint (%node_struct* getelementptr (%node_struct, %node_struct* null, i32 1) to i32))
+  %node384 = bitcast i8* %malloccall382 to %node_struct*
+  %malloccall385 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
+  %data386 = bitcast i8* %malloccall385 to i8**
   %malloccall387 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
-  %data388 = bitcast i8* %malloccall387 to i8**
-  %malloccall389 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
-  %name390 = bitcast i8* %malloccall389 to i8**
-  %data_ptr391 = bitcast i8** %data388 to i8*
-  %name_ptr392 = bitcast i8** %name390 to i8*
-  %"name'393" = getelementptr inbounds %node_struct, %node_struct* %node386, i32 0, i32 0
-  %"data'394" = getelementptr inbounds %node_struct, %node_struct* %node386, i32 0, i32 2
-  store i8* %name_ptr392, i8** %"name'393", align 8
-  store i8* %data_ptr391, i8** %"data'394", align 8
-  store %node_struct* %node386, %node_struct** @node4_prime, align 8
-  store %node_struct* %val_ptr384, %node_struct** @node4_prime, align 8
-  %list395 = load %list_node*, %list_node** @l, align 8
-  %malloccall396 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
-  %24 = bitcast i8* %malloccall396 to %list_node**
-  %malloccall397 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
-  %25 = bitcast i8* %malloccall397 to i32*
-  store %list_node* %list395, %list_node** %24, align 8
-  store i32 4, i32* %25, align 4
-  br label %traverse_loop398
+  %name388 = bitcast i8* %malloccall387 to i8**
+  %data_ptr389 = bitcast i8** %data386 to i8*
+  %name_ptr390 = bitcast i8** %name388 to i8*
+  %"name'391" = getelementptr inbounds %node_struct, %node_struct* %node384, i32 0, i32 0
+  %"data'392" = getelementptr inbounds %node_struct, %node_struct* %node384, i32 0, i32 2
+  store i8* %name_ptr390, i8** %"name'391", align 8
+  store i8* %data_ptr389, i8** %"data'392", align 8
+  store %node_struct* %node384, %node_struct** @node2_prime, align 8
+  store %node_struct* %val_ptr381, %node_struct** @node2_prime, align 8
+  %list393 = load %list_node*, %list_node** @l, align 8
+  %malloccall394 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
+  %12 = bitcast i8* %malloccall394 to %list_node**
+  %malloccall395 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
+  %13 = bitcast i8* %malloccall395 to i32*
+  store %list_node* %list393, %list_node** %12, align 8
+  store i32 2, i32* %13, align 4
+  br label %traverse_loop396
 
-traverse_loop398:                                 ; preds = %while_body399, %merge380
-  %26 = load i32, i32* %25, align 4
-  %temp403 = icmp ne i32 %26, 0
-  br i1 %temp403, label %while_body399, label %merge404
+traverse_loop396:                                 ; preds = %while_body397, %merge377
+  %14 = load i32, i32* %13, align 4
+  %temp401 = icmp ne i32 %14, 0
+  br i1 %temp401, label %while_body397, label %merge402
 
-while_body399:                                    ; preds = %traverse_loop398
-  %27 = load %list_node*, %list_node** %24, align 8
-  %temp400 = getelementptr inbounds %list_node, %list_node* %27, i32 0, i32 1
-  %temp401 = load %list_node*, %list_node** %temp400, align 8
-  %28 = load i32, i32* %25, align 4
-  %subtract402 = sub i32 %28, 1
-  store i32 %subtract402, i32* %25, align 4
-  store %list_node* %temp401, %list_node** %24, align 8
-  br label %traverse_loop398
+while_body397:                                    ; preds = %traverse_loop396
+  %15 = load %list_node*, %list_node** %12, align 8
+  %temp398 = getelementptr inbounds %list_node, %list_node* %15, i32 0, i32 1
+  %temp399 = load %list_node*, %list_node** %temp398, align 8
+  %16 = load i32, i32* %13, align 4
+  %subtract400 = sub i32 %16, 1
+  store i32 %subtract400, i32* %13, align 4
+  store %list_node* %temp399, %list_node** %12, align 8
+  br label %traverse_loop396
 
-merge404:                                         ; preds = %traverse_loop398
-  %29 = load %list_node*, %list_node** %24, align 8
-  %temp405 = getelementptr inbounds %list_node, %list_node* %29, i32 0, i32 0
-  %retval406 = load i8*, i8** %temp405, align 8
-  %li_conv407 = bitcast i8* %retval406 to %node_struct**
-  %val_ptr408 = load %node_struct*, %node_struct** %li_conv407, align 8
-  %malloccall409 = tail call i8* @malloc(i32 ptrtoint (%node_struct* getelementptr (%node_struct, %node_struct* null, i32 1) to i32))
-  %node410 = bitcast i8* %malloccall409 to %node_struct*
+merge402:                                         ; preds = %traverse_loop396
+  %17 = load %list_node*, %list_node** %12, align 8
+  %temp403 = getelementptr inbounds %list_node, %list_node* %17, i32 0, i32 0
+  %retval404 = load i8*, i8** %temp403, align 8
+  %li_conv405 = bitcast i8* %retval404 to %node_struct**
+  %val_ptr406 = load %node_struct*, %node_struct** %li_conv405, align 8
+  %malloccall407 = tail call i8* @malloc(i32 ptrtoint (%node_struct* getelementptr (%node_struct, %node_struct* null, i32 1) to i32))
+  %node408 = bitcast i8* %malloccall407 to %node_struct*
+  %malloccall409 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
+  %data410 = bitcast i8* %malloccall409 to i8**
   %malloccall411 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
-  %data412 = bitcast i8* %malloccall411 to i8**
-  %malloccall413 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
-  %name414 = bitcast i8* %malloccall413 to i8**
-  %data_ptr415 = bitcast i8** %data412 to i8*
-  %name_ptr416 = bitcast i8** %name414 to i8*
-  %"name'417" = getelementptr inbounds %node_struct, %node_struct* %node410, i32 0, i32 0
-  %"data'418" = getelementptr inbounds %node_struct, %node_struct* %node410, i32 0, i32 2
-  store i8* %name_ptr416, i8** %"name'417", align 8
-  store i8* %data_ptr415, i8** %"data'418", align 8
-  store %node_struct* %node410, %node_struct** @node5_prime, align 8
-  store %node_struct* %val_ptr408, %node_struct** @node5_prime, align 8
-  %list419 = load %list_node*, %list_node** @l, align 8
-  %malloccall420 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
-  %30 = bitcast i8* %malloccall420 to %list_node**
-  %malloccall421 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
-  %31 = bitcast i8* %malloccall421 to i32*
-  store %list_node* %list419, %list_node** %30, align 8
-  store i32 5, i32* %31, align 4
-  br label %traverse_loop422
+  %name412 = bitcast i8* %malloccall411 to i8**
+  %data_ptr413 = bitcast i8** %data410 to i8*
+  %name_ptr414 = bitcast i8** %name412 to i8*
+  %"name'415" = getelementptr inbounds %node_struct, %node_struct* %node408, i32 0, i32 0
+  %"data'416" = getelementptr inbounds %node_struct, %node_struct* %node408, i32 0, i32 2
+  store i8* %name_ptr414, i8** %"name'415", align 8
+  store i8* %data_ptr413, i8** %"data'416", align 8
+  store %node_struct* %node408, %node_struct** @node3_prime, align 8
+  store %node_struct* %val_ptr406, %node_struct** @node3_prime, align 8
+  %list417 = load %list_node*, %list_node** @l, align 8
+  %malloccall418 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
+  %18 = bitcast i8* %malloccall418 to %list_node**
+  %malloccall419 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
+  %19 = bitcast i8* %malloccall419 to i32*
+  store %list_node* %list417, %list_node** %18, align 8
+  store i32 3, i32* %19, align 4
+  br label %traverse_loop420
 
-traverse_loop422:                                 ; preds = %while_body423, %merge404
-  %32 = load i32, i32* %31, align 4
-  %temp427 = icmp ne i32 %32, 0
-  br i1 %temp427, label %while_body423, label %merge428
+traverse_loop420:                                 ; preds = %while_body421, %merge402
+  %20 = load i32, i32* %19, align 4
+  %temp425 = icmp ne i32 %20, 0
+  br i1 %temp425, label %while_body421, label %merge426
 
-while_body423:                                    ; preds = %traverse_loop422
-  %33 = load %list_node*, %list_node** %30, align 8
-  %temp424 = getelementptr inbounds %list_node, %list_node* %33, i32 0, i32 1
-  %temp425 = load %list_node*, %list_node** %temp424, align 8
-  %34 = load i32, i32* %31, align 4
-  %subtract426 = sub i32 %34, 1
-  store i32 %subtract426, i32* %31, align 4
-  store %list_node* %temp425, %list_node** %30, align 8
-  br label %traverse_loop422
+while_body421:                                    ; preds = %traverse_loop420
+  %21 = load %list_node*, %list_node** %18, align 8
+  %temp422 = getelementptr inbounds %list_node, %list_node* %21, i32 0, i32 1
+  %temp423 = load %list_node*, %list_node** %temp422, align 8
+  %22 = load i32, i32* %19, align 4
+  %subtract424 = sub i32 %22, 1
+  store i32 %subtract424, i32* %19, align 4
+  store %list_node* %temp423, %list_node** %18, align 8
+  br label %traverse_loop420
 
-merge428:                                         ; preds = %traverse_loop422
-  %35 = load %list_node*, %list_node** %30, align 8
-  %temp429 = getelementptr inbounds %list_node, %list_node* %35, i32 0, i32 0
-  %retval430 = load i8*, i8** %temp429, align 8
-  %li_conv431 = bitcast i8* %retval430 to %node_struct**
-  %val_ptr432 = load %node_struct*, %node_struct** %li_conv431, align 8
-  %malloccall433 = tail call i8* @malloc(i32 ptrtoint (%node_struct* getelementptr (%node_struct, %node_struct* null, i32 1) to i32))
-  %node434 = bitcast i8* %malloccall433 to %node_struct*
+merge426:                                         ; preds = %traverse_loop420
+  %23 = load %list_node*, %list_node** %18, align 8
+  %temp427 = getelementptr inbounds %list_node, %list_node* %23, i32 0, i32 0
+  %retval428 = load i8*, i8** %temp427, align 8
+  %li_conv429 = bitcast i8* %retval428 to %node_struct**
+  %val_ptr430 = load %node_struct*, %node_struct** %li_conv429, align 8
+  %malloccall431 = tail call i8* @malloc(i32 ptrtoint (%node_struct* getelementptr (%node_struct, %node_struct* null, i32 1) to i32))
+  %node432 = bitcast i8* %malloccall431 to %node_struct*
+  %malloccall433 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
+  %data434 = bitcast i8* %malloccall433 to i8**
   %malloccall435 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
-  %data436 = bitcast i8* %malloccall435 to i8**
-  %malloccall437 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
-  %name438 = bitcast i8* %malloccall437 to i8**
-  %data_ptr439 = bitcast i8** %data436 to i8*
-  %name_ptr440 = bitcast i8** %name438 to i8*
-  %"name'441" = getelementptr inbounds %node_struct, %node_struct* %node434, i32 0, i32 0
-  %"data'442" = getelementptr inbounds %node_struct, %node_struct* %node434, i32 0, i32 2
-  store i8* %name_ptr440, i8** %"name'441", align 8
-  store i8* %data_ptr439, i8** %"data'442", align 8
-  store %node_struct* %node434, %node_struct** @node6_prime, align 8
-  store %node_struct* %val_ptr432, %node_struct** @node6_prime, align 8
-  %"lvar'443" = load %node_struct*, %node_struct** @node1_prime, align 8
-  %temp444 = getelementptr inbounds %node_struct, %node_struct* %"lvar'443", i32 0, i32 0
-  %node1_prime.name = load i8*, i8** %temp444, align 8
-  %srcNode = load i8*, i8** %temp444, align 8
+  %name436 = bitcast i8* %malloccall435 to i8**
+  %data_ptr437 = bitcast i8** %data434 to i8*
+  %name_ptr438 = bitcast i8** %name436 to i8*
+  %"name'439" = getelementptr inbounds %node_struct, %node_struct* %node432, i32 0, i32 0
+  %"data'440" = getelementptr inbounds %node_struct, %node_struct* %node432, i32 0, i32 2
+  store i8* %name_ptr438, i8** %"name'439", align 8
+  store i8* %data_ptr437, i8** %"data'440", align 8
+  store %node_struct* %node432, %node_struct** @node4_prime, align 8
+  store %node_struct* %val_ptr430, %node_struct** @node4_prime, align 8
+  %list441 = load %list_node*, %list_node** @l, align 8
+  %malloccall442 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
+  %24 = bitcast i8* %malloccall442 to %list_node**
+  %malloccall443 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
+  %25 = bitcast i8* %malloccall443 to i32*
+  store %list_node* %list441, %list_node** %24, align 8
+  store i32 4, i32* %25, align 4
+  br label %traverse_loop444
+
+traverse_loop444:                                 ; preds = %while_body445, %merge426
+  %26 = load i32, i32* %25, align 4
+  %temp449 = icmp ne i32 %26, 0
+  br i1 %temp449, label %while_body445, label %merge450
+
+while_body445:                                    ; preds = %traverse_loop444
+  %27 = load %list_node*, %list_node** %24, align 8
+  %temp446 = getelementptr inbounds %list_node, %list_node* %27, i32 0, i32 1
+  %temp447 = load %list_node*, %list_node** %temp446, align 8
+  %28 = load i32, i32* %25, align 4
+  %subtract448 = sub i32 %28, 1
+  store i32 %subtract448, i32* %25, align 4
+  store %list_node* %temp447, %list_node** %24, align 8
+  br label %traverse_loop444
+
+merge450:                                         ; preds = %traverse_loop444
+  %29 = load %list_node*, %list_node** %24, align 8
+  %temp451 = getelementptr inbounds %list_node, %list_node* %29, i32 0, i32 0
+  %retval452 = load i8*, i8** %temp451, align 8
+  %li_conv453 = bitcast i8* %retval452 to %node_struct**
+  %val_ptr454 = load %node_struct*, %node_struct** %li_conv453, align 8
+  %malloccall455 = tail call i8* @malloc(i32 ptrtoint (%node_struct* getelementptr (%node_struct, %node_struct* null, i32 1) to i32))
+  %node456 = bitcast i8* %malloccall455 to %node_struct*
+  %malloccall457 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
+  %data458 = bitcast i8* %malloccall457 to i8**
+  %malloccall459 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
+  %name460 = bitcast i8* %malloccall459 to i8**
+  %data_ptr461 = bitcast i8** %data458 to i8*
+  %name_ptr462 = bitcast i8** %name460 to i8*
+  %"name'463" = getelementptr inbounds %node_struct, %node_struct* %node456, i32 0, i32 0
+  %"data'464" = getelementptr inbounds %node_struct, %node_struct* %node456, i32 0, i32 2
+  store i8* %name_ptr462, i8** %"name'463", align 8
+  store i8* %data_ptr461, i8** %"data'464", align 8
+  store %node_struct* %node456, %node_struct** @node5_prime, align 8
+  store %node_struct* %val_ptr454, %node_struct** @node5_prime, align 8
+  %list465 = load %list_node*, %list_node** @l, align 8
+  %malloccall466 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
+  %30 = bitcast i8* %malloccall466 to %list_node**
+  %malloccall467 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
+  %31 = bitcast i8* %malloccall467 to i32*
+  store %list_node* %list465, %list_node** %30, align 8
+  store i32 5, i32* %31, align 4
+  br label %traverse_loop468
+
+traverse_loop468:                                 ; preds = %while_body469, %merge450
+  %32 = load i32, i32* %31, align 4
+  %temp473 = icmp ne i32 %32, 0
+  br i1 %temp473, label %while_body469, label %merge474
+
+while_body469:                                    ; preds = %traverse_loop468
+  %33 = load %list_node*, %list_node** %30, align 8
+  %temp470 = getelementptr inbounds %list_node, %list_node* %33, i32 0, i32 1
+  %temp471 = load %list_node*, %list_node** %temp470, align 8
+  %34 = load i32, i32* %31, align 4
+  %subtract472 = sub i32 %34, 1
+  store i32 %subtract472, i32* %31, align 4
+  store %list_node* %temp471, %list_node** %30, align 8
+  br label %traverse_loop468
+
+merge474:                                         ; preds = %traverse_loop468
+  %35 = load %list_node*, %list_node** %30, align 8
+  %temp475 = getelementptr inbounds %list_node, %list_node* %35, i32 0, i32 0
+  %retval476 = load i8*, i8** %temp475, align 8
+  %li_conv477 = bitcast i8* %retval476 to %node_struct**
+  %val_ptr478 = load %node_struct*, %node_struct** %li_conv477, align 8
+  %malloccall479 = tail call i8* @malloc(i32 ptrtoint (%node_struct* getelementptr (%node_struct, %node_struct* null, i32 1) to i32))
+  %node480 = bitcast i8* %malloccall479 to %node_struct*
+  %malloccall481 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
+  %data482 = bitcast i8* %malloccall481 to i8**
+  %malloccall483 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
+  %name484 = bitcast i8* %malloccall483 to i8**
+  %data_ptr485 = bitcast i8** %data482 to i8*
+  %name_ptr486 = bitcast i8** %name484 to i8*
+  %"name'487" = getelementptr inbounds %node_struct, %node_struct* %node480, i32 0, i32 0
+  %"data'488" = getelementptr inbounds %node_struct, %node_struct* %node480, i32 0, i32 2
+  store i8* %name_ptr486, i8** %"name'487", align 8
+  store i8* %data_ptr485, i8** %"data'488", align 8
+  store %node_struct* %node480, %node_struct** @node6_prime, align 8
+  store %node_struct* %val_ptr478, %node_struct** @node6_prime, align 8
+  %"lvar'489" = load %node_struct*, %node_struct** @node1_prime, align 8
+  %temp490 = getelementptr inbounds %node_struct, %node_struct* %"lvar'489", i32 0, i32 0
+  %node1_prime.name = load i8*, i8** %temp490, align 8
+  %srcNode = load i8*, i8** %temp490, align 8
   store i8* %srcNode, i8** @toPrint1, align 8
-  %"lvar'445" = load %node_struct*, %node_struct** @node2_prime, align 8
-  %temp446 = getelementptr inbounds %node_struct, %node_struct* %"lvar'445", i32 0, i32 0
-  %node2_prime.name = load i8*, i8** %temp446, align 8
-  %srcNode447 = load i8*, i8** %temp446, align 8
-  store i8* %srcNode447, i8** @toPrint2, align 8
-  %"lvar'448" = load %node_struct*, %node_struct** @node3_prime, align 8
-  %temp449 = getelementptr inbounds %node_struct, %node_struct* %"lvar'448", i32 0, i32 0
-  %node3_prime.name = load i8*, i8** %temp449, align 8
-  %srcNode450 = load i8*, i8** %temp449, align 8
-  store i8* %srcNode450, i8** @toPrint3, align 8
-  %"lvar'451" = load %node_struct*, %node_struct** @node4_prime, align 8
-  %temp452 = getelementptr inbounds %node_struct, %node_struct* %"lvar'451", i32 0, i32 0
-  %node4_prime.name = load i8*, i8** %temp452, align 8
-  %srcNode453 = load i8*, i8** %temp452, align 8
-  store i8* %srcNode453, i8** @toPrint4, align 8
-  %"lvar'454" = load %node_struct*, %node_struct** @node5_prime, align 8
-  %temp455 = getelementptr inbounds %node_struct, %node_struct* %"lvar'454", i32 0, i32 0
-  %node5_prime.name = load i8*, i8** %temp455, align 8
-  %srcNode456 = load i8*, i8** %temp455, align 8
-  store i8* %srcNode456, i8** @toPrint5, align 8
-  %"lvar'457" = load %node_struct*, %node_struct** @node6_prime, align 8
-  %temp458 = getelementptr inbounds %node_struct, %node_struct* %"lvar'457", i32 0, i32 0
-  %node6_prime.name = load i8*, i8** %temp458, align 8
-  %srcNode459 = load i8*, i8** %temp458, align 8
-  store i8* %srcNode459, i8** @toPrint6, align 8
+  %"lvar'491" = load %node_struct*, %node_struct** @node2_prime, align 8
+  %temp492 = getelementptr inbounds %node_struct, %node_struct* %"lvar'491", i32 0, i32 0
+  %node2_prime.name = load i8*, i8** %temp492, align 8
+  %srcNode493 = load i8*, i8** %temp492, align 8
+  store i8* %srcNode493, i8** @toPrint2, align 8
+  %"lvar'494" = load %node_struct*, %node_struct** @node3_prime, align 8
+  %temp495 = getelementptr inbounds %node_struct, %node_struct* %"lvar'494", i32 0, i32 0
+  %node3_prime.name = load i8*, i8** %temp495, align 8
+  %srcNode496 = load i8*, i8** %temp495, align 8
+  store i8* %srcNode496, i8** @toPrint3, align 8
+  %"lvar'497" = load %node_struct*, %node_struct** @node4_prime, align 8
+  %temp498 = getelementptr inbounds %node_struct, %node_struct* %"lvar'497", i32 0, i32 0
+  %node4_prime.name = load i8*, i8** %temp498, align 8
+  %srcNode499 = load i8*, i8** %temp498, align 8
+  store i8* %srcNode499, i8** @toPrint4, align 8
+  %"lvar'500" = load %node_struct*, %node_struct** @node5_prime, align 8
+  %temp501 = getelementptr inbounds %node_struct, %node_struct* %"lvar'500", i32 0, i32 0
+  %node5_prime.name = load i8*, i8** %temp501, align 8
+  %srcNode502 = load i8*, i8** %temp501, align 8
+  store i8* %srcNode502, i8** @toPrint5, align 8
+  %"lvar'503" = load %node_struct*, %node_struct** @node6_prime, align 8
+  %temp504 = getelementptr inbounds %node_struct, %node_struct* %"lvar'503", i32 0, i32 0
+  %node6_prime.name = load i8*, i8** %temp504, align 8
+  %srcNode505 = load i8*, i8** %temp504, align 8
+  store i8* %srcNode505, i8** @toPrint6, align 8
   %toPrint1 = load i8*, i8** @toPrint1, align 8
   %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i8* %toPrint1)
   %toPrint2 = load i8*, i8** @toPrint2, align 8
-  %printf460 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.7, i32 0, i32 0), i8* %toPrint2)
+  %printf506 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.7, i32 0, i32 0), i8* %toPrint2)
   %toPrint3 = load i8*, i8** @toPrint3, align 8
-  %printf461 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.8, i32 0, i32 0), i8* %toPrint3)
+  %printf507 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.8, i32 0, i32 0), i8* %toPrint3)
   %toPrint4 = load i8*, i8** @toPrint4, align 8
-  %printf462 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.9, i32 0, i32 0), i8* %toPrint4)
+  %printf508 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.9, i32 0, i32 0), i8* %toPrint4)
   %toPrint5 = load i8*, i8** @toPrint5, align 8
-  %printf463 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.10, i32 0, i32 0), i8* %toPrint5)
+  %printf509 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.10, i32 0, i32 0), i8* %toPrint5)
   %toPrint6 = load i8*, i8** @toPrint6, align 8
-  %printf464 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.11, i32 0, i32 0), i8* %toPrint6)
+  %printf510 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.11, i32 0, i32 0), i8* %toPrint6)
   ret i32 0
 }
 
