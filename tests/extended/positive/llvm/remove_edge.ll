@@ -146,182 +146,178 @@ else:                                             ; preds = %if
   br label %while
 
 merge:                                            ; preds = %while, %then
-  %e34 = load %edge_t*, %edge_t** @e, align 8
   %returnVal = load i1, i1* %ret_true, align 1
   store i1 %returnVal, i1* @found_e, align 1
-  %ret_true35 = alloca i1, align 1
-  store i1 false, i1* %ret_true35, align 1
+  %ret_true34 = alloca i1, align 1
+  store i1 false, i1* %ret_true34, align 1
   %e2 = load %edge_t*, %edge_t** @e2, align 8
-  %head36 = load %edge_node*, %edge_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 1), align 8
-  store %edge_node* %head36, %edge_node** @llEdges.1, align 8
-  br label %while37
+  %head35 = load %edge_node*, %edge_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 1), align 8
+  store %edge_node* %head35, %edge_node** @llEdges.1, align 8
+  br label %while36
 
-while37:                                          ; preds = %merge, %else46
-  %putMeHere38 = load %edge_node*, %edge_node** @llEdges.1, align 8
-  %curr39 = icmp ne %edge_node* %putMeHere38, null
-  br i1 %curr39, label %while_body40, label %merge47
+while36:                                          ; preds = %merge, %else45
+  %putMeHere37 = load %edge_node*, %edge_node** @llEdges.1, align 8
+  %curr38 = icmp ne %edge_node* %putMeHere37, null
+  br i1 %curr38, label %while_body39, label %merge46
 
-while_body40:                                     ; preds = %while37
-  %putMeHere41 = load %edge_node*, %edge_node** @llEdges.1, align 8
-  %nodes42 = getelementptr inbounds %edge_node, %edge_node* %putMeHere41, i32 0, i32 0
-  %"stored_node'43" = load %edge_t*, %edge_t** %nodes42, align 8
-  br label %if44
+while_body39:                                     ; preds = %while36
+  %putMeHere40 = load %edge_node*, %edge_node** @llEdges.1, align 8
+  %nodes41 = getelementptr inbounds %edge_node, %edge_node* %putMeHere40, i32 0, i32 0
+  %"stored_node'42" = load %edge_t*, %edge_t** %nodes41, align 8
+  br label %if43
 
-if44:                                             ; preds = %while_body40
-  %"found?48" = icmp eq %edge_t* %"stored_node'43", %e2
-  br i1 %"found?48", label %then45, label %else46
+if43:                                             ; preds = %while_body39
+  %"found?47" = icmp eq %edge_t* %"stored_node'42", %e2
+  br i1 %"found?47", label %then44, label %else45
 
-then45:                                           ; preds = %if44
-  store i1 true, i1* %ret_true35, align 1
-  br label %merge47
+then44:                                           ; preds = %if43
+  store i1 true, i1* %ret_true34, align 1
+  br label %merge46
 
-else46:                                           ; preds = %if44
-  %toBeHere49 = load %edge_node*, %edge_node** @llEdges.1, align 8
-  %llNodesPtr50 = getelementptr inbounds %edge_node, %edge_node* %toBeHere49, i32 0, i32 1
-  %toBeHerenow51 = load %edge_node*, %edge_node** %llNodesPtr50, align 8
-  store %edge_node* %toBeHerenow51, %edge_node** @llEdges.1, align 8
-  br label %while37
+else45:                                           ; preds = %if43
+  %toBeHere48 = load %edge_node*, %edge_node** @llEdges.1, align 8
+  %llNodesPtr49 = getelementptr inbounds %edge_node, %edge_node* %toBeHere48, i32 0, i32 1
+  %toBeHerenow50 = load %edge_node*, %edge_node** %llNodesPtr49, align 8
+  store %edge_node* %toBeHerenow50, %edge_node** @llEdges.1, align 8
+  br label %while36
 
-merge47:                                          ; preds = %while37, %then45
-  %e252 = load %edge_t*, %edge_t** @e2, align 8
-  %returnVal53 = load i1, i1* %ret_true35, align 1
-  store i1 %returnVal53, i1* @found_e2, align 1
+merge46:                                          ; preds = %while36, %then44
+  %returnVal51 = load i1, i1* %ret_true34, align 1
+  store i1 %returnVal51, i1* @found_e2, align 1
   %found_e = load i1, i1* @found_e, align 1
   %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i1 %found_e)
   %found_e2 = load i1, i1* @found_e2, align 1
-  %printf54 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.2, i32 0, i32 0), i1 %found_e2)
-  %ret_true55 = alloca i1, align 1
-  store i1 false, i1* %ret_true55, align 1
-  %e56 = load %edge_t*, %edge_t** @e, align 8
-  %head57 = load %edge_node*, %edge_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 1), align 8
-  store %edge_node* %head57, %edge_node** @prevEdge, align 8
-  store %edge_node* %head57, %edge_node** @llEdges.3, align 8
-  br label %while58
+  %printf52 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.2, i32 0, i32 0), i1 %found_e2)
+  %ret_true53 = alloca i1, align 1
+  store i1 false, i1* %ret_true53, align 1
+  %e54 = load %edge_t*, %edge_t** @e, align 8
+  %head55 = load %edge_node*, %edge_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 1), align 8
+  store %edge_node* %head55, %edge_node** @prevEdge, align 8
+  store %edge_node* %head55, %edge_node** @llEdges.3, align 8
+  br label %while56
 
-while58:                                          ; preds = %merge47, %else67
-  %putMeHere59 = load %edge_node*, %edge_node** @llEdges.3, align 8
-  %curr60 = icmp ne %edge_node* %putMeHere59, null
-  br i1 %curr60, label %while_body61, label %merge68
+while56:                                          ; preds = %merge46, %else65
+  %putMeHere57 = load %edge_node*, %edge_node** @llEdges.3, align 8
+  %curr58 = icmp ne %edge_node* %putMeHere57, null
+  br i1 %curr58, label %while_body59, label %merge66
 
-while_body61:                                     ; preds = %while58
-  %putMeHere62 = load %edge_node*, %edge_node** @llEdges.3, align 8
-  %edges = getelementptr inbounds %edge_node, %edge_node* %putMeHere62, i32 0, i32 0
+while_body59:                                     ; preds = %while56
+  %putMeHere60 = load %edge_node*, %edge_node** @llEdges.3, align 8
+  %edges = getelementptr inbounds %edge_node, %edge_node* %putMeHere60, i32 0, i32 0
   %"stored_edge'" = load %edge_t*, %edge_t** %edges, align 8
-  br label %if63
+  br label %if61
 
-if63:                                             ; preds = %while_body61
-  %"found?69" = icmp eq %edge_t* %"stored_edge'", %e56
-  br i1 %"found?69", label %then64, label %else67
+if61:                                             ; preds = %while_body59
+  %"found?67" = icmp eq %edge_t* %"stored_edge'", %e54
+  br i1 %"found?67", label %then62, label %else65
 
-then64:                                           ; preds = %if63
-  %toBeHere70 = load %edge_node*, %edge_node** @llEdges.3, align 8
-  %toBeHere71 = load %edge_node*, %edge_node** @prevEdge, align 8
-  %"found?72" = icmp eq %edge_node* %toBeHere70, %toBeHere71
-  br i1 %"found?72", label %then66, label %then65
+then62:                                           ; preds = %if61
+  %toBeHere68 = load %edge_node*, %edge_node** @llEdges.3, align 8
+  %toBeHere69 = load %edge_node*, %edge_node** @prevEdge, align 8
+  %"found?70" = icmp eq %edge_node* %toBeHere68, %toBeHere69
+  br i1 %"found?70", label %then64, label %then63
 
-then65:                                           ; preds = %then64
+then63:                                           ; preds = %then62
   %loadHere = load %edge_node*, %edge_node** @prevEdge, align 8
   %nxtEdge = getelementptr inbounds %edge_node, %edge_node* %loadHere, i32 0, i32 1
-  %edgesmore = getelementptr inbounds %edge_node, %edge_node* %toBeHere70, i32 0, i32 1
+  %edgesmore = getelementptr inbounds %edge_node, %edge_node* %toBeHere68, i32 0, i32 1
   %"stored_edgemore'" = load %edge_node*, %edge_node** %edgesmore, align 8
   store %edge_node* %"stored_edgemore'", %edge_node** %nxtEdge, align 8
-  store i1 true, i1* %ret_true55, align 1
-  br label %merge68
+  store i1 true, i1* %ret_true53, align 1
+  br label %merge66
 
-then66:                                           ; preds = %then64
-  %edgesmore73 = getelementptr inbounds %edge_node, %edge_node* %toBeHere70, i32 0, i32 1
-  %"stored_edgemore'74" = load %edge_node*, %edge_node** %edgesmore73, align 8
-  store %edge_node* %"stored_edgemore'74", %edge_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 1), align 8
-  store i1 true, i1* %ret_true55, align 1
-  br label %merge68
+then64:                                           ; preds = %then62
+  %edgesmore71 = getelementptr inbounds %edge_node, %edge_node* %toBeHere68, i32 0, i32 1
+  %"stored_edgemore'72" = load %edge_node*, %edge_node** %edgesmore71, align 8
+  store %edge_node* %"stored_edgemore'72", %edge_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 1), align 8
+  store i1 true, i1* %ret_true53, align 1
+  br label %merge66
 
-else67:                                           ; preds = %if63
-  %toBeHere75 = load %edge_node*, %edge_node** @llEdges.3, align 8
-  %llEdgesPtr = getelementptr inbounds %edge_node, %edge_node* %toBeHere75, i32 0, i32 1
-  %toBeHerenow76 = load %edge_node*, %edge_node** %llEdgesPtr, align 8
-  store %edge_node* %toBeHerenow76, %edge_node** @llEdges.3, align 8
-  br label %while58
+else65:                                           ; preds = %if61
+  %toBeHere73 = load %edge_node*, %edge_node** @llEdges.3, align 8
+  %llEdgesPtr = getelementptr inbounds %edge_node, %edge_node* %toBeHere73, i32 0, i32 1
+  %toBeHerenow74 = load %edge_node*, %edge_node** %llEdgesPtr, align 8
+  store %edge_node* %toBeHerenow74, %edge_node** @llEdges.3, align 8
+  br label %while56
 
-merge68:                                          ; preds = %while58, %then66, %then65
-  %returnVal77 = load i1, i1* %ret_true55, align 1
-  %ret_true78 = alloca i1, align 1
-  store i1 false, i1* %ret_true78, align 1
-  %e79 = load %edge_t*, %edge_t** @e, align 8
-  %head80 = load %edge_node*, %edge_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 1), align 8
-  store %edge_node* %head80, %edge_node** @llEdges.4, align 8
-  br label %while81
+merge66:                                          ; preds = %while56, %then64, %then63
+  %returnVal75 = load i1, i1* %ret_true53, align 1
+  %ret_true76 = alloca i1, align 1
+  store i1 false, i1* %ret_true76, align 1
+  %e77 = load %edge_t*, %edge_t** @e, align 8
+  %head78 = load %edge_node*, %edge_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 1), align 8
+  store %edge_node* %head78, %edge_node** @llEdges.4, align 8
+  br label %while79
 
-while81:                                          ; preds = %merge68, %else90
-  %putMeHere82 = load %edge_node*, %edge_node** @llEdges.4, align 8
-  %curr83 = icmp ne %edge_node* %putMeHere82, null
-  br i1 %curr83, label %while_body84, label %merge91
+while79:                                          ; preds = %merge66, %else88
+  %putMeHere80 = load %edge_node*, %edge_node** @llEdges.4, align 8
+  %curr81 = icmp ne %edge_node* %putMeHere80, null
+  br i1 %curr81, label %while_body82, label %merge89
 
-while_body84:                                     ; preds = %while81
-  %putMeHere85 = load %edge_node*, %edge_node** @llEdges.4, align 8
-  %nodes86 = getelementptr inbounds %edge_node, %edge_node* %putMeHere85, i32 0, i32 0
-  %"stored_node'87" = load %edge_t*, %edge_t** %nodes86, align 8
-  br label %if88
+while_body82:                                     ; preds = %while79
+  %putMeHere83 = load %edge_node*, %edge_node** @llEdges.4, align 8
+  %nodes84 = getelementptr inbounds %edge_node, %edge_node* %putMeHere83, i32 0, i32 0
+  %"stored_node'85" = load %edge_t*, %edge_t** %nodes84, align 8
+  br label %if86
 
-if88:                                             ; preds = %while_body84
-  %"found?92" = icmp eq %edge_t* %"stored_node'87", %e79
-  br i1 %"found?92", label %then89, label %else90
+if86:                                             ; preds = %while_body82
+  %"found?90" = icmp eq %edge_t* %"stored_node'85", %e77
+  br i1 %"found?90", label %then87, label %else88
 
-then89:                                           ; preds = %if88
-  store i1 true, i1* %ret_true78, align 1
-  br label %merge91
+then87:                                           ; preds = %if86
+  store i1 true, i1* %ret_true76, align 1
+  br label %merge89
 
-else90:                                           ; preds = %if88
-  %toBeHere93 = load %edge_node*, %edge_node** @llEdges.4, align 8
-  %llNodesPtr94 = getelementptr inbounds %edge_node, %edge_node* %toBeHere93, i32 0, i32 1
-  %toBeHerenow95 = load %edge_node*, %edge_node** %llNodesPtr94, align 8
-  store %edge_node* %toBeHerenow95, %edge_node** @llEdges.4, align 8
-  br label %while81
+else88:                                           ; preds = %if86
+  %toBeHere91 = load %edge_node*, %edge_node** @llEdges.4, align 8
+  %llNodesPtr92 = getelementptr inbounds %edge_node, %edge_node* %toBeHere91, i32 0, i32 1
+  %toBeHerenow93 = load %edge_node*, %edge_node** %llNodesPtr92, align 8
+  store %edge_node* %toBeHerenow93, %edge_node** @llEdges.4, align 8
+  br label %while79
 
-merge91:                                          ; preds = %while81, %then89
-  %e96 = load %edge_t*, %edge_t** @e, align 8
-  %returnVal97 = load i1, i1* %ret_true78, align 1
-  store i1 %returnVal97, i1* @found_e, align 1
-  %ret_true98 = alloca i1, align 1
-  store i1 false, i1* %ret_true98, align 1
-  %e299 = load %edge_t*, %edge_t** @e2, align 8
-  %head100 = load %edge_node*, %edge_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 1), align 8
-  store %edge_node* %head100, %edge_node** @llEdges.5, align 8
-  br label %while101
+merge89:                                          ; preds = %while79, %then87
+  %returnVal94 = load i1, i1* %ret_true76, align 1
+  store i1 %returnVal94, i1* @found_e, align 1
+  %ret_true95 = alloca i1, align 1
+  store i1 false, i1* %ret_true95, align 1
+  %e296 = load %edge_t*, %edge_t** @e2, align 8
+  %head97 = load %edge_node*, %edge_node** getelementptr inbounds (%graph_t, %graph_t* @g, i32 0, i32 1), align 8
+  store %edge_node* %head97, %edge_node** @llEdges.5, align 8
+  br label %while98
 
-while101:                                         ; preds = %merge91, %else110
+while98:                                          ; preds = %merge89, %else107
+  %putMeHere99 = load %edge_node*, %edge_node** @llEdges.5, align 8
+  %curr100 = icmp ne %edge_node* %putMeHere99, null
+  br i1 %curr100, label %while_body101, label %merge108
+
+while_body101:                                    ; preds = %while98
   %putMeHere102 = load %edge_node*, %edge_node** @llEdges.5, align 8
-  %curr103 = icmp ne %edge_node* %putMeHere102, null
-  br i1 %curr103, label %while_body104, label %merge111
+  %nodes103 = getelementptr inbounds %edge_node, %edge_node* %putMeHere102, i32 0, i32 0
+  %"stored_node'104" = load %edge_t*, %edge_t** %nodes103, align 8
+  br label %if105
 
-while_body104:                                    ; preds = %while101
-  %putMeHere105 = load %edge_node*, %edge_node** @llEdges.5, align 8
-  %nodes106 = getelementptr inbounds %edge_node, %edge_node* %putMeHere105, i32 0, i32 0
-  %"stored_node'107" = load %edge_t*, %edge_t** %nodes106, align 8
-  br label %if108
+if105:                                            ; preds = %while_body101
+  %"found?109" = icmp eq %edge_t* %"stored_node'104", %e296
+  br i1 %"found?109", label %then106, label %else107
 
-if108:                                            ; preds = %while_body104
-  %"found?112" = icmp eq %edge_t* %"stored_node'107", %e299
-  br i1 %"found?112", label %then109, label %else110
+then106:                                          ; preds = %if105
+  store i1 true, i1* %ret_true95, align 1
+  br label %merge108
 
-then109:                                          ; preds = %if108
-  store i1 true, i1* %ret_true98, align 1
-  br label %merge111
+else107:                                          ; preds = %if105
+  %toBeHere110 = load %edge_node*, %edge_node** @llEdges.5, align 8
+  %llNodesPtr111 = getelementptr inbounds %edge_node, %edge_node* %toBeHere110, i32 0, i32 1
+  %toBeHerenow112 = load %edge_node*, %edge_node** %llNodesPtr111, align 8
+  store %edge_node* %toBeHerenow112, %edge_node** @llEdges.5, align 8
+  br label %while98
 
-else110:                                          ; preds = %if108
-  %toBeHere113 = load %edge_node*, %edge_node** @llEdges.5, align 8
-  %llNodesPtr114 = getelementptr inbounds %edge_node, %edge_node* %toBeHere113, i32 0, i32 1
-  %toBeHerenow115 = load %edge_node*, %edge_node** %llNodesPtr114, align 8
-  store %edge_node* %toBeHerenow115, %edge_node** @llEdges.5, align 8
-  br label %while101
-
-merge111:                                         ; preds = %while101, %then109
-  %e2116 = load %edge_t*, %edge_t** @e2, align 8
-  %returnVal117 = load i1, i1* %ret_true98, align 1
-  store i1 %returnVal117, i1* @found_e2, align 1
-  %found_e118 = load i1, i1* @found_e, align 1
-  %printf119 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.6, i32 0, i32 0), i1 %found_e118)
-  %found_e2120 = load i1, i1* @found_e2, align 1
-  %printf121 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.7, i32 0, i32 0), i1 %found_e2120)
+merge108:                                         ; preds = %while98, %then106
+  %returnVal113 = load i1, i1* %ret_true95, align 1
+  store i1 %returnVal113, i1* @found_e2, align 1
+  %found_e114 = load i1, i1* @found_e, align 1
+  %printf115 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.6, i32 0, i32 0), i1 %found_e114)
+  %found_e2116 = load i1, i1* @found_e2, align 1
+  %printf117 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.7, i32 0, i32 0), i1 %found_e2116)
   ret i32 0
 }
 

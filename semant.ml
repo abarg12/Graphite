@@ -300,12 +300,15 @@ let check (decls) =
         let sexp = expr scope funcs arg1 in
         (f.typ, SCall(fname, [sexp]))
       else
-      if (fname = "array_set") || (fname = "array_add") 
-      then
-        let [list_name; idx; value;] = args in
-        let a1 = expr scope funcs list_name in
-        let a2 = expr scope funcs idx       in
-        let a3 = expr scope funcs value     in
+      if (fname = "array_set") || (fname = "array_add")
+      then      
+        let lst, idx, vall = (match args with
+              list_name :: idx :: value :: [] -> list_name, idx, value
+            | _ -> raise (Failure "bad args to arrayfunc"))
+        in
+        let a1 = expr scope funcs lst in
+        let a2 = expr scope funcs idx in
+        let a3 = expr scope funcs vall in
         (f.typ, SCall(fname, [a1;a2;a3])) 
       else
         let rec check_args m (actuals, formals) = match (actuals, formals) with
