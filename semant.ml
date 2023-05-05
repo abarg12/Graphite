@@ -22,7 +22,7 @@ let check (decls) =
   in
 
   let rec find_loc_variable (scope : symbol_table) (name : string) =
-     StringMap.find name scope.variables
+    StringMap.find name scope.variables
   in
 
   (* Collect function declarations for built-in functions: no bodies *)
@@ -110,7 +110,7 @@ let check (decls) =
   in *)
 
   let find_method m data_structs scope = 
-    let ds = find_loc_variable scope data_structs in (*data_structs is the name, we need the actual type of it *)
+    let ds = find_variable scope data_structs in (*data_structs is the name, we need the actual type of it *)
     let meths = (match ds with 
         Graph(_, _) -> graph_meths
       | Node(_) -> node_meths
@@ -486,7 +486,7 @@ in
       with Not_found -> 
         match t with 
            Graph(typ, fields) ->
-              let _ = List.map find_invar fields in  
+              let _ = List.map find_invar fields in
               SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest
           | Node(ty) -> 
             let scope1 = (bind_var scope x t) in 
