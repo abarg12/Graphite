@@ -60,36 +60,15 @@ let translate decls =
   in
 
   (* linked list of graph *)
-  let graph_t = L.named_struct_type context "graph_t" in
+  let graph_t = L.named_struct_type context "graph_tt" in
     let _ = Llvm.struct_set_body graph_t
       [|
         Llvm.pointer_type node_node;
         Llvm.pointer_type edge_node;
       |] false
   in
+  let graph_ptr = Llvm.pointer_type graph_t in
 
-  let rec enforce_invariants gname flags (action : string) = match flags with
-      [] -> "proceed"
-    | flag::rest ->
-      let err = action ^ " failed on " ^ flag ^ " graph " ^ gname in
-      (match (flag, action) with
-          (* adding node to a tree won't break any rules. always true *)
-          ("tree", "addNode") -> enforce_invariants gname rest action
-
-          (* prob need to do dfs  *)
-        | ("tree", "addEdge") -> raise (Failure ("addEdge to tree cannot be enforced yet"))
-
-        (* adding node to a connected graph will always create a disconnected node. always false  *)
-        | ("connected", "addNode") -> raise (Failure (err))
-
-          (* 1. either node x or y must be in graph -> need to search vertex list
-          2.  *)
-        | ("connected", "addEdge") -> raise (Failure ("addEdge to connected cannot be enforced yet"))
-
-        | _ -> raise (Failure ("not an invariant"))
-
-      )
-  in
 
   let list_node = L.named_struct_type context "list_node" in 
     let _ = L.struct_set_body list_node
@@ -114,7 +93,7 @@ let ltype_of_typ = function
   | A.String -> string_t 
   | A.Node(typ) -> node_t
   | A.Edge(typ) -> edge_t
-  | A.Graph(typ) -> graph_t
+  | A.Graph(typ) -> graph_ptr
   | A.List_t -> list_t
   | _ -> raise (Unfinished "not all types implemented")
 in
@@ -439,6 +418,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
                           L.build_store node_p p builder) in
       link_list (idx + 1) es node_p) in 
       let _ = link_list 0 ses (L.const_pointer_null list_node) in 
+      (* let _ = L.dump_value (L.build_load list_head "temp" builder) in  *)
       L.build_load list_head "temp" builder
 
 
@@ -521,65 +501,63 @@ and traverse_isteps i list (builder, stable) =
     (* L.build_load next_ptr "" builder  *) 
     currnode
 
-and count_steps list (builder, stable) = 
+  and count_steps list (builder, stable) =
     let currnode = L.build_malloc (L.pointer_type list_node) "" builder in
-    let zeroval = L.const_int i32_t 0 in 
+    let zeroval = L.const_int i32_t 0 in
     let oneval  = L.const_int i32_t 1 in
     let iter = L.build_malloc i32_t "" builder in
-
+ 
     let _ = L.build_store (L.const_int i32_t 0) iter builder in
-    let _ = L.build_store list currnode builder in 
-
-    let (_, currLLVMfunc) = find_func stable stable.curr_func in 
-
+    let _ = L.build_store list currnode builder in
+ 
+    let (_, currLLVMfunc) = find_func stable stable.curr_func in
+ 
         (* let start_bb = L.insertion_block builder in *)
         let bool_val_if = L.build_is_null list "" builder in
-
+ 
         let merge_bb_if = L.append_block context "merge" currLLVMfunc in
         let branch_instr = L.build_br merge_bb_if in
-
+ 
         let then_bb_if = L.append_block context "then" currLLVMfunc in
         let then_builder_if = L.builder_at_end context then_bb_if in
         let _ = L.build_store zeroval iter then_builder_if in
         (* let _ = L.build_call printf_func [| int_format_str then_builder_if ; (L.const_int i32_t 69) |] "printf" then_builder_if in *)
-
+ 
         (* let _ = L.build_call printf_func [| int_format_str builder ; (L.const_int i32_t 69) |] "printf" in *)
-
+ 
         let () = add_terminal then_builder_if branch_instr in
-
+ 
         let else_bb_if = L.append_block context "else" currLLVMfunc in
         let else_builder_if = L.builder_at_end context else_bb_if in
             let pred_bb = L.append_block context "traverse_loop" currLLVMfunc in
             let _ = L.build_br pred_bb else_builder_if in
-
+ 
             let body_bb = L.append_block context "while_body" currLLVMfunc in
-            (** body of traverse is stepping through linked list **) 
+            (** body of traverse is stepping through linked list **)
             let bb = L.builder_at_end context body_bb in
-
+ 
             let temp = L.build_load (L.build_struct_gep (L.build_load currnode "" bb) 1 "temp" bb) "temp" bb in
-
+ 
             (* let _ = L.build_store temp next_ptr bb in *)
             let _ = L.build_store (L.build_add (L.build_load iter "" bb) oneval "add" bb) iter bb in
-            let _ = L.build_store temp currnode bb in 
+            let _ = L.build_store temp currnode bb in
             let () = add_terminal bb (L.build_br pred_bb) in
-
+ 
             (** check if i has been brought down to 0, indicating finished traversal **)
             let pred_builder = L.builder_at_end context pred_bb in
             let bool_val = L.build_is_not_null (L.build_load currnode "" pred_builder) "" pred_builder in
-
+ 
             let merge_bb = L.append_block context "merge" currLLVMfunc in
             let m_build = L.builder_at_end context merge_bb in
             let () = add_terminal m_build (L.build_br merge_bb_if) in
-            let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in 
+            let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
             (* let _ = L.position_at_end merge_bb builder in  *)
-
-        let () = add_terminal else_builder_if branch_instr in 
-        let _ = L.build_cond_br bool_val_if then_bb_if else_bb_if builder in 
-
-        let _ = L.position_at_end merge_bb_if builder in 
-    iter 
-
-
+ 
+        let () = add_terminal else_builder_if branch_instr in
+        let _ = L.build_cond_br bool_val_if then_bb_if else_bb_if builder in
+ 
+        let _ = L.position_at_end merge_bb_if builder in
+    iter
 (* and array_delete_def (builder, stable) args = 
     (match args with
         (typ, SId(list_id)) :: index :: [] ->
@@ -611,6 +589,7 @@ and array_get_def (builder, stable) args =
     (match args with
       (typ, SId(list_id)) :: index :: [] -> 
             let list_dp = find_variable stable list_id in 
+            (* let _ = L.dump_value list_dp in  *)
             let list_p = L.build_load list_dp "list" builder in
             let idx = expr (builder, stable) index in
             let targetv = traverse_isteps idx list_p (builder, stable) in
@@ -650,7 +629,7 @@ and array_len_def (builder, stable) args =
 
 
 
-and array_add_def (builder, stable) args =
+        and array_add_def (builder, stable) args =
     match args with
       (typ, SId(list_id)) :: index :: (vtyp, exp) :: [] ->
         let llvm_val = expr (builder, stable) (vtyp, exp) in
@@ -739,12 +718,12 @@ and get_all_nodes_def (builder, stable) ds_name lst =
         
 
         let ds = find_variable stable ds_name in 
-      
-
+        let ds' = L.build_load ds "graph_ptr" builder in 
+              
         let nodesList = L.define_global "nodesList" (L.const_pointer_null (list_t)) the_module in 
    
 
-        let llNodesPtr = L.build_struct_gep ds 0 "nodes" builder in
+        let llNodesPtr = L.build_struct_gep ds' 0 "nodes" builder in
 
         let llNodes = L.build_load llNodesPtr "head" builder in
 
@@ -888,9 +867,11 @@ and check_name_exists_def (builder, stable) ds_name lst =
     (* retrieve pointer of node to find and graph to traverse *)
     let to_find' = expr (builder, stable) to_find in
     let ds = find_variable stable ds_name in
+    let ds' = L.build_load ds "graph_ptr" builder in 
+
 
     (* get the head of our node linked list *)
-    let llNodesPtr = L.build_struct_gep ds 0 "nodes" builder in
+    let llNodesPtr = L.build_struct_gep ds' 0 "nodes" builder in
     let llNodes = L.build_load llNodesPtr "head" builder in
     let llNodes' = L.define_global "llNodes" (L.const_pointer_null (L.pointer_type node_node)) the_module in
     let _ = L.build_store llNodes llNodes' builder in
@@ -982,9 +963,11 @@ and get_by_name_def (builder, stable) ds_name lst =
   (* retrieve pointer of node to find and graph to traverse *)
   let to_find' = expr (builder, stable) to_find in
   let ds = find_variable stable ds_name in
+  let ds' = L.build_load ds "graph_ptr" builder in 
+
 
   (* get the head of our node linked list *)
-  let llNodesPtr = L.build_struct_gep ds 0 "nodes" builder in
+  let llNodesPtr = L.build_struct_gep ds' 0 "nodes" builder in
   let llNodes = L.build_load llNodesPtr "head" builder in
   let llNodes' = L.define_global "llNodes" (L.const_pointer_null (L.pointer_type node_node)) the_module in
   let _ = L.build_store llNodes llNodes' builder in
@@ -1068,10 +1051,12 @@ and get_by_name_def (builder, stable) ds_name lst =
 and get_all_edges_def (builder, stable) ds_name lst = 
 
   let ds = find_variable stable ds_name in 
+  let ds' = L.build_load ds "graph_ptr" builder in 
+
       
   let edgesList = L.define_global "edgesList" (L.const_pointer_null (list_t)) the_module in 
 
-  let llEdgesPtr = L.build_struct_gep ds 1 "edges" builder in
+  let llEdgesPtr = L.build_struct_gep ds' 1 "edges" builder in
   let llEdges = L.build_load llEdgesPtr "head" builder in
   let llEdges' = L.define_global "llEdges" (L.const_pointer_null (L.pointer_type edge_node)) the_module in
   let _ = L.build_store llEdges llEdges' builder in
@@ -1146,8 +1131,9 @@ and add_node_def (builder, stable) styp ds_name lst =
   in 
 
   let n_to_add = expr (builder, stable) to_add in
-  let ds = find_variable stable ds_name in 
-  let nodes = L.build_struct_gep ds 0 "nodes" builder in (*ptr to our linked list of nodes*)
+  let ds = find_variable stable ds_name in
+  let ds' = L.build_load ds "graph_ptr" builder in  
+  let nodes = L.build_struct_gep ds' 0 "nodes" builder in (*ptr to our linked list of nodes*)
   let nodes_hd = L.build_load nodes "nodes_hd" builder in (*the head of our linked list*)
 
   let new_node = L.build_malloc node_node "new_node" builder in (*create a new node head to add*)
@@ -1157,11 +1143,11 @@ and add_node_def (builder, stable) styp ds_name lst =
   let _ = L.build_store n_to_add node_ptr builder in (* point to newly added node *)
 
   (* BEGIN INVARIANT *)
-  let flags = match styp with
+  (*let flags = match styp with
       Graph(t, flags) -> flags
     | _ -> raise (Failure ("SDotCall not supported for non-graphs"))
   in
-  let _ = enforce_invariants ds_name flags "addNode" in
+  let _ = enforce_invariants ds_name flags "addNode" in*)
   (* END INVARIANT *)
 
   L.build_store new_node nodes builder
@@ -1172,7 +1158,8 @@ and add_edge_def (builder, stable) styp ds_name lst =
   in 
   let e_to_add = expr (builder, stable) to_add in
   let ds = find_variable stable ds_name in
-  let edges = L.build_struct_gep ds 1 "edges" builder in (*ptr to our linked list of nodes*)
+  let ds' = L.build_load ds "graph_ptr" builder in 
+  let edges = L.build_struct_gep ds' 1 "edges" builder in (*ptr to our linked list of nodes*)
   let edges_hd = L.build_load edges "edges_hd" builder in (*the head of our linked list*)
   
   let new_edge = L.build_malloc edge_node "new_edge" builder in (*create a new node head to add*)
@@ -1236,7 +1223,9 @@ let _ =  add_ll_node_def (builder, stable) styp ds_name dst in *)
   L.build_store new_edge edges builder
 and add_ll_node_def (builder, stable) styp ds_name n_to_add =
   let ds = find_variable stable ds_name in 
-  let nodes = L.build_struct_gep ds 0 "nodes" builder in (*ptr to our linked list of nodes*)
+  let ds' = L.build_load ds "graph_ptr" builder in 
+
+  let nodes = L.build_struct_gep ds' 0 "nodes" builder in (*ptr to our linked list of nodes*)
   let nodes_hd = L.build_load nodes "nodes_hd" builder in (*the head of our linked list*)
 
   let new_node = L.build_malloc node_node "new_node" builder in (*create a new node head to add*)
@@ -1255,9 +1244,11 @@ and ll_node_exists_then_add_node_def (builder, stable) ds_name to_find' =
   (* retrieve pointer of node to find and graph to traverse *)
   (* let to_find' = expr (builder, stable) to_find in *)
   let ds = find_variable stable ds_name in
+  let ds' = L.build_load ds "graph_ptr" builder in 
+
 
   (* get the head of our node linked list *)
-  let llNodesPtr = L.build_struct_gep ds 0 "nodes" builder in
+  let llNodesPtr = L.build_struct_gep ds' 0 "nodes" builder in
   let llNodes = L.build_load llNodesPtr "head" builder in
   let llNodes' = L.define_global "llNodes" (L.const_pointer_null (L.pointer_type node_node)) the_module in
   let _ = L.build_store llNodes llNodes' builder in
@@ -1336,9 +1327,11 @@ and node_exists_def (builder, stable) ds_name lst =
   (* retrieve pointer of node to find and graph to traverse *)
   let to_find' = expr (builder, stable) to_find in
   let ds = find_variable stable ds_name in
+  let ds' = L.build_load ds "graph_ptr" builder in 
+
 
   (* get the head of our node linked list *)
-  let llNodesPtr = L.build_struct_gep ds 0 "nodes" builder in
+  let llNodesPtr = L.build_struct_gep ds' 0 "nodes" builder in
   let llNodes = L.build_load llNodesPtr "head" builder in
   let llNodes' = L.define_global "llNodes" (L.const_pointer_null (L.pointer_type node_node)) the_module in
   let _ = L.build_store llNodes llNodes' builder in
@@ -1418,9 +1411,11 @@ and edge_exists_def (builder, stable) ds_name lst =
   (* retrieve pointer of node to find and graph to traverse *)
   let to_find' = expr (builder, stable) to_find in
   let ds = find_variable stable ds_name in
+  let ds' = L.build_load ds "graph_ptr" builder in 
+
 
   (* get the head of our node linked list *)
-  let llEdgesPtr = L.build_struct_gep ds 1 "edges" builder in
+  let llEdgesPtr = L.build_struct_gep ds' 1 "edges" builder in
   let llEdges = L.build_load llEdgesPtr "head" builder in
   let llEdges' = L.define_global "llEdges" (L.const_pointer_null (L.pointer_type edge_node)) the_module in
   let _ = L.build_store llEdges llEdges' builder in
@@ -1500,9 +1495,11 @@ and remove_node_def (builder, stable) ds_name lst =
   (* retrieve pointer of node to find and graph to traverse *)
   let to_remove' = expr (builder, stable) to_remove in
   let ds = find_variable stable ds_name in
+  let ds' = L.build_load ds "graph_ptr" builder in 
+
 
   (* get the head of our node linked list *)
-  let llNodesPtr = L.build_struct_gep ds 0 "nodes" builder in
+  let llNodesPtr = L.build_struct_gep ds' 0 "nodes" builder in
   let llNodes = L.build_load llNodesPtr "head" builder in
   let llNodes' = L.define_global "llNodes" (L.const_pointer_null (L.pointer_type node_node)) the_module in
   let prevNode = L.define_global "prevNode" (L.const_pointer_null (L.pointer_type node_node)) the_module in
@@ -1566,7 +1563,7 @@ and remove_node_def (builder, stable) ds_name lst =
 
   
   let then_else_builder = L.builder_at_end context then_else_bb in
-  let llNodesPtr_original = L.build_struct_gep ds 0 "llNodesPtr_original" then_else_builder in
+  let llNodesPtr_original = L.build_struct_gep ds' 0 "llNodesPtr_original" then_else_builder in
   let currNodeNextPtr = L.build_struct_gep load_struct_ptr 1 "nodesmore" then_else_builder in
   let currNodeNext = L.build_load currNodeNextPtr "stored_nodemore'" then_else_builder in
   let _ = L.build_store currNodeNext llNodesPtr_original then_else_builder in 
@@ -1612,10 +1609,11 @@ and remove_edge_def (builder, stable) ds_name lst =
   (* retrieve pointer of edge to find and graph to traverse *)
   let to_remove' = expr (builder, stable) to_remove in
   let ds = find_variable stable ds_name in
+  let ds' = L.build_load ds "graph_ptr" builder in 
 
 
   (* get the head of our edge linked list *)
-  let llEdgesPtr = L.build_struct_gep ds 1 "edges" builder in
+  let llEdgesPtr = L.build_struct_gep ds' 1 "edges" builder in
   let llEdges = L.build_load llEdgesPtr "head" builder in
   let llEdges' = L.define_global "llEdges" (L.const_pointer_null (L.pointer_type edge_node)) the_module in
   let prevEdge = L.define_global "prevEdge" (L.const_pointer_null (L.pointer_type edge_node)) the_module in
@@ -1692,7 +1690,7 @@ and remove_edge_def (builder, stable) ds_name lst =
 
   
   let then_else_builder = L.builder_at_end context then_else_bb in
-  let llEdgesPtr_original = L.build_struct_gep ds 1 "llEdgesPtr_original" then_else_builder in
+  let llEdgesPtr_original = L.build_struct_gep ds' 1 "llEdgesPtr_original" then_else_builder in
   let currEdgeNextPtr = L.build_struct_gep load_struct_ptr 1 "edgesmore" then_else_builder in
   let currEdgeNext = L.build_load currEdgeNextPtr "stored_edgemore'" then_else_builder in
   let _ = L.build_store currEdgeNext llEdgesPtr_original then_else_builder in
@@ -1738,10 +1736,11 @@ and get_edges_of_def (builder, stable) ds_name lst =
   in 
   let to_find' = expr (builder, stable) to_find in
   let ds = find_variable stable ds_name in 
+  let ds' = L.build_load ds "graph_ptr" builder in 
 
   let edgesList = L.define_global "edgesList" (L.const_pointer_null (list_t)) the_module in 
 
-  let llEdgesPtr = L.build_struct_gep ds 1 "edges" builder in
+  let llEdgesPtr = L.build_struct_gep ds' 1 "edges" builder in
   let llEdges = L.build_load llEdgesPtr "head" builder in
   let llEdges' = L.define_global "llEdges" (L.const_pointer_null (L.pointer_type edge_node)) the_module in
   let _ = L.build_store llEdges llEdges' builder in
@@ -1904,9 +1903,7 @@ and  bind (builder, stable) = function
             | A.String -> L.const_pointer_null (L.pointer_type i8_t)
             | A.Node(ntyp) -> L.const_pointer_null node_t 
             | A.Edge(t) -> L.const_pointer_null edge_t 
-            | A.Graph(t, invars) -> Llvm.const_named_struct graph_t
-                          [| L.const_pointer_null node_node; 
-                             L.const_pointer_null edge_node; |] 
+            | A.Graph(t, invars) -> L.const_pointer_null graph_ptr 
             | A.List_t -> L.const_pointer_null (L.pointer_type list_node)
             | _ -> raise (Failure "no global default value set")
           in 
@@ -1924,6 +1921,17 @@ and  bind (builder, stable) = function
                   let _ = L.build_store name_ptr name' builder in 
                   let _ = L.build_store data_ptr data' builder in 
                   let _ = L.build_store node new_glob builder in
+                  true
+              | A.Graph(ntyp, invars) -> 
+                  let graph = L.build_malloc graph_t "node" builder in 
+                  let nodes = L.const_pointer_null (L.pointer_type node_node) in 
+                  let edges = L.const_pointer_null (L.pointer_type edge_node) in 
+                  let nodes' = Llvm.build_struct_gep graph 0 "name'" builder in
+                  let edges' = Llvm.build_struct_gep graph 1 "data'" builder in
+    
+                  let _ = L.build_store nodes nodes' builder in 
+                  let _ = L.build_store edges edges' builder in 
+                  let _ = L.build_store graph new_glob builder in
                   true
               | A.Edge(ntyp) -> 
                   let edge = L.build_malloc edge_struct "edge" builder in 
@@ -1954,6 +1962,18 @@ and  bind (builder, stable) = function
                   let _ = L.build_store name_ptr name' builder in 
                   let _ = L.build_store data_ptr data' builder in 
                   let _ = L.build_store node new_var builder in
+                  true
+              | A.Graph(ntyp, invars) -> 
+                  let graph = L.build_malloc graph_t "node" builder in 
+                  let nodes = L.const_pointer_null (L.pointer_type node_node) in 
+                  let edges = L.const_pointer_null (L.pointer_type edge_node) in 
+
+                  let nodes' = Llvm.build_struct_gep graph 0 "name'" builder in
+                  let edges' = Llvm.build_struct_gep graph 1 "data'" builder in
+    
+                  let _ = L.build_store nodes nodes' builder in 
+                  let _ = L.build_store edges edges' builder in 
+                  let _ = L.build_store graph new_var builder in
                   true
               | A.Edge(ntyp) -> 
                   let edge = L.build_malloc edge_struct "edge" builder in 
@@ -1990,9 +2010,7 @@ and bindassign (builder, stable) = function
             | A.Int -> L.const_int (ltype_of_typ typ) 0
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
             | A.String -> L.const_pointer_null (L.type_of e')
-            | A.Graph(t, invars) -> Llvm.const_named_struct graph_t
-                  [| L.const_pointer_null node_node;
-                     L.const_pointer_null edge_node; |] 
+            | A.Graph(t, invars) -> L.const_pointer_null graph_ptr    
             | A.Node(t) -> L.const_pointer_null node_t           
             | A.Edge(t) -> L.const_pointer_null edge_t   
             | A.List_t -> L.const_pointer_null (L.pointer_type list_node)
@@ -2013,6 +2031,18 @@ and bindassign (builder, stable) = function
                   let _ = L.build_store data_ptr data' builder in 
                   let _ = L.build_store node new_glob builder in
                   true
+              | A.Graph(ntyp, invars) -> 
+                let graph = L.build_malloc graph_t "node" builder in 
+                let nodes = L.const_pointer_null (L.pointer_type node_node) in 
+                let edges = L.const_pointer_null (L.pointer_type edge_node) in 
+
+                let nodes' = Llvm.build_struct_gep graph 0 "name'" builder in
+                let edges' = Llvm.build_struct_gep graph 1 "data'" builder in
+  
+                let _ = L.build_store nodes nodes' builder in 
+                let _ = L.build_store edges edges' builder in 
+                let _ = L.build_store graph new_glob builder in
+                true
               | A.Edge(ntyp) -> 
                   let edge = L.build_malloc edge_struct "edge" builder in 
                   let noNode = L.const_pointer_null node_t in 
