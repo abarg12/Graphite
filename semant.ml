@@ -328,10 +328,12 @@ let check (decls) =
       let gt = find_variable scope ds in
       let _ = match gt with
           Graph(x) -> x
+        | _ -> raise(Failure("addEdge cannot be called on a non-graph"))
       in
       let (edg_t, edg_sx) = expr scope funcs edg in
       let dt = match edg_t with
           Edge(dt) -> dt
+        | _ -> raise(Failure("addEdge expects an edge argument"))
       in
       (dt, SDotCall(ds, "addEdge", [(edg_t, edg_sx)]))
     | DotCall(ds, mname, args) ->
