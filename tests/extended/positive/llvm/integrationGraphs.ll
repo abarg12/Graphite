@@ -31,25 +31,21 @@ source_filename = "Graphite"
 @llNodes.1 = global %node_node* null
 @llNodes.2 = global %node_node* null
 @llNodes.3 = global %node_node* null
-@fmt = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-@fmt.4 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @assignment_id_num = global i32 0
 @assignment_index = global i32 0
 @7 = private unnamed_addr constant [55 x i8] c"assignment we are averaging is assignment with name: \0A\00", align 1
 @assignment_name = global i8* null
-@fmt.5 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@fmt = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
 @8 = private unnamed_addr constant [36 x i8] c"we will now find the average score\0A\00", align 1
 @9 = private unnamed_addr constant [39 x i8] c"The average score for assignment is: \0A\00", align 1
 @nodesList = global %list_node* null
-@llNodes.6 = global %node_node* null
+@llNodes.4 = global %node_node* null
 @allStudents = global %list_node* null
-@fmt.7 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-@fmt.8 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @num_students = global i32 0
 @i = global i32 0
 @sum = global i32 0
 @average = global i32 0
-@fmt.9 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@fmt.5 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 
 declare i32 @printf(i8*, ...)
 
@@ -69,6 +65,7 @@ define i32 @main() {
 entry:
   %malloccall = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list = bitcast i8* %malloccall to %list_node**
+  store %list_node* null, %list_node** %new_list, align 8
   %malloccall1 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
   %arr_val = bitcast i8* %malloccall1 to i8**
   store i8* getelementptr inbounds ([12 x i8], [12 x i8]* @0, i32 0, i32 0), i8** %arr_val, align 8
@@ -105,6 +102,7 @@ entry:
   store %list_node* %temp16, %list_node** @assignment_names, align 8
   %malloccall17 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list18 = bitcast i8* %malloccall17 to %list_node**
+  store %list_node* null, %list_node** %new_list18, align 8
   %malloccall19 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
   %arr_val20 = bitcast i8* %malloccall19 to i32*
   store i32 13, i32* %arr_val20, align 4
@@ -143,6 +141,7 @@ entry:
   store i32 1, i32* @id_ix, align 4
   %malloccall40 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list41 = bitcast i8* %malloccall40 to %list_node**
+  store %list_node* null, %list_node** %new_list41, align 8
   %assignment_names = load %list_node*, %list_node** @assignment_names, align 8
   %malloccall42 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %arr_val43 = bitcast i8* %malloccall42 to %list_node**
@@ -186,6 +185,7 @@ entry:
   store i8* getelementptr inbounds ([5 x i8], [5 x i8]* @3, i32 0, i32 0), i8** %temp59, align 8
   %malloccall60 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list61 = bitcast i8* %malloccall60 to %list_node**
+  store %list_node* null, %list_node** %new_list61, align 8
   %malloccall62 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
   %arr_val63 = bitcast i8* %malloccall62 to i32*
   store i32 95, i32* %arr_val63, align 4
@@ -247,6 +247,7 @@ entry:
   store i8* getelementptr inbounds ([5 x i8], [5 x i8]* @4, i32 0, i32 0), i8** %temp100, align 8
   %malloccall101 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list102 = bitcast i8* %malloccall101 to %list_node**
+  store %list_node* null, %list_node** %new_list102, align 8
   %malloccall103 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
   %arr_val104 = bitcast i8* %malloccall103 to i32*
   store i32 91, i32* %arr_val104, align 4
@@ -308,6 +309,7 @@ entry:
   store i8* getelementptr inbounds ([5 x i8], [5 x i8]* @5, i32 0, i32 0), i8** %temp142, align 8
   %malloccall143 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list144 = bitcast i8* %malloccall143 to %list_node**
+  store %list_node* null, %list_node** %new_list144, align 8
   %malloccall145 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
   %arr_val146 = bitcast i8* %malloccall145 to i32*
   store i32 95, i32* %arr_val146, align 4
@@ -369,6 +371,7 @@ entry:
   store i8* getelementptr inbounds ([5 x i8], [5 x i8]* @6, i32 0, i32 0), i8** %temp184, align 8
   %malloccall185 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list186 = bitcast i8* %malloccall185 to %list_node**
+  store %list_node* null, %list_node** %new_list186, align 8
   %malloccall187 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
   %arr_val188 = bitcast i8* %malloccall187 to i32*
   store i32 44, i32* %arr_val188, align 4
@@ -758,20 +761,20 @@ merge359:                                         ; preds = %traverse_loop
   %val_ptr = load i8*, i8** %li_conv, align 8
   store i8* %val_ptr, i8** @assignment_name, align 8
   %assignment_name = load i8*, i8** @assignment_name, align 8
-  %printf361 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.5, i32 0, i32 0), i8* %assignment_name)
+  %printf361 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i8* %assignment_name)
   %printf362 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @8, i32 0, i32 0))
   %printf363 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([39 x i8], [39 x i8]* @9, i32 0, i32 0))
   %head364 = load %node_node*, %node_node** getelementptr inbounds (%graph_t, %graph_t* @students, i32 0, i32 0), align 8
-  store %node_node* %head364, %node_node** @llNodes.6, align 8
+  store %node_node* %head364, %node_node** @llNodes.4, align 8
   br label %while365
 
 while365:                                         ; preds = %merge359, %else372
-  %putMeHere366 = load %node_node*, %node_node** @llNodes.6, align 8
+  %putMeHere366 = load %node_node*, %node_node** @llNodes.4, align 8
   %curr367 = icmp ne %node_node* %putMeHere366, null
   br i1 %curr367, label %while_body368, label %merge373
 
 while_body368:                                    ; preds = %while365
-  %putMeHere369 = load %node_node*, %node_node** @llNodes.6, align 8
+  %putMeHere369 = load %node_node*, %node_node** @llNodes.4, align 8
   %nodes370 = getelementptr inbounds %node_node, %node_node* %putMeHere369, i32 0, i32 0
   %"stored_nodeA'" = load %node_struct*, %node_struct** %nodes370, align 8
   br label %then371
@@ -792,159 +795,157 @@ then371:                                          ; preds = %while_body368
   br label %else372
 
 else372:                                          ; preds = %then371
-  %toBeHere379 = load %node_node*, %node_node** @llNodes.6, align 8
+  %toBeHere379 = load %node_node*, %node_node** @llNodes.4, align 8
   %llNodesPtr380 = getelementptr inbounds %node_node, %node_node* %toBeHere379, i32 0, i32 1
   %toBeHerenow381 = load %node_node*, %node_node** %llNodesPtr380, align 8
-  store %node_node* %toBeHerenow381, %node_node** @llNodes.6, align 8
+  store %node_node* %toBeHerenow381, %node_node** @llNodes.4, align 8
   br label %while365
 
 merge373:                                         ; preds = %while365
   %return = load %list_node*, %list_node** @nodesList, align 8
   store %list_node* %return, %list_node** @allStudents, align 8
-  %printf382 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.7, i32 0, i32 0), i32 69)
-  %list383 = load %list_node*, %list_node** @allStudents, align 8
-  %malloccall384 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
-  %6 = bitcast i8* %malloccall384 to %list_node**
-  %malloccall385 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
-  %7 = bitcast i8* %malloccall385 to i32*
+  %list382 = load %list_node*, %list_node** @allStudents, align 8
+  %malloccall383 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
+  %6 = bitcast i8* %malloccall383 to %list_node**
+  %malloccall384 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
+  %7 = bitcast i8* %malloccall384 to i32*
   store i32 0, i32* %7, align 4
-  store %list_node* %list383, %list_node** %6, align 8
-  %8 = icmp eq %list_node* %list383, null
-  br i1 %8, label %then387, label %else388
+  store %list_node* %list382, %list_node** %6, align 8
+  %8 = icmp eq %list_node* %list382, null
+  br i1 %8, label %then386, label %else387
 
-merge386:                                         ; preds = %merge394, %then387
+merge385:                                         ; preds = %merge392, %then386
   %9 = load i32, i32* %7, align 4
   store i32 %9, i32* @num_students, align 4
   store i32 0, i32* @i, align 4
   store i32 0, i32* @sum, align 4
   store i32 0, i32* @i, align 4
-  br label %while395
+  br label %while393
 
-then387:                                          ; preds = %merge373
+then386:                                          ; preds = %merge373
   store i32 0, i32* %7, align 4
-  br label %merge386
+  br label %merge385
 
-else388:                                          ; preds = %merge373
-  %printf389 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.8, i32 0, i32 0), i32 69)
-  br label %traverse_loop390
+else387:                                          ; preds = %merge373
+  br label %traverse_loop388
 
-traverse_loop390:                                 ; preds = %while_body391, %else388
+traverse_loop388:                                 ; preds = %while_body389, %else387
   %10 = load %list_node*, %list_node** %6, align 8
   %11 = icmp ne %list_node* %10, null
-  br i1 %11, label %while_body391, label %merge394
+  br i1 %11, label %while_body389, label %merge392
 
-while_body391:                                    ; preds = %traverse_loop390
+while_body389:                                    ; preds = %traverse_loop388
   %12 = load %list_node*, %list_node** %6, align 8
-  %temp392 = getelementptr inbounds %list_node, %list_node* %12, i32 0, i32 1
-  %temp393 = load %list_node*, %list_node** %temp392, align 8
+  %temp390 = getelementptr inbounds %list_node, %list_node* %12, i32 0, i32 1
+  %temp391 = load %list_node*, %list_node** %temp390, align 8
   %13 = load i32, i32* %7, align 4
   %add = add i32 %13, 1
   store i32 %add, i32* %7, align 4
-  store %list_node* %temp393, %list_node** %6, align 8
-  br label %traverse_loop390
+  store %list_node* %temp391, %list_node** %6, align 8
+  br label %traverse_loop388
 
-merge394:                                         ; preds = %traverse_loop390
-  br label %merge386
+merge392:                                         ; preds = %traverse_loop388
+  br label %merge385
 
-while395:                                         ; preds = %merge425, %merge386
-  %i434 = load i32, i32* @i, align 4
-  %num_students = load i32, i32* @num_students, align 4
-  %tmp435 = icmp slt i32 %i434, %num_students
-  br i1 %tmp435, label %while_body396, label %merge436
-
-while_body396:                                    ; preds = %while395
-  %sum = load i32, i32* @sum, align 4
-  %curr397 = alloca i32, align 4
-  store i32 %sum, i32* %curr397, align 4
-  %list398 = load %list_node*, %list_node** @allStudents, align 8
-  %i = load i32, i32* @i, align 4
-  %malloccall399 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
-  %14 = bitcast i8* %malloccall399 to %list_node**
-  %malloccall400 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
-  %15 = bitcast i8* %malloccall400 to i32*
-  store %list_node* %list398, %list_node** %14, align 8
-  store i32 %i, i32* %15, align 4
-  br label %traverse_loop401
-
-traverse_loop401:                                 ; preds = %while_body402, %while_body396
-  %16 = load i32, i32* %15, align 4
-  %temp406 = icmp ne i32 %16, 0
-  br i1 %temp406, label %while_body402, label %merge407
-
-while_body402:                                    ; preds = %traverse_loop401
-  %17 = load %list_node*, %list_node** %14, align 8
-  %temp403 = getelementptr inbounds %list_node, %list_node* %17, i32 0, i32 1
-  %temp404 = load %list_node*, %list_node** %temp403, align 8
-  %18 = load i32, i32* %15, align 4
-  %subtract405 = sub i32 %18, 1
-  store i32 %subtract405, i32* %15, align 4
-  store %list_node* %temp404, %list_node** %14, align 8
-  br label %traverse_loop401
-
-merge407:                                         ; preds = %traverse_loop401
-  %19 = load %list_node*, %list_node** %14, align 8
-  %temp408 = getelementptr inbounds %list_node, %list_node* %19, i32 0, i32 0
-  %retval409 = load i8*, i8** %temp408, align 8
-  %li_conv410 = bitcast i8* %retval409 to %node_struct**
-  %val_ptr411 = load %node_struct*, %node_struct** %li_conv410, align 8
-  %curr_student = alloca %node_struct*, align 8
-  store %node_struct* %val_ptr411, %node_struct** %curr_student, align 8
-  %"lvar'412" = load %node_struct*, %node_struct** %curr_student, align 8
-  %temp413 = getelementptr inbounds %node_struct, %node_struct* %"lvar'412", i32 0, i32 2
-  %curr_student.data = load i8*, i8** %temp413, align 8
-  %new_ptr = bitcast i8* %curr_student.data to %list_node**
-  %curr_student.data414 = load %list_node*, %list_node** %new_ptr, align 8
-  %score_list = alloca %list_node*, align 8
-  store %list_node* %curr_student.data414, %list_node** %score_list, align 8
-  %list415 = load %list_node*, %list_node** %score_list, align 8
-  %assignment_index416 = load i32, i32* @assignment_index, align 4
-  %malloccall417 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
-  %20 = bitcast i8* %malloccall417 to %list_node**
-  %malloccall418 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
-  %21 = bitcast i8* %malloccall418 to i32*
-  store %list_node* %list415, %list_node** %20, align 8
-  store i32 %assignment_index416, i32* %21, align 4
-  br label %traverse_loop419
-
-traverse_loop419:                                 ; preds = %while_body420, %merge407
-  %22 = load i32, i32* %21, align 4
-  %temp424 = icmp ne i32 %22, 0
-  br i1 %temp424, label %while_body420, label %merge425
-
-while_body420:                                    ; preds = %traverse_loop419
-  %23 = load %list_node*, %list_node** %20, align 8
-  %temp421 = getelementptr inbounds %list_node, %list_node* %23, i32 0, i32 1
-  %temp422 = load %list_node*, %list_node** %temp421, align 8
-  %24 = load i32, i32* %21, align 4
-  %subtract423 = sub i32 %24, 1
-  store i32 %subtract423, i32* %21, align 4
-  store %list_node* %temp422, %list_node** %20, align 8
-  br label %traverse_loop419
-
-merge425:                                         ; preds = %traverse_loop419
-  %25 = load %list_node*, %list_node** %20, align 8
-  %temp426 = getelementptr inbounds %list_node, %list_node* %25, i32 0, i32 0
-  %retval427 = load i8*, i8** %temp426, align 8
-  %li_conv428 = bitcast i8* %retval427 to i32*
-  %val_ptr429 = load i32, i32* %li_conv428, align 4
-  %score = alloca i32, align 4
-  store i32 %val_ptr429, i32* %score, align 4
-  %curr430 = load i32, i32* %curr397, align 4
-  %score431 = load i32, i32* %score, align 4
-  %tmp = add i32 %curr430, %score431
-  store i32 %tmp, i32* @sum, align 4
+while393:                                         ; preds = %merge423, %merge385
   %i432 = load i32, i32* @i, align 4
-  %tmp433 = add i32 %i432, 1
-  store i32 %tmp433, i32* @i, align 4
-  br label %while395
+  %num_students = load i32, i32* @num_students, align 4
+  %tmp433 = icmp slt i32 %i432, %num_students
+  br i1 %tmp433, label %while_body394, label %merge434
 
-merge436:                                         ; preds = %while395
-  %sum437 = load i32, i32* @sum, align 4
-  %num_students438 = load i32, i32* @num_students, align 4
-  %tmp439 = sdiv i32 %sum437, %num_students438
-  store i32 %tmp439, i32* @average, align 4
+while_body394:                                    ; preds = %while393
+  %sum = load i32, i32* @sum, align 4
+  %curr395 = alloca i32, align 4
+  store i32 %sum, i32* %curr395, align 4
+  %list396 = load %list_node*, %list_node** @allStudents, align 8
+  %i = load i32, i32* @i, align 4
+  %malloccall397 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
+  %14 = bitcast i8* %malloccall397 to %list_node**
+  %malloccall398 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
+  %15 = bitcast i8* %malloccall398 to i32*
+  store %list_node* %list396, %list_node** %14, align 8
+  store i32 %i, i32* %15, align 4
+  br label %traverse_loop399
+
+traverse_loop399:                                 ; preds = %while_body400, %while_body394
+  %16 = load i32, i32* %15, align 4
+  %temp404 = icmp ne i32 %16, 0
+  br i1 %temp404, label %while_body400, label %merge405
+
+while_body400:                                    ; preds = %traverse_loop399
+  %17 = load %list_node*, %list_node** %14, align 8
+  %temp401 = getelementptr inbounds %list_node, %list_node* %17, i32 0, i32 1
+  %temp402 = load %list_node*, %list_node** %temp401, align 8
+  %18 = load i32, i32* %15, align 4
+  %subtract403 = sub i32 %18, 1
+  store i32 %subtract403, i32* %15, align 4
+  store %list_node* %temp402, %list_node** %14, align 8
+  br label %traverse_loop399
+
+merge405:                                         ; preds = %traverse_loop399
+  %19 = load %list_node*, %list_node** %14, align 8
+  %temp406 = getelementptr inbounds %list_node, %list_node* %19, i32 0, i32 0
+  %retval407 = load i8*, i8** %temp406, align 8
+  %li_conv408 = bitcast i8* %retval407 to %node_struct**
+  %val_ptr409 = load %node_struct*, %node_struct** %li_conv408, align 8
+  %curr_student = alloca %node_struct*, align 8
+  store %node_struct* %val_ptr409, %node_struct** %curr_student, align 8
+  %"lvar'410" = load %node_struct*, %node_struct** %curr_student, align 8
+  %temp411 = getelementptr inbounds %node_struct, %node_struct* %"lvar'410", i32 0, i32 2
+  %curr_student.data = load i8*, i8** %temp411, align 8
+  %new_ptr = bitcast i8* %curr_student.data to %list_node**
+  %curr_student.data412 = load %list_node*, %list_node** %new_ptr, align 8
+  %score_list = alloca %list_node*, align 8
+  store %list_node* %curr_student.data412, %list_node** %score_list, align 8
+  %list413 = load %list_node*, %list_node** %score_list, align 8
+  %assignment_index414 = load i32, i32* @assignment_index, align 4
+  %malloccall415 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
+  %20 = bitcast i8* %malloccall415 to %list_node**
+  %malloccall416 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
+  %21 = bitcast i8* %malloccall416 to i32*
+  store %list_node* %list413, %list_node** %20, align 8
+  store i32 %assignment_index414, i32* %21, align 4
+  br label %traverse_loop417
+
+traverse_loop417:                                 ; preds = %while_body418, %merge405
+  %22 = load i32, i32* %21, align 4
+  %temp422 = icmp ne i32 %22, 0
+  br i1 %temp422, label %while_body418, label %merge423
+
+while_body418:                                    ; preds = %traverse_loop417
+  %23 = load %list_node*, %list_node** %20, align 8
+  %temp419 = getelementptr inbounds %list_node, %list_node* %23, i32 0, i32 1
+  %temp420 = load %list_node*, %list_node** %temp419, align 8
+  %24 = load i32, i32* %21, align 4
+  %subtract421 = sub i32 %24, 1
+  store i32 %subtract421, i32* %21, align 4
+  store %list_node* %temp420, %list_node** %20, align 8
+  br label %traverse_loop417
+
+merge423:                                         ; preds = %traverse_loop417
+  %25 = load %list_node*, %list_node** %20, align 8
+  %temp424 = getelementptr inbounds %list_node, %list_node* %25, i32 0, i32 0
+  %retval425 = load i8*, i8** %temp424, align 8
+  %li_conv426 = bitcast i8* %retval425 to i32*
+  %val_ptr427 = load i32, i32* %li_conv426, align 4
+  %score = alloca i32, align 4
+  store i32 %val_ptr427, i32* %score, align 4
+  %curr428 = load i32, i32* %curr395, align 4
+  %score429 = load i32, i32* %score, align 4
+  %tmp = add i32 %curr428, %score429
+  store i32 %tmp, i32* @sum, align 4
+  %i430 = load i32, i32* @i, align 4
+  %tmp431 = add i32 %i430, 1
+  store i32 %tmp431, i32* @i, align 4
+  br label %while393
+
+merge434:                                         ; preds = %while393
+  %sum435 = load i32, i32* @sum, align 4
+  %num_students436 = load i32, i32* @num_students, align 4
+  %tmp437 = sdiv i32 %sum435, %num_students436
+  store i32 %tmp437, i32* @average, align 4
   %average = load i32, i32* @average, align 4
-  %printf440 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.9, i32 0, i32 0), i32 %average)
+  %printf438 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.5, i32 0, i32 0), i32 %average)
   ret i32 0
 }
 
@@ -987,7 +988,6 @@ merge:                                            ; preds = %traverse_loop
   %val_ptr = load %list_node*, %list_node** %li_conv, align 8
   %assignment_ids = alloca %list_node*, align 8
   store %list_node* %val_ptr, %list_node** %assignment_ids, align 8
-  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt, i32 0, i32 0), i32 69)
   %list6 = load %list_node*, %list_node** @assignments, align 8
   %malloccall7 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %6 = bitcast i8* %malloccall7 to %list_node**
@@ -998,7 +998,7 @@ merge:                                            ; preds = %traverse_loop
   %8 = icmp eq %list_node* %list6, null
   br i1 %8, label %then, label %else
 
-merge9:                                           ; preds = %merge15, %then
+merge9:                                           ; preds = %merge14, %then
   %9 = load i32, i32* %7, align 4
   %num_assigments = alloca i32, align 4
   store i32 %9, i32* %num_assigments, align 4
@@ -1014,87 +1014,86 @@ then:                                             ; preds = %merge
   br label %merge9
 
 else:                                             ; preds = %merge
-  %printf10 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.4, i32 0, i32 0), i32 69)
-  br label %traverse_loop11
+  br label %traverse_loop10
 
-traverse_loop11:                                  ; preds = %while_body12, %else
+traverse_loop10:                                  ; preds = %while_body11, %else
   %10 = load %list_node*, %list_node** %6, align 8
   %11 = icmp ne %list_node* %10, null
-  br i1 %11, label %while_body12, label %merge15
+  br i1 %11, label %while_body11, label %merge14
 
-while_body12:                                     ; preds = %traverse_loop11
+while_body11:                                     ; preds = %traverse_loop10
   %12 = load %list_node*, %list_node** %6, align 8
-  %temp13 = getelementptr inbounds %list_node, %list_node* %12, i32 0, i32 1
-  %temp14 = load %list_node*, %list_node** %temp13, align 8
+  %temp12 = getelementptr inbounds %list_node, %list_node* %12, i32 0, i32 1
+  %temp13 = load %list_node*, %list_node** %temp12, align 8
   %13 = load i32, i32* %7, align 4
   %add = add i32 %13, 1
   store i32 %add, i32* %7, align 4
-  store %list_node* %temp14, %list_node** %6, align 8
-  br label %traverse_loop11
+  store %list_node* %temp13, %list_node** %6, align 8
+  br label %traverse_loop10
 
-merge15:                                          ; preds = %traverse_loop11
+merge14:                                          ; preds = %traverse_loop10
   br label %merge9
 
-while:                                            ; preds = %merge34, %merge9
-  %i40 = load i32, i32* %i, align 4
-  %num_assigments41 = load i32, i32* %num_assigments, align 4
-  %tmp42 = icmp slt i32 %i40, %num_assigments41
-  br i1 %tmp42, label %while_body16, label %merge43
+while:                                            ; preds = %merge33, %merge9
+  %i39 = load i32, i32* %i, align 4
+  %num_assigments40 = load i32, i32* %num_assigments, align 4
+  %tmp41 = icmp slt i32 %i39, %num_assigments40
+  br i1 %tmp41, label %while_body15, label %merge42
 
-while_body16:                                     ; preds = %while
-  %list17 = load %list_node*, %list_node** %assignment_ids, align 8
-  %i18 = load i32, i32* %i, align 4
-  %malloccall19 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
-  %14 = bitcast i8* %malloccall19 to %list_node**
-  %malloccall20 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
-  %15 = bitcast i8* %malloccall20 to i32*
-  store %list_node* %list17, %list_node** %14, align 8
-  store i32 %i18, i32* %15, align 4
-  br label %traverse_loop21
+while_body15:                                     ; preds = %while
+  %list16 = load %list_node*, %list_node** %assignment_ids, align 8
+  %i17 = load i32, i32* %i, align 4
+  %malloccall18 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
+  %14 = bitcast i8* %malloccall18 to %list_node**
+  %malloccall19 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
+  %15 = bitcast i8* %malloccall19 to i32*
+  store %list_node* %list16, %list_node** %14, align 8
+  store i32 %i17, i32* %15, align 4
+  br label %traverse_loop20
 
-traverse_loop21:                                  ; preds = %while_body22, %while_body16
+traverse_loop20:                                  ; preds = %while_body21, %while_body15
   %16 = load i32, i32* %15, align 4
-  %temp26 = icmp ne i32 %16, 0
-  br i1 %temp26, label %while_body22, label %merge27
+  %temp25 = icmp ne i32 %16, 0
+  br i1 %temp25, label %while_body21, label %merge26
 
-while_body22:                                     ; preds = %traverse_loop21
+while_body21:                                     ; preds = %traverse_loop20
   %17 = load %list_node*, %list_node** %14, align 8
-  %temp23 = getelementptr inbounds %list_node, %list_node* %17, i32 0, i32 1
-  %temp24 = load %list_node*, %list_node** %temp23, align 8
+  %temp22 = getelementptr inbounds %list_node, %list_node* %17, i32 0, i32 1
+  %temp23 = load %list_node*, %list_node** %temp22, align 8
   %18 = load i32, i32* %15, align 4
-  %subtract25 = sub i32 %18, 1
-  store i32 %subtract25, i32* %15, align 4
-  store %list_node* %temp24, %list_node** %14, align 8
-  br label %traverse_loop21
+  %subtract24 = sub i32 %18, 1
+  store i32 %subtract24, i32* %15, align 4
+  store %list_node* %temp23, %list_node** %14, align 8
+  br label %traverse_loop20
 
-merge27:                                          ; preds = %traverse_loop21
+merge26:                                          ; preds = %traverse_loop20
   %19 = load %list_node*, %list_node** %14, align 8
-  %temp28 = getelementptr inbounds %list_node, %list_node* %19, i32 0, i32 0
-  %retval29 = load i8*, i8** %temp28, align 8
-  %li_conv30 = bitcast i8* %retval29 to i32*
-  %val_ptr31 = load i32, i32* %li_conv30, align 4
+  %temp27 = getelementptr inbounds %list_node, %list_node* %19, i32 0, i32 0
+  %retval28 = load i8*, i8** %temp27, align 8
+  %li_conv29 = bitcast i8* %retval28 to i32*
+  %val_ptr30 = load i32, i32* %li_conv29, align 4
   %id = alloca i32, align 4
-  store i32 %val_ptr31, i32* %id, align 4
-  %assignment_id32 = load i32, i32* %assignment_id, align 4
-  %id33 = load i32, i32* %id, align 4
-  %tmp = icmp eq i32 %assignment_id32, %id33
-  br i1 %tmp, label %then35, label %else37
+  store i32 %val_ptr30, i32* %id, align 4
+  %assignment_id31 = load i32, i32* %assignment_id, align 4
+  %id32 = load i32, i32* %id, align 4
+  %tmp = icmp eq i32 %assignment_id31, %id32
+  br i1 %tmp, label %then34, label %else36
 
-merge34:                                          ; preds = %else37, %then35
-  %i38 = load i32, i32* %i, align 4
-  %tmp39 = add i32 %i38, 1
-  store i32 %tmp39, i32* %i, align 4
+merge33:                                          ; preds = %else36, %then34
+  %i37 = load i32, i32* %i, align 4
+  %tmp38 = add i32 %i37, 1
+  store i32 %tmp38, i32* %i, align 4
   br label %while
 
-then35:                                           ; preds = %merge27
-  %i36 = load i32, i32* %i, align 4
-  store i32 %i36, i32* %index, align 4
-  br label %merge34
+then34:                                           ; preds = %merge26
+  %i35 = load i32, i32* %i, align 4
+  store i32 %i35, i32* %index, align 4
+  br label %merge33
 
-else37:                                           ; preds = %merge27
-  br label %merge34
+else36:                                           ; preds = %merge26
+  br label %merge33
 
-merge43:                                          ; preds = %while
-  %index44 = load i32, i32* %index, align 4
-  ret i32 %index44
+merge42:                                          ; preds = %while
+  %index43 = load i32, i32* %index, align 4
+  ret i32 %index43
 }

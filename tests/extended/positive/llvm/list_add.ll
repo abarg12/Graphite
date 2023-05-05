@@ -37,10 +37,12 @@ define i32 @main() {
 entry:
   %malloccall = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list = bitcast i8* %malloccall to %list_node**
+  store %list_node* null, %list_node** %new_list, align 8
   %temp = load %list_node*, %list_node** %new_list, align 8
   store %list_node* %temp, %list_node** @l, align 8
   %malloccall1 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list2 = bitcast i8* %malloccall1 to %list_node**
+  store %list_node* null, %list_node** %new_list2, align 8
   %malloccall3 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
   %arr_val = bitcast i8* %malloccall3 to i8**
   store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @0, i32 0, i32 0), i8** %arr_val, align 8

@@ -3,12 +3,12 @@ list l2 = ["a", "b", 3, "d"];
 list l3 = ["p"];
 list l4 = [];
 
-int i = array_len(l);
+int i = l.len();
 printf(i);
 int i2;
-i2 = array_len(l2);
+i2 = l2.len();
 printf(i2);
-int i3 = array_len(l3);
+int i3 = l3.len();
 printf(i3);
-int i4 = array_len(l4);
+int i4 = l4.len();
 printf(i4);

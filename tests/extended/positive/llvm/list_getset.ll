@@ -28,6 +28,7 @@ define i32 @main() {
 entry:
   %malloccall = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list = bitcast i8* %malloccall to %list_node**
+  store %list_node* null, %list_node** %new_list, align 8
   %malloccall1 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
   %arr_val = bitcast i8* %malloccall1 to i32*
   store i32 1, i32* %arr_val, align 4
