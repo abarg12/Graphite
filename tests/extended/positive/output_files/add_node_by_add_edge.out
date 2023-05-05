@@ -1,0 +1,11 @@
+one and two exist
+1
+1
+always true
+1
+edge exists
+1
+name still exists (should be! we just added it)
+1
+name still exists (should not be! we just removed it)
+0
