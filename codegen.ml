@@ -1178,15 +1178,148 @@ and add_edge_def (builder, stable) styp ds_name lst =
   let _ = L.build_store edges_hd lst_rst builder in (* add ptr to rest of nodes list *)
   let _ = L.build_store e_to_add edge_ptr builder in (* point to newly added node *)
 
+let src_ptr = L.build_struct_gep e_to_add 0 "src_ptr" builder in
+  let dst_ptr = L.build_struct_gep e_to_add 1 "dst_ptr" builder in
+  let src = L.build_load src_ptr "src'" builder in
+  let dst = L.build_load dst_ptr "dst'" builder in
+
+  let src_exists_loaded = ll_node_exists_then_add_node_def (builder, stable) ds_name src in
+  let dst_exists_loaded = ll_node_exists_then_add_node_def (builder, stable) ds_name dst in
+  let (_, currLLVMfunc) = find_func stable stable.curr_func in
+  
+  let if_bb = L.append_block context "if" currLLVMfunc in
+    let else_bb = L.append_block context "else" currLLVMfunc in
+    let merge_bb = L.append_block context "merge" currLLVMfunc in
+  
+    let _ = L.build_br if_bb builder in
+  
+    let if_builder = L.builder_at_end context if_bb in
+    let _ = L.build_cond_br src_exists_loaded merge_bb else_bb if_builder in
+  
+    let else_builder = L.builder_at_end context else_bb in
+
+    let _ = add_ll_node_def (else_builder, stable) styp ds_name src in
+    let _ = L.build_br merge_bb else_builder in
+    let _ = L.position_at_end merge_bb builder in
+
+    let if_bb2 = L.append_block context "if" currLLVMfunc in
+      let else_bb2 = L.append_block context "else" currLLVMfunc in
+      let merge_bb2 = L.append_block context "merge" currLLVMfunc in
+    
+      let _ = L.build_br if_bb2 builder in
+    
+      let if_builder2 = L.builder_at_end context if_bb2 in
+      let _ = L.build_cond_br dst_exists_loaded merge_bb2 else_bb2 if_builder2 in
+    
+      let else_builder2 = L.builder_at_end context else_bb2 in
+  
+      let _ = add_ll_node_def (else_builder2, stable) styp ds_name dst in
+      let _ = L.build_br merge_bb2 else_builder2 in
+      let _ = L.position_at_end merge_bb2 builder in
+  
+  
+(* let _ =  add_ll_node_def (builder, stable) styp ds_name src in
+let _ =  add_ll_node_def (builder, stable) styp ds_name dst in *)
+
+
   (* BEGIN INVARIANT *)
-  let flags = match styp with
+  (* let flags = match styp with
       Graph(t, flags) -> flags
     | _ -> raise (Failure ("SDotCall not supported for non-graphs"))
   in
-  let _ = enforce_invariants ds_name flags "addEdge" in
+  let _ = enforce_invariants ds_name flags "addEdge" in *)
   (* END INVARIANT *)
 
   L.build_store new_edge edges builder
+and add_ll_node_def (builder, stable) styp ds_name n_to_add =
+  let ds = find_variable stable ds_name in 
+  let nodes = L.build_struct_gep ds 0 "nodes" builder in (*ptr to our linked list of nodes*)
+  let nodes_hd = L.build_load nodes "nodes_hd" builder in (*the head of our linked list*)
+
+  let new_node = L.build_malloc node_node "new_node" builder in (*create a new node head to add*)
+  let lst_rst = L.build_struct_gep new_node 1 "lst_rst'" builder in (* where we will put the rest of the list *)
+  let node_ptr = L.build_struct_gep new_node 0 "node_ptr" builder in (* where we will point to node being added *)
+  let _ = L.build_store nodes_hd lst_rst builder in (* add ptr to rest of nodes list *)
+  let _ = L.build_store n_to_add node_ptr builder in (* point to newly added node *)
+
+  L.build_store new_node nodes builder
+and ll_node_exists_then_add_node_def (builder, stable) ds_name to_find' =
+  (* added so we can just return once  *)
+  let ret_ptr = L.build_alloca i1_t "ret_true" builder in
+  let bool = L.const_int (ltype_of_typ A.Bool) 0 in
+  let _ = L.build_store bool ret_ptr builder in 
+
+  (* retrieve pointer of node to find and graph to traverse *)
+  (* let to_find' = expr (builder, stable) to_find in *)
+  let ds = find_variable stable ds_name in
+
+  (* get the head of our node linked list *)
+  let llNodesPtr = L.build_struct_gep ds 0 "nodes" builder in
+  let llNodes = L.build_load llNodesPtr "head" builder in
+  let llNodes' = L.define_global "llNodes" (L.const_pointer_null (L.pointer_type node_node)) the_module in
+  let _ = L.build_store llNodes llNodes' builder in
+
+  let (_, currLLVMfunc) = find_func stable stable.curr_func in
+
+  (* is the curr node null?  *)
+  let pred_bb = L.append_block context "while" currLLVMfunc in
+  let _ = L.builder_at_end context pred_bb in
+  let pred_builder = L.builder_at_end context pred_bb in
+  let x = L.build_load llNodes' "putMeHere" pred_builder in
+  let bool_val = L.build_is_not_null x "curr" pred_builder in
+
+  (* body of the while, including the if/else *)
+  let body_bb = L.append_block context "while_body" currLLVMfunc in
+  let body_builder = L.builder_at_end context body_bb in
+
+  (* conditional for if currNode*)
+  let load_struct_ptr = L.build_load llNodes' "putMeHere" body_builder in
+  let currNodePtr = L.build_struct_gep load_struct_ptr 0 "nodes" body_builder in
+  let currNode = L.build_load currNodePtr "stored_node'" body_builder in
+  (* labelling the blocks for if else *)
+
+  let if_bb = L.append_block context "if" currLLVMfunc in
+  let then_bb = L.append_block context "then" currLLVMfunc in
+  let else_bb = L.append_block context "else" currLLVMfunc in
+  let merge_bb = L.append_block context "merge" currLLVMfunc in
+
+  let _ = L.build_br if_bb body_builder in
+
+  let if_builder = L.builder_at_end context if_bb in
+  let if_found_bool_val = L.build_icmp L.Icmp.Eq currNode to_find' "found?" if_builder in
+  let _ = L.build_cond_br if_found_bool_val then_bb else_bb if_builder in
+
+  (* then basic block and builder that returns a true if found *)
+  let then_builder = L.builder_at_end context then_bb in
+  
+  let bool = L.const_int (ltype_of_typ A.Bool) 1 in
+  let _ = L.build_store bool ret_ptr then_builder in 
+
+  (*replaced return with below *) (*let _ = L.build_ret ret_ptr then_builder in*)
+  let _ = L.build_br merge_bb then_builder in
+  (*hopefully this builds the proper return instruction *)
+
+  (* if we haven't found our node *)
+  let else_builder = L.builder_at_end context else_bb in
+
+  (* get the head of our node linked list *)
+  let load_struct_ptr = L.build_load llNodes' "toBeHere" else_builder in
+  let llNodesPtr' = L.build_struct_gep load_struct_ptr 1 "llNodesPtr" else_builder in
+  let load_next_ptr = L.build_load llNodesPtr' "toBeHerenow" else_builder in
+  let _ = L.build_store load_next_ptr llNodes' else_builder in
+  let _ = L.build_br pred_bb else_builder in
+
+
+  (* make sure merge bb returns a FALSE if we get to it, i.e. if we did not find the node*)
+  let _ = L.builder_at_end context merge_bb in
+
+  (* go to body if we still have nodes to check out, go to merge cond. if we are out of nodes *)
+  let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
+
+  let _ = L.build_br pred_bb builder in
+  let _ = L.position_at_end merge_bb builder in
+
+  L.build_load ret_ptr "returnVal" builder
 and node_exists_def (builder, stable) ds_name lst =
   let to_find = match lst with 
       x::[] -> x
