@@ -66,6 +66,17 @@ let check (decls) =
                                                  ("nodeExists", Bool, [(Node(Uninitialized), "toFind")]); 
                                                  ("getNode", Node(Uninitialized), [(Node(Uninitialized), "toFind")]); *)]
   in
+  let built_in_list_meths = 
+    let add_bind map (name, ty, forms) = StringMap.add name {
+      typ = ty;
+      fname = name;
+      formals = forms;
+      body = Block[] } map 
+    in List.fold_left add_bind StringMap.empty [ ("get", Void, [(Int, "idx")]);
+                                                 ("set", List_t, [(Int, "idx");(Void, "poly")]);
+                                                 ("add", List_t, [(Int, "idx");(Void, "poly")]);
+                                                 ("len", Int, []);]
+  in
   let built_in_node_meths =
     let add_bind map (name, ty, forms) = StringMap.add name {
       typ = ty;
@@ -80,6 +91,7 @@ let check (decls) =
   let invariants = ["tree"; "connected"; "uniqueName"]  in
   let graph_meths = built_in_graph_meths in
   let node_meths = built_in_node_meths in 
+  let list_meths = built_in_list_meths in 
   let node_fields = ["flag"; "data"; "name"] in
   let edge_fields = ["src"; "dst"; "weight"] in
 
@@ -114,6 +126,7 @@ let check (decls) =
     let meths = (match ds with 
         Graph(_, _) -> graph_meths
       | Node(_) -> node_meths
+      | List_t -> list_meths
       | _ -> raise (Failure ("Data Struct " ^ string_of_typ ds ^ " not found")))
     in  
     try StringMap.find m meths
@@ -203,6 +216,8 @@ let check (decls) =
           Call("array_get", _) -> 
             let (rt, e') = expr scope funcs e in
             (rt, SAssign(x, (rt, e')))
+        | DotCall(_,"get",_) -> let (rt, e') = expr scope funcs e in
+                                      (rt, SAssign(x, (rt, e')))
         | _ ->
           let lt = find_variable scope x in
           let (rt, e') = expr scope funcs e in
@@ -343,6 +358,7 @@ let check (decls) =
           Node(ty) -> ty 
         | Graph(ty, invars) -> ty
         | Edge(ty) -> ty 
+        | List_t -> List_t 
         | _ -> raise(Failure("semant/DotCall: invalid dsty"))
       in 
       let rec check_args m (actuals, formals) = match (actuals, formals) with
@@ -350,6 +366,9 @@ let check (decls) =
       | (x::xs, y::ys) ->
         let (rt, _) = y in
         let lsexpr = expr m funcs x in
+        let ispoly = (match dsty with 
+                          List_t -> true
+                        | _ -> false) in 
         let (lt, le) = lsexpr in
         let sameTy = match (lt, rt) with 
             (* make sure that overall type for function matches (eg node given for a node)
@@ -359,7 +378,7 @@ let check (decls) =
            | (Edge(ty1), Edge(ty2)) -> ty1 = dsIntTy
            | (ty1, ty2) -> ty1 = ty2
         in
-        if sameTy then lsexpr::check_args m (xs, ys)
+        if (sameTy || ispoly) then lsexpr::check_args m (xs, ys)
         else raise (Failure("invalid dotcall args: " ^ string_of_typ lt ^ " != " ^ string_of_typ rt))
       | _ -> raise (Failure("invalid number of args"))
       in let sexprs = check_args scope (args, md.formals)
@@ -508,6 +527,7 @@ in
 
         let _ = (match sexp with
               SCall("array_get", _) -> ()
+            | SDotCall(_,"get",_) -> ()
             | _ -> if t != t' && (not (check_dty t t')) then raise (Failure("local bind assign"))
         ) in 
 
@@ -580,6 +600,7 @@ in
           match (t, e) with
               (List_t, _) -> SBindAssign(t, x, (et, sx))::check_decls (bind_var scope x t) funcs rest 
             | (_, Call("array_get", _)) -> SBindAssign(t, x, (et, sx))::check_decls (bind_var scope x t) funcs rest
+            | (_, DotCall(_,"get",_)) -> SBindAssign(t, x, (et, sx))::check_decls (bind_var scope x t) funcs rest 
             | _ ->
 
           if t != et && (not (check_dty t et))
