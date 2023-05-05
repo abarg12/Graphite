@@ -24,7 +24,9 @@ source_filename = "Graphite"
 @fmt.6 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @3 = private unnamed_addr constant [4 x i8] c"set\00", align 1
 @fmt.7 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@fmt.8 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@4 = private unnamed_addr constant [5 x i8] c"test\00", align 1
+@fmt.8 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@fmt.9 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 
 declare i32 @printf(i8*, ...)
 
@@ -33,6 +35,8 @@ declare i32 @strcmp(i8*, i8*)
 declare i8* @array_get(i8*, i32, ...)
 
 declare i8* @array_set(i8*, i32, i8*, ...)
+
+declare i8* @array_len(i8*, ...)
 
 declare i8 @nodeExists(%node_struct*, ...)
 
@@ -682,39 +686,107 @@ merge16:                                          ; preds = %traverse_loop10
   store i8* %val_ptr20, i8** %s, align 8
   %s21 = load i8*, i8** %s, align 8
   %printf22 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.7, i32 0, i32 0), i8* %s21)
-  %list23 = load %list_node*, %list_node** @l3, align 8
-  %malloccall24 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
-  %12 = bitcast i8* %malloccall24 to %list_node**
-  %malloccall25 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
-  %13 = bitcast i8* %malloccall25 to i32*
-  store %list_node* %list23, %list_node** %12, align 8
-  store i32 5, i32* %13, align 4
-  br label %traverse_loop26
+  %s2 = alloca i8*, align 8
+  store i8* getelementptr inbounds ([5 x i8], [5 x i8]* @4, i32 0, i32 0), i8** %s2, align 8
+  %s223 = load i8*, i8** %s2, align 8
+  %malloccall24 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
+  %arr_val = bitcast i8* %malloccall24 to i8**
+  store i8* %s223, i8** %arr_val, align 8
+  %i8ptr = bitcast i8** %arr_val to i8*
+  %list25 = load %list_node*, %list_node** @l4, align 8
+  %malloccall26 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
+  %12 = bitcast i8* %malloccall26 to %list_node**
+  %malloccall27 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
+  %13 = bitcast i8* %malloccall27 to i32*
+  store %list_node* %list25, %list_node** %12, align 8
+  store i32 1, i32* %13, align 4
+  br label %traverse_loop28
 
-traverse_loop26:                                  ; preds = %while_body27, %merge16
+traverse_loop28:                                  ; preds = %while_body29, %merge16
   %14 = load i32, i32* %13, align 4
-  %temp31 = icmp ne i32 %14, 0
-  br i1 %temp31, label %while_body27, label %merge32
+  %temp33 = icmp ne i32 %14, 0
+  br i1 %temp33, label %while_body29, label %merge34
 
-while_body27:                                     ; preds = %traverse_loop26
+while_body29:                                     ; preds = %traverse_loop28
   %15 = load %list_node*, %list_node** %12, align 8
-  %temp28 = getelementptr inbounds %list_node, %list_node* %15, i32 0, i32 1
-  %temp29 = load %list_node*, %list_node** %temp28, align 8
+  %temp30 = getelementptr inbounds %list_node, %list_node* %15, i32 0, i32 1
+  %temp31 = load %list_node*, %list_node** %temp30, align 8
   %16 = load i32, i32* %13, align 4
-  %subtract30 = sub i32 %16, 1
-  store i32 %subtract30, i32* %13, align 4
-  store %list_node* %temp29, %list_node** %12, align 8
-  br label %traverse_loop26
+  %subtract32 = sub i32 %16, 1
+  store i32 %subtract32, i32* %13, align 4
+  store %list_node* %temp31, %list_node** %12, align 8
+  br label %traverse_loop28
 
-merge32:                                          ; preds = %traverse_loop26
+merge34:                                          ; preds = %traverse_loop28
   %17 = load %list_node*, %list_node** %12, align 8
-  %temp33 = getelementptr inbounds %list_node, %list_node* %17, i32 0, i32 0
-  %retval34 = load i8*, i8** %temp33, align 8
-  %li_conv35 = bitcast i8* %retval34 to i1*
-  %val_ptr36 = load i1, i1* %li_conv35, align 1
+  %temp35 = getelementptr inbounds %list_node, %list_node* %17, i32 0, i32 0
+  store i8* %i8ptr, i8** %temp35, align 8
+  %list36 = load %list_node*, %list_node** @l4, align 8
+  %malloccall37 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
+  %18 = bitcast i8* %malloccall37 to %list_node**
+  %malloccall38 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
+  %19 = bitcast i8* %malloccall38 to i32*
+  store %list_node* %list36, %list_node** %18, align 8
+  store i32 1, i32* %19, align 4
+  br label %traverse_loop39
+
+traverse_loop39:                                  ; preds = %while_body40, %merge34
+  %20 = load i32, i32* %19, align 4
+  %temp44 = icmp ne i32 %20, 0
+  br i1 %temp44, label %while_body40, label %merge45
+
+while_body40:                                     ; preds = %traverse_loop39
+  %21 = load %list_node*, %list_node** %18, align 8
+  %temp41 = getelementptr inbounds %list_node, %list_node* %21, i32 0, i32 1
+  %temp42 = load %list_node*, %list_node** %temp41, align 8
+  %22 = load i32, i32* %19, align 4
+  %subtract43 = sub i32 %22, 1
+  store i32 %subtract43, i32* %19, align 4
+  store %list_node* %temp42, %list_node** %18, align 8
+  br label %traverse_loop39
+
+merge45:                                          ; preds = %traverse_loop39
+  %23 = load %list_node*, %list_node** %18, align 8
+  %temp46 = getelementptr inbounds %list_node, %list_node* %23, i32 0, i32 0
+  %retval47 = load i8*, i8** %temp46, align 8
+  %li_conv48 = bitcast i8* %retval47 to i8**
+  %val_ptr49 = load i8*, i8** %li_conv48, align 8
+  store i8* %val_ptr49, i8** %s, align 8
+  %s50 = load i8*, i8** %s, align 8
+  %printf51 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.8, i32 0, i32 0), i8* %s50)
+  %list52 = load %list_node*, %list_node** @l3, align 8
+  %malloccall53 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
+  %24 = bitcast i8* %malloccall53 to %list_node**
+  %malloccall54 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
+  %25 = bitcast i8* %malloccall54 to i32*
+  store %list_node* %list52, %list_node** %24, align 8
+  store i32 5, i32* %25, align 4
+  br label %traverse_loop55
+
+traverse_loop55:                                  ; preds = %while_body56, %merge45
+  %26 = load i32, i32* %25, align 4
+  %temp60 = icmp ne i32 %26, 0
+  br i1 %temp60, label %while_body56, label %merge61
+
+while_body56:                                     ; preds = %traverse_loop55
+  %27 = load %list_node*, %list_node** %24, align 8
+  %temp57 = getelementptr inbounds %list_node, %list_node* %27, i32 0, i32 1
+  %temp58 = load %list_node*, %list_node** %temp57, align 8
+  %28 = load i32, i32* %25, align 4
+  %subtract59 = sub i32 %28, 1
+  store i32 %subtract59, i32* %25, align 4
+  store %list_node* %temp58, %list_node** %24, align 8
+  br label %traverse_loop55
+
+merge61:                                          ; preds = %traverse_loop55
+  %29 = load %list_node*, %list_node** %24, align 8
+  %temp62 = getelementptr inbounds %list_node, %list_node* %29, i32 0, i32 0
+  %retval63 = load i8*, i8** %temp62, align 8
+  %li_conv64 = bitcast i8* %retval63 to i1*
+  %val_ptr65 = load i1, i1* %li_conv64, align 1
   %b = alloca i1, align 1
-  store i1 %val_ptr36, i1* %b, align 1
-  %b37 = load i1, i1* %b, align 1
-  %printf38 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.8, i32 0, i32 0), i1 %b37)
+  store i1 %val_ptr65, i1* %b, align 1
+  %b66 = load i1, i1* %b, align 1
+  %printf67 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.9, i32 0, i32 0), i1 %b66)
   ret void
 }

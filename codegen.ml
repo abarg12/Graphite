@@ -192,6 +192,11 @@ let array_set_t =
 let array_set_func =
   L.declare_function "array_set" array_set_t the_module in
 
+let array_len_t =
+  L.var_arg_function_type (L.pointer_type i8_t) [| L.pointer_type i8_t; |] in
+let array_len_func = 
+  L.declare_function "array_len" array_len_t the_module in
+
 let nodeExists_t = 
   L.var_arg_function_type i8_t [| node_t |] in
 let nodeExists_func =
@@ -202,10 +207,10 @@ let array_add_t =
 let array_add_func = 
   L.declare_function "array_add" array_add_t the_module in
 
-let array_delete_t =
+(* let array_delete_t =
   L.var_arg_function_type (L.pointer_type i8_t) [| L.pointer_type i8_t; i32_t; |] in
-let array_add_func = 
-  L.declare_function "array_delete" array_delete_t the_module in
+let array_delete_func = 
+  L.declare_function "array_delete" array_delete_t the_module in *)
 
 (* let add_node_t : L.lltype = 
   L.var_arg_function_type void_t [| L.pointer_type i8_t ; L.pointer_type i8_t |] in *)
@@ -324,7 +329,8 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       (match name with  
           "array_get" -> array_get_def (builder, stable) args 
         | "array_set" -> array_set_def (builder, stable) args
-        | "array_add" -> array_add_def (builder, stable) args 
+        | "array_add" -> array_add_def (builder, stable) args
+        | "array_len" -> array_len_def (builder, stable) args  
         | _ -> let (fdecl_opt, llvm_decl) = find_func stable name in
           let sfdecl = (match fdecl_opt with
                         Some(f) -> f
@@ -433,10 +439,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
                       (L.build_store node_p list_head builder)
                     else let p = L.build_struct_gep prev_node 1 "temp" builder in
                           L.build_store node_p p builder) in
-        (* let s = L.build_struct_gep node_p 0 "temp" builder in
-        let l = L.build_pointercast (L.build_load s "val" builder) (L.pointer_type i32_t) "intval" builder in
-        let _ = L.dump_value l in *)
-        link_list (idx + 1) es node_p) in 
+      link_list (idx + 1) es node_p) in 
       let _ = link_list 0 ses (L.const_pointer_null list_node) in 
       L.build_load list_head "temp" builder
 
@@ -514,21 +517,82 @@ and traverse_isteps i list (builder, stable) =
     (* L.build_load next_ptr "" builder  *) 
     currnode
 
+and count_steps list (builder, stable) = 
+    let currnode = L.build_malloc (L.pointer_type list_node) "" builder in
+    let oneval  = L.const_int i32_t 1 in
+    let iter = L.build_malloc i32_t "" builder in
+    let _ = L.build_store list currnode builder in
+    let _ = L.build_store (L.const_int i32_t 0) iter builder in
+
+    let null_node = L.const_pointer_null (L.pointer_type list_node) in
+
+    let (_, currLLVMfunc) = find_func stable stable.curr_func in 
+    let pred_bb = L.append_block context "traverse_loop" currLLVMfunc in
+    let _ = L.build_br pred_bb builder in
+
+    let body_bb = L.append_block context "while_body" currLLVMfunc in
+    (** body of traverse is stepping through linked list **) 
+    let bb = L.builder_at_end context body_bb in
+    let temp = L.build_load (L.build_struct_gep (L.build_load currnode "" bb) 1 "temp" bb) "temp" bb in
+
+    (* let _ = L.build_store temp next_ptr bb in *)
+    let _ = L.build_store (L.build_add (L.build_load iter "" bb) oneval "add" bb) iter bb in
+    let _ = L.build_store temp currnode bb in 
+    let () = add_terminal bb (L.build_br pred_bb) in
+
+    (** check if i has been brought down to 0, indicating finished traversal **)
+    let pred_builder = L.builder_at_end context pred_bb in
+    (* let _ = L.dump_value currnode in *)
+    let bool_val = L.build_is_not_null (L.build_load currnode "" pred_builder) "" pred_builder in
+    (* let bool_val = L.build_icmp L.Icmp.Ne oneval zeroval "" pred_builder in *)
+
+    let merge_bb = L.append_block context "merge" currLLVMfunc in
+    (* let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in *)
+    let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in 
+    let _ = L.position_at_end merge_bb builder in 
+    (* L.build_load next_ptr "" builder  *) 
+    iter 
+
+
+(* and array_delete_def (builder, stable) args = 
+    (match args with
+        (typ, SId(list_id)) :: index :: [] ->
+          let list_dp = find_variable stable list_id in 
+          let list_p = L.build_load list_dp "list" builder in
+          let idx = expr (builder, stable) index in
+
+          let zeroval = L.const_int i32_t 0 in
+          
+
+          let todeletev = traverse_isteps idx list_p (builder, stable) in
+          let todelete = L.build_load todeletev "" builder in 
+          let iminus1 = L.build_alloca i32_t "iter" builder in
+          let _ = L.build_store (L.build_sub idx (L.const_int i32_t 1) "temp" builder) iminus1 builder in
+          let beforev = traverse_isteps iminus1 list_p (builder, stable) in
+          let before = L.build_load afterv "" builder in 
+
+          (* let before_next = L.build_struct_gep before 1 "next" builder in 
+          let _ = L.build_store node_p before_next builder in 
+          if (L.is_null after) 
+                  then list_dp
+                  else let _ = L.build_store after (L.build_struct_gep node_p 1 "next" builder) builder in list_dp *)
+
+          L.build_load targetptr "retval" builder
+
+      | _ -> raise (Failure "wrong args to array_delete")) *)
+
 and array_get_def (builder, stable) args = 
     (match args with
       (typ, SId(list_id)) :: index :: [] -> 
-            (* let list_p = expr (builder, stable) list_id in *)
             let list_dp = find_variable stable list_id in 
             let list_p = L.build_load list_dp "list" builder in
             let idx = expr (builder, stable) index in
-
             let targetv = traverse_isteps idx list_p (builder, stable) in
             let target = L.build_load targetv "" builder in
-            (* let target = traverse_x int_idx list_p in *)
             let targetptr = L.build_struct_gep target 0 "temp" builder in
             L.build_load targetptr "retval" builder
 
-      | _ -> raise (Failure("wrong args to array_get"))) 
+      | _ -> raise (Failure "wrong args to array_get")) 
 
 and array_set_def (builder, stable) args =
     match args with
@@ -546,6 +610,16 @@ and array_set_def (builder, stable) args =
             L.build_store llvm_i8 targetptr builder
         | _ -> raise (Failure "wrong args to array_set")
 
+and array_len_def (builder, stable) args =
+    match args with
+        (typ, SId(list_id)) :: [] ->
+            let list_dp = find_variable stable list_id in 
+            let list_p = L.build_load list_dp "list" builder in
+
+            let counterp = count_steps list_p (builder, stable) in
+            let counter = L.build_load counterp "" builder in
+            counter
+        | _ -> raise (Failure "wrong args to array_set")
 
 
 and array_add_def (builder, stable) args =
@@ -554,32 +628,71 @@ and array_add_def (builder, stable) args =
         let llvm_val = expr (builder, stable) (vtyp, exp) in
         let llvm_ptr = L.build_malloc (ltype_of_typ vtyp) "arr_val" builder in
         let _ = L.build_store llvm_val llvm_ptr builder in
+        let zeroval = L.const_int i32_t 0 in 
+        let oneval = L.const_int i32_t 1 in
 
         let array_node = L.const_named_struct list_node [| L.const_pointer_null (L.pointer_type i8_t); L.const_pointer_null (L.pointer_type list_node); |] in 
         (** generalize the value to an i8_t pointer **)
         let llvm_i8 = L.build_pointercast llvm_ptr (L.pointer_type i8_t) "i8ptr" builder in
+        
+
         (** create the node variable **)
         let node_p = L.build_malloc list_node "node_p" builder in 
         let val_ptr = L.build_struct_gep node_p 0 "valloc" builder in
         let _ = L.build_store array_node node_p builder in
         let _ = L.build_store llvm_i8 val_ptr builder in
 
-            (** get the list **)
-            let list_dp = find_variable stable list_id in 
-            let list_p = L.build_load list_dp "list" builder in
-            let idx = expr (builder, stable) index in
-            let beforev = traverse_isteps idx list_p (builder, stable) in
-            let before = L.build_load beforev "" builder in 
-            let iplus1 = L.build_alloca i32_t "iter" builder in
-            let _ = L.build_store (L.build_add idx (L.const_int i32_t 1) "temp" builder) iplus1 builder in
-            (* let after = traverse_x (int_idx + 1) list_p in *)
-            let afterv = traverse_isteps iplus1 list_p (builder, stable) in
-            let after = L.build_load afterv "" builder in 
-            let before_next = L.build_struct_gep before 1 "next" builder in 
-            let _ = L.build_store node_p before_next builder in 
-            if (L.is_null after) 
-                    then list_dp
-                    else let _ = L.build_store after (L.build_struct_gep node_p 1 "next" builder) builder in list_dp
+        (** get the list **)
+        let list_dp = find_variable stable list_id in 
+        let list_p = L.build_load list_dp "list" builder in
+        let idx = expr (builder, stable) index in
+
+        (** if you want to add to beginning of list **)
+            let (_, currLLVMfunc) = find_func stable stable.curr_func in 
+            (* let start_bb = L.insertion_block builder in *)
+            let bool_val = L.build_icmp L.Icmp.Eq zeroval idx "" builder in
+
+            let merge_bb = L.append_block context "merge" currLLVMfunc in
+            let branch_instr = L.build_br merge_bb in
+
+            let then_bb = L.append_block context "then" currLLVMfunc in
+            let then_builder = L.builder_at_end context then_bb in
+            let curnextptr = L.build_struct_gep node_p 1 "" then_builder in (**TODO: this line is a guestimate :o*) 
+            let _ = L.build_store list_p curnextptr in (**TODO: this line is a guestimate :o*) 
+            let _ = L.build_store node_p list_dp in  (**TODO: this line is a guestimate :o*) 
+
+            (* let (then_builder, _) = stmt ((L.builder_at_end context then_bb), stable) then_stmt in *)
+            let () = add_terminal then_builder branch_instr in
+
+
+            let else_bb = L.append_block context "else" currLLVMfunc in
+            let else_builder = L.builder_at_end context else_bb in
+
+
+
+
+            let () = add_terminal else_builder branch_instr in 
+            let _ = L.build_cond_br bool_val then_bb else_bb builder in
+
+
+            let _ = L.builder_at_end context merge_bb, stable in (**TODO: change this*)
+            list_p
+
+
+        (* let beforev = traverse_isteps idx list_p (builder, stable) in
+        let before = L.build_load beforev "" builder in 
+
+        let iplus1 = L.build_malloc i32_t "iter" builder in
+        let _ = L.build_store (L.build_add idx oneval "temp" builder) iplus1 builder in
+
+        let afterv = traverse_isteps (L.build_load iplus1 "" builder) list_p (builder, stable) in
+        let after = L.build_load afterv "" builder in 
+
+        let before_next = L.build_struct_gep before 1 "next" builder in 
+        let _ = L.build_store node_p before_next builder in 
+        if (L.is_null after) 
+                then list_dp
+                else let _ = L.build_store after (L.build_struct_gep node_p 1 "next" builder) builder in list_dp *)
 
       | _ -> raise (Failure "wrong args to array_add")
 
@@ -1130,11 +1243,11 @@ let rec sb_lines (builder, stable) (ls : sb_line list) = match ls with
 
 (*** Statements go here ***)
 and stmt (builder, stable) = function
-    SExpr (typ, sexp) -> 
-      (match (typ, sexp) with
-          (A.List_t, SAssign(s,(typ,SList(es)))) -> bindassign (builder, stable) 
+    SExpr (typ, sexp) -> let _ = expr (builder, stable) (typ, sexp) in (builder, stable)
+      (* (match (typ, sexp) with *)
+          (* (A.List_t, SAssign(s,(typ,SList(es)))) -> bindassign (builder, stable) 
                                                           (A.List_t, s, (typ, SList(es)))
-        | _ -> let _ = expr (builder, stable) (typ, sexp) in (builder, stable))
+        | _ -> let _ = expr (builder, stable) (typ, sexp) in (builder, stable)) *)
 
   | SBlock ls -> let stable' = {
           variables = StringMap.empty;
@@ -1375,6 +1488,8 @@ let init_stable = add_func "strcmp" (None, strcmp_func) init_stable in
 let init_stable = add_func "array_get" (None, array_get_func) init_stable in
 let init_stable = add_func "array_set" (None, array_set_func) init_stable in
 let init_stable = add_func "array_add" (None, array_add_func) init_stable in
+let init_stable = add_func "array_len" (None, array_len_func) init_stable in
+(* let init_stable = add_func "array_delete" (None, array_delete_func) init_stable in *)
 (*let init_stable = add_func "addNode" (None, addNode) init_stable in *)
 let init_stable = add_func "nodeExists" (None, nodeExists_func) init_stable in 
 

@@ -38,6 +38,8 @@ let check (decls) =
                                                  ("array_get", List_t, [(List_t, "arr");(Int, "idx")]);
                                                  ("array_set", List_t, [(List_t, "arr");(Int, "idx");(Void, "poly")]);
                                                  ("array_add", List_t, [(List_t, "arr");(Int, "idx");(Void, "poly")]);
+                                                 ("array_delete", List_t, [(List_t, "arr");(Int, "idx");]);
+                                                 ("array_len", Int, [(List_t, "arr")]);
                                                  ]
   in
 
@@ -297,7 +299,7 @@ let check (decls) =
         let sexp = expr scope funcs arg1 in
         (f.typ, SCall(fname, [sexp]))
       else
-      if (fname = "array_set") || (fname = "array_add")
+      if (fname = "array_set") || (fname = "array_add") 
       then
         let [list_name; idx; value;] = args in
         let a1 = expr scope funcs list_name in
