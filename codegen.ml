@@ -202,6 +202,11 @@ let array_add_t =
 let array_add_func = 
   L.declare_function "array_add" array_add_t the_module in
 
+let array_delete_t =
+  L.var_arg_function_type (L.pointer_type i8_t) [| L.pointer_type i8_t; i32_t; |] in
+let array_add_func = 
+  L.declare_function "array_delete" array_delete_t the_module in
+
 (* let add_node_t : L.lltype = 
   L.var_arg_function_type void_t [| L.pointer_type i8_t ; L.pointer_type i8_t |] in *)
 (* let add_node_func : L.llvalue = 
@@ -1061,6 +1066,8 @@ and array_set_def (builder, stable) args =
             let targetptr = L.build_struct_gep target 0 "temp" builder in 
             L.build_store llvm_i8 targetptr builder
         | _ -> raise (Failure "wrong args to array_set")
+
+
 
 and array_add_def (builder, stable) args =
     match args with
