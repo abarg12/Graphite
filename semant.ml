@@ -53,9 +53,13 @@ let check (decls) =
     in List.fold_left add_bind StringMap.empty [ ("addNode", Void, [(Node(Uninitialized), "to_add")]);
                                                  ("addEdge", Void, [(Edge(Uninitialized), "to_add")]);
                                                  ("edgeExists", Bool, [(Edge(Uninitialized), "to_find")]);
-                                                 (*("nameExists", Graph(Uninitialized, []), [(Node(Uninitialized), "toFind")]); *)
+                                                 ("nameExists", Bool, [(String, "toFind")]);
+                                                 ("getByName", Node(Uninitialized), [(String, "toFind")]);
                                                  ("removeEdge", Bool, [(Edge(Uninitialized), "toFind")]); 
                                                  ("getEdgesOf", List_t, [(Node(Uninitialized), "toFind")]);
+                                                 ("getAllEdges", List_t, []);
+                                                 ("getAllNodes", List_t, []);
+
                                                  ("nodeExists", Bool, [(Node(Uninitialized), "toFind")]); 
                                                  ("removeNode", Bool, [(Node(Uninitialized), "toFind")]); 
                                                  
@@ -190,6 +194,7 @@ let check (decls) =
           (Node(_src_dty), Node(_dst_dty)) -> (_src_dty, _dst_dty)
         | _ -> raise (Failure ("semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " cannot form an edge"))
       in
+<<<<<<< HEAD
       let err = "semant/edge: " ^ string_of_expr (Edge(src, dst)) ^ " must point to node types" in
       if src_dty = dst_dty
         then (Edge(src_dty), (SEdge((src_ty, src_sx), (dst_ty, dst_sx))))
@@ -204,6 +209,13 @@ let check (decls) =
       
       (* in
       (Edge(src_data_ty), (SEdge((src_ty, src_sx), (dst_ty, dst_sx)))) *)
+=======
+      if src_dty = dst_dty then
+        (Edge(src_dty), (SEdge((src_ty, src_sx), (dst_ty, dst_sx))))
+      else
+        raise (Failure("semant/edge: src_dty != dst_dty"))
+      
+>>>>>>> 78313652faaf410b70529343ba0c0657f38044ac
     | Assign(x, e) ->
       (match e with 
           Call("array_get", _) -> 
