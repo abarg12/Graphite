@@ -241,11 +241,10 @@ entry:
   %"lvar'111" = load %node_struct*, %node_struct** @Ihaveconfidenceinrain, align 8
   %temp112 = getelementptr inbounds %node_struct, %node_struct* %"lvar'111", i32 0, i32 0
   %Ihaveconfidenceinrain.name = load i8*, i8** %temp112, align 8
-  %new_ptr113 = bitcast i8* %Ihaveconfidenceinrain.name to i8**
-  %Ihaveconfidenceinrain.name114 = load i8*, i8** %new_ptr113, align 8
-  store i8* %Ihaveconfidenceinrain.name114, i8** @despitewhatyouseeIhaveconfidenceinme, align 8
+  %srcNode113 = load i8*, i8** %temp112, align 8
+  store i8* %srcNode113, i8** @despitewhatyouseeIhaveconfidenceinme, align 8
   %despitewhatyouseeIhaveconfidenceinme = load i8*, i8** @despitewhatyouseeIhaveconfidenceinme, align 8
-  %printf115 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.3, i32 0, i32 0), i8* %despitewhatyouseeIhaveconfidenceinme)
+  %printf114 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.3, i32 0, i32 0), i8* %despitewhatyouseeIhaveconfidenceinme)
   ret i32 0
 }
 
@@ -290,23 +289,19 @@ entry:
   store i8* %name14, i8** %temp, align 8
   %"lvar'15" = load %node_struct*, %node_struct** %ifFunctionsDontWorkMyGod, align 8
   %temp16 = getelementptr inbounds %node_struct, %node_struct* %"lvar'15", i32 0, i32 0
-  %malloccall17 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
-  %bruh18 = bitcast i8* %malloccall17 to i8**
-  store i8* getelementptr inbounds ([32 x i8], [32 x i8]* @4, i32 0, i32 0), i8** %bruh18, align 8
-  %name19 = bitcast i8** %bruh18 to i8*
-  store i8* %name19, i8** %temp16, align 8
-  %aMessageForMain20 = load %node_struct*, %node_struct** %aMessageForMain, align 8
-  %ifFunctionsDontWorkMyGod21 = load %node_struct*, %node_struct** %ifFunctionsDontWorkMyGod, align 8
-  %malloccall22 = tail call i8* @malloc(i32 ptrtoint (%edge_t* getelementptr (%edge_t, %edge_t* null, i32 1) to i32))
-  %myEdgeStruct = bitcast i8* %malloccall22 to %edge_t*
-  %"name'23" = getelementptr inbounds %edge_t, %edge_t* %myEdgeStruct, i32 0, i32 0
-  %"name'24" = getelementptr inbounds %edge_t, %edge_t* %myEdgeStruct, i32 0, i32 1
-  %"name'25" = getelementptr inbounds %edge_t, %edge_t* %myEdgeStruct, i32 0, i32 2
-  store %node_struct* %aMessageForMain20, %node_struct** %"name'23", align 8
-  store %node_struct* %ifFunctionsDontWorkMyGod21, %node_struct** %"name'24", align 8
-  store i32 0, i32* %"name'25", align 4
+  store i8* getelementptr inbounds ([32 x i8], [32 x i8]* @4, i32 0, i32 0), i8** %temp16, align 8
+  %aMessageForMain17 = load %node_struct*, %node_struct** %aMessageForMain, align 8
+  %ifFunctionsDontWorkMyGod18 = load %node_struct*, %node_struct** %ifFunctionsDontWorkMyGod, align 8
+  %malloccall19 = tail call i8* @malloc(i32 ptrtoint (%edge_t* getelementptr (%edge_t, %edge_t* null, i32 1) to i32))
+  %myEdgeStruct = bitcast i8* %malloccall19 to %edge_t*
+  %"name'20" = getelementptr inbounds %edge_t, %edge_t* %myEdgeStruct, i32 0, i32 0
+  %"name'21" = getelementptr inbounds %edge_t, %edge_t* %myEdgeStruct, i32 0, i32 1
+  %"name'22" = getelementptr inbounds %edge_t, %edge_t* %myEdgeStruct, i32 0, i32 2
+  store %node_struct* %aMessageForMain17, %node_struct** %"name'20", align 8
+  store %node_struct* %ifFunctionsDontWorkMyGod18, %node_struct** %"name'21", align 8
+  store i32 0, i32* %"name'22", align 4
   %newbie = alloca %edge_t*, align 8
   store %edge_t* %myEdgeStruct, %edge_t** %newbie, align 8
-  %newbie26 = load %edge_t*, %edge_t** %newbie, align 8
-  ret %edge_t* %newbie26
+  %newbie23 = load %edge_t*, %edge_t** %newbie, align 8
+  ret %edge_t* %newbie23
 }

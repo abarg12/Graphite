@@ -142,20 +142,19 @@ entry:
   %"lvar'55" = load %node_struct*, %node_struct** @n5, align 8
   %temp56 = getelementptr inbounds %node_struct, %node_struct* %"lvar'55", i32 0, i32 0
   %n5.name = load i8*, i8** %temp56, align 8
-  %new_ptr57 = bitcast i8* %n5.name to i8**
-  %n5.name58 = load i8*, i8** %new_ptr57, align 8
-  store i8* %n5.name58, i8** @myName, align 8
-  %"lvar'59" = load %node_struct*, %node_struct** @n5, align 8
-  %temp60 = getelementptr inbounds %node_struct, %node_struct* %"lvar'59", i32 0, i32 1
-  %n5.flag = load i1, i1* %temp60, align 1
-  %n5.flag61 = load i1, i1* %temp60, align 1
-  store i1 %n5.flag61, i1* @myFlag, align 1
+  %srcNode = load i8*, i8** %temp56, align 8
+  store i8* %srcNode, i8** @myName, align 8
+  %"lvar'57" = load %node_struct*, %node_struct** @n5, align 8
+  %temp58 = getelementptr inbounds %node_struct, %node_struct* %"lvar'57", i32 0, i32 1
+  %n5.flag = load i1, i1* %temp58, align 1
+  %n5.flag59 = load i1, i1* %temp58, align 1
+  store i1 %n5.flag59, i1* @myFlag, align 1
   %myData = load i8*, i8** @myData, align 8
-  %printf62 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.6, i32 0, i32 0), i8* %myData)
+  %printf60 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.6, i32 0, i32 0), i8* %myData)
   %myName = load i8*, i8** @myName, align 8
-  %printf63 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.7, i32 0, i32 0), i8* %myName)
+  %printf61 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.7, i32 0, i32 0), i8* %myName)
   %myFlag = load i1, i1* @myFlag, align 1
-  %printf64 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.8, i32 0, i32 0), i1 %myFlag)
+  %printf62 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.8, i32 0, i32 0), i1 %myFlag)
   ret i32 0
 }
 
@@ -225,14 +224,10 @@ entry:
   store i8* %name4, i8** %temp, align 8
   %"lvar'5" = load %node_struct*, %node_struct** %n1, align 8
   %temp6 = getelementptr inbounds %node_struct, %node_struct* %"lvar'5", i32 0, i32 0
-  %malloccall7 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
-  %bruh8 = bitcast i8* %malloccall7 to i8**
-  store i8* getelementptr inbounds ([96 x i8], [96 x i8]* @1, i32 0, i32 0), i8** %bruh8, align 8
-  %name9 = bitcast i8** %bruh8 to i8*
-  store i8* %name9, i8** %temp6, align 8
-  %"lvar'10" = load %node_struct*, %node_struct** %n1, align 8
-  %temp11 = getelementptr inbounds %node_struct, %node_struct* %"lvar'10", i32 0, i32 1
-  store i1 true, i1* %temp11, align 1
-  %n112 = load %node_struct*, %node_struct** %n1, align 8
-  ret %node_struct* %n112
+  store i8* getelementptr inbounds ([96 x i8], [96 x i8]* @1, i32 0, i32 0), i8** %temp6, align 8
+  %"lvar'7" = load %node_struct*, %node_struct** %n1, align 8
+  %temp8 = getelementptr inbounds %node_struct, %node_struct* %"lvar'7", i32 0, i32 1
+  store i1 true, i1* %temp8, align 1
+  %n19 = load %node_struct*, %node_struct** %n1, align 8
+  ret %node_struct* %n19
 }

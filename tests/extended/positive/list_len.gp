@@ -8,4 +8,4 @@ int i2;
 i2 = array_len(l2);
 printf(i2);
 int i3 = array_len(l3);
-printf(i3);
+#printf(i3);

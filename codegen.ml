@@ -587,34 +587,59 @@ and traverse_isteps i list (builder, stable) =
 
 and count_steps list (builder, stable) = 
     let currnode = L.build_malloc (L.pointer_type list_node) "" builder in
+    let zeroval = L.const_int i32_t 0 in 
     let oneval  = L.const_int i32_t 1 in
     let iter = L.build_malloc i32_t "" builder in
-    let _ = L.build_store list currnode builder in
-    let _ = L.build_store (L.const_int i32_t 0) iter builder in
 
-    let null_node = L.const_pointer_null (L.pointer_type list_node) in
+    let _ = L.build_store (L.const_int i32_t 0) iter builder in
+    let _ = L.build_store list currnode builder in 
 
     let (_, currLLVMfunc) = find_func stable stable.curr_func in 
-    let pred_bb = L.append_block context "traverse_loop" currLLVMfunc in
-    let _ = L.build_br pred_bb builder in
 
-    let body_bb = L.append_block context "while_body" currLLVMfunc in
-    (** body of traverse is stepping through linked list **) 
-    let bb = L.builder_at_end context body_bb in
-    let temp = L.build_load (L.build_struct_gep (L.build_load currnode "" bb) 1 "temp" bb) "temp" bb in
+        (* let start_bb = L.insertion_block builder in *)
+        let bool_val_if = L.build_is_null list "" builder in
 
-    (* let _ = L.build_store temp next_ptr bb in *)
-    let _ = L.build_store (L.build_add (L.build_load iter "" bb) oneval "add" bb) iter bb in
-    let _ = L.build_store temp currnode bb in 
-    let () = add_terminal bb (L.build_br pred_bb) in
+        let merge_bb_if = L.append_block context "merge" currLLVMfunc in
+        let branch_instr = L.build_br merge_bb_if in
 
-    (** check if i has been brought down to 0, indicating finished traversal **)
-    let pred_builder = L.builder_at_end context pred_bb in
-    let bool_val = L.build_is_not_null (L.build_load currnode "" pred_builder) "" pred_builder in
+        let then_bb_if = L.append_block context "then" currLLVMfunc in
+        let then_builder_if = L.builder_at_end context then_bb_if in
+        let _ = L.build_store zeroval iter then_builder_if in
+        (* let _ = L.build_call printf_func [| int_format_str builder ; (L.const_int i32_t 69) |] "printf" in *)
 
-    let merge_bb = L.append_block context "merge" currLLVMfunc in
-    let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in 
-    let _ = L.position_at_end merge_bb builder in 
+        let () = add_terminal then_builder_if branch_instr in
+
+        let else_bb_if = L.append_block context "else" currLLVMfunc in
+        let else_builder_if = L.builder_at_end context else_bb_if in
+
+            let pred_bb = L.append_block context "traverse_loop" currLLVMfunc in
+            let _ = L.build_br pred_bb else_builder_if in
+
+            let body_bb = L.append_block context "while_body" currLLVMfunc in
+            (** body of traverse is stepping through linked list **) 
+            let bb = L.builder_at_end context body_bb in
+
+            let temp = L.build_load (L.build_struct_gep (L.build_load currnode "" bb) 1 "temp" bb) "temp" bb in
+
+            (* let _ = L.build_store temp next_ptr bb in *)
+            let _ = L.build_store (L.build_add (L.build_load iter "" bb) oneval "add" bb) iter bb in
+            let _ = L.build_store temp currnode bb in 
+            let () = add_terminal bb (L.build_br pred_bb) in
+
+            (** check if i has been brought down to 0, indicating finished traversal **)
+            let pred_builder = L.builder_at_end context pred_bb in
+            let bool_val = L.build_is_not_null (L.build_load currnode "" pred_builder) "" pred_builder in
+
+            let merge_bb = L.append_block context "merge" currLLVMfunc in
+            let m_build = L.builder_at_end context merge_bb in
+            let () = add_terminal m_build (L.build_br merge_bb_if) in
+            let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in 
+            (* let _ = L.position_at_end merge_bb builder in  *)
+
+        let () = add_terminal else_builder_if branch_instr in 
+        let _ = L.build_cond_br bool_val_if then_bb_if else_bb_if builder in
+
+        let _ = L.position_at_end merge_bb_if builder in 
     iter 
 
 
@@ -679,8 +704,10 @@ and array_set_def (builder, stable) args =
 and array_len_def (builder, stable) args =
     match args with
         (typ, SId(list_id)) :: [] ->
+          let _ = L.build_call printf_func [| int_format_str builder ; (L.const_int i32_t 69) |] "printf" in
             let list_dp = find_variable stable list_id in 
             let list_p = L.build_load list_dp "list" builder in
+
 
             let counterp = count_steps list_p (builder, stable) in
             let counter = L.build_load counterp "" builder in
@@ -689,7 +716,7 @@ and array_len_def (builder, stable) args =
 
 
 
-        and array_add_def (builder, stable) args =
+and array_add_def (builder, stable) args =
     match args with
       (typ, SId(list_id)) :: index :: (vtyp, exp) :: [] ->
         let llvm_val = expr (builder, stable) (vtyp, exp) in
