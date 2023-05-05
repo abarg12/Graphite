@@ -295,10 +295,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
         | A.Neg                  -> L.build_neg
         | A.Not                  -> L.build_not)
       e' "tmp" builder 
-  | SId s -> (match styp with 
-                  A.List_t -> let list_ptr = L.build_load (find_variable stable s) s builder in 
-                            L.build_load list_ptr s builder 
-                | _ -> L.build_load (find_variable stable s) s builder)
+  | SId s -> L.build_load (find_variable stable s) s builder
   | SAssign (s, (typ, sexp)) -> 
       (match sexp with
           SCall("array_get", _) -> let e' = expr (builder, stable) (typ, sexp) in
@@ -436,6 +433,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
                           L.build_store node_p p builder) in
       link_list (idx + 1) es node_p) in 
       let _ = link_list 0 ses (L.const_pointer_null list_node) in 
+      (* let _ = L.dump_value (L.build_load list_head "temp" builder) in  *)
       L.build_load list_head "temp" builder
 
 
@@ -539,15 +537,11 @@ and count_steps list (builder, stable) =
 
     (** check if i has been brought down to 0, indicating finished traversal **)
     let pred_builder = L.builder_at_end context pred_bb in
-    (* let _ = L.dump_value currnode in *)
     let bool_val = L.build_is_not_null (L.build_load currnode "" pred_builder) "" pred_builder in
-    (* let bool_val = L.build_icmp L.Icmp.Ne oneval zeroval "" pred_builder in *)
 
     let merge_bb = L.append_block context "merge" currLLVMfunc in
-    (* let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in *)
     let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in 
     let _ = L.position_at_end merge_bb builder in 
-    (* L.build_load next_ptr "" builder  *) 
     iter 
 
 
@@ -633,7 +627,6 @@ and array_len_def (builder, stable) args =
         let array_node = L.const_named_struct list_node [| L.const_pointer_null (L.pointer_type i8_t); L.const_pointer_null (L.pointer_type list_node); |] in 
         (** generalize the value to an i8_t pointer **)
         let llvm_i8 = L.build_pointercast llvm_ptr (L.pointer_type i8_t) "i8ptr" builder in
-        
 
         (** create the node variable **)
         let node_p = L.build_malloc list_node "node_p" builder in 
@@ -641,10 +634,14 @@ and array_len_def (builder, stable) args =
         let _ = L.build_store array_node node_p builder in
         let _ = L.build_store llvm_i8 val_ptr builder in
 
+
         (** get the list **)
         let list_dp = find_variable stable list_id in 
         let list_p = L.build_load list_dp "list" builder in
         let idx = expr (builder, stable) index in
+        let idxminusone = L.build_malloc i32_t "" builder in
+        let _ = L.build_store (L.build_sub idx oneval "" builder) idxminusone builder in
+
 
         (** if you want to add to beginning of list **)
             let (_, currLLVMfunc) = find_func stable stable.curr_func in 
@@ -660,21 +657,29 @@ and array_len_def (builder, stable) args =
             let _ = L.build_store list_p curnextptr then_builder in (**TODO: this line is a guestimate :o*) 
             let _ = L.build_store node_p list_dp then_builder in  (**TODO: this line is a guestimate :o*) 
 
+
             (* let (then_builder, _) = stmt ((L.builder_at_end context then_bb), stable) then_stmt in *)
             let () = add_terminal then_builder branch_merge in
-
 
             let else_bb = L.append_block context "else" currLLVMfunc in
             let else_builder = L.builder_at_end context else_bb in
 
+            let beforev = traverse_isteps (L.build_load idxminusone "" else_builder) list_p (else_builder, stable) in
+            let before = L.build_load beforev "" else_builder in 
+            let beforeptr = L.build_struct_gep before 1 "temp" else_builder in 
+            let _ = L.build_store node_p beforeptr else_builder in    
 
+            let targetv = traverse_isteps idx list_p (else_builder, stable) in
+            let target = L.build_load targetv "" else_builder in 
 
+            let curnext = L.build_struct_gep node_p 1 "temp" else_builder in
+
+            let _ = L.build_store target curnext else_builder in
 
             let () = add_terminal else_builder branch_merge in 
             let _ = L.build_cond_br bool_val then_bb else_bb builder in
 
-
-            let _ = L.builder_at_end context merge_bb, stable in (**TODO: change this*)
+            let _ = L.position_at_end merge_bb builder in 
             list_p
 
 
