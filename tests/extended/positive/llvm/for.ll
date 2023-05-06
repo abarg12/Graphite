@@ -25,6 +25,8 @@ declare i8 @nodeExists(%node_struct*, ...)
 
 declare i8* @array_add(i8*, i32, i8*, ...)
 
+declare i8* @array_del(i8*, i32, ...)
+
 define i32 @main() {
 entry:
   store i32 99, i32* @i, align 4

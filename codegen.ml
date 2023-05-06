@@ -188,10 +188,10 @@ let array_add_t =
 let array_add_func = 
   L.declare_function "array_add" array_add_t the_module in
 
-(* let array_delete_t =
+let array_del_t =
   L.var_arg_function_type (L.pointer_type i8_t) [| L.pointer_type i8_t; i32_t; |] in
-let array_delete_func = 
-  L.declare_function "array_delete" array_delete_t the_module in *)
+let array_del_func = 
+  L.declare_function "array_del" array_del_t the_module in
 
 (* let add_node_t : L.lltype = 
   L.var_arg_function_type void_t [| L.pointer_type i8_t ; L.pointer_type i8_t |] in *)
@@ -303,6 +303,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
         | "array_set" -> array_set_def (builder, stable) args
         | "array_add" -> array_add_def (builder, stable) args
         | "array_len" -> array_len_def (builder, stable) args  
+        | "array_del" -> array_del_def (builder, stable) args
         | _ -> let (fdecl_opt, llvm_decl) = find_func stable name in
           let sfdecl = (match fdecl_opt with
                         Some(f) -> f
@@ -442,6 +443,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
     | "add" -> array_add_def (builder, stable) ((List_t, SId(ds_name))::args)
     | "get" -> array_get_def (builder, stable) ((List_t, SId(ds_name))::args) 
     | "len" -> array_len_def (builder, stable) ((List_t, SId(ds_name))::args) 
+    | "del" -> array_del_def (builder, stable) ((List_t, SId(ds_name))::args) 
     | _ -> raise (Failure ("invalid methods")))
   | SEdge(n1, n2) -> 
       let n1' = expr (builder, stable) n1 in
@@ -501,7 +503,7 @@ and traverse_isteps i list (builder, stable) =
     (* L.build_load next_ptr "" builder  *) 
     currnode
 
-  and count_steps list (builder, stable) =
+and count_steps list (builder, stable) =
     let currnode = L.build_malloc (L.pointer_type list_node) "" builder in
     let zeroval = L.const_int i32_t 0 in
     let oneval  = L.const_int i32_t 1 in
@@ -558,32 +560,68 @@ and traverse_isteps i list (builder, stable) =
  
         let _ = L.position_at_end merge_bb_if builder in
     iter
-(* and array_delete_def (builder, stable) args = 
+
+
+and array_del_def (builder, stable) args = 
     (match args with
         (typ, SId(list_id)) :: index :: [] ->
           let list_dp = find_variable stable list_id in 
           let list_p = L.build_load list_dp "list" builder in
-          let idx = expr (builder, stable) index in
 
-          let zeroval = L.const_int i32_t 0 in
-          
+          let i = expr (builder, stable) index in
 
-          let todeletev = traverse_isteps idx list_p (builder, stable) in
-          let todelete = L.build_load todeletev "" builder in 
-          let iminus1 = L.build_alloca i32_t "iter" builder in
-          let _ = L.build_store (L.build_sub idx (L.const_int i32_t 1) "temp" builder) iminus1 builder in
-          let beforev = traverse_isteps iminus1 list_p (builder, stable) in
-          let before = L.build_load afterv "" builder in 
+          let currnode = L.build_malloc (L.pointer_type list_node) "" builder in
+          let zero = L.const_int i32_t 0 in
+          let oneval  = L.const_int i32_t 1 in
+          let iter = L.build_malloc i32_t "" builder in
+       
+          let _ = L.build_store (L.const_int i32_t 0) iter builder in
+          let _ = L.build_store list_p currnode builder in
+       
+          let (_, currLLVMfunc) = find_func stable stable.curr_func in
+       
+              (* let start_bb = L.insertion_block builder in *)
+              let bool_val_if = L.build_icmp L.Icmp.Eq i zero "equaltozero" builder in
+       
+              let merge_bb_if = L.append_block context "merge" currLLVMfunc in
+              let branch_instr = L.build_br merge_bb_if in
+              
+              let then_bb_if = L.append_block context "then" currLLVMfunc in
 
-          (* let before_next = L.build_struct_gep before 1 "next" builder in 
-          let _ = L.build_store node_p before_next builder in 
-          if (L.is_null after) 
-                  then list_dp
-                  else let _ = L.build_store after (L.build_struct_gep node_p 1 "next" builder) builder in list_dp *)
+              let then_builder_if = L.builder_at_end context then_bb_if in
+              let delcurnextp = L.build_struct_gep (L.build_load currnode "" then_builder_if) 1 "temp" then_builder_if in
 
-          L.build_load targetptr "retval" builder
+              let delcurnext = L.build_load delcurnextp "" then_builder_if in
+              let _ = L.build_store delcurnext list_dp then_builder_if in
+       
+              let () = add_terminal then_builder_if branch_instr in 
+       
+              let else_bb_if = L.append_block context "else" currLLVMfunc in
+              let else_builder_if = L.builder_at_end context else_bb_if in
 
-      | _ -> raise (Failure "wrong args to array_delete")) *)
+              let idxminusone = L.build_malloc i32_t "" else_builder_if in
+              let _ = L.build_store (L.build_sub i oneval "" else_builder_if) idxminusone else_builder_if in
+              let idxplusone = L.build_malloc i32_t "" else_builder_if in
+              let _ = L.build_store (L.build_add i oneval "" else_builder_if) idxplusone else_builder_if in
+
+              let beforev = traverse_isteps (L.build_load idxminusone "" else_builder_if) list_p (else_builder_if, stable) in
+              let before = L.build_load beforev "" else_builder_if in 
+              let beforeptr = L.build_struct_gep before 1 "temp" else_builder_if in 
+  
+              let targetv = traverse_isteps (L.build_load idxplusone "" else_builder_if) list_p (else_builder_if, stable) in
+              let target = L.build_load targetv "" else_builder_if in 
+              let curnext = L.build_struct_gep target 1 "temp" else_builder_if in
+              (* let currnextv = L.build_load curnext "" else_builder_if in *)
+              let _ = L.build_store (L.build_load curnext "" else_builder_if) beforeptr else_builder_if in 
+              
+              let () = add_terminal else_builder_if branch_instr in
+              let _ = L.build_cond_br bool_val_if then_bb_if else_bb_if builder in
+       
+              let _ = L.position_at_end merge_bb_if builder in
+
+          list_dp
+
+      | _ -> raise (Failure "wrong args to array_delete"))
 
 and array_get_def (builder, stable) args = 
     (match args with
@@ -629,7 +667,7 @@ and array_len_def (builder, stable) args =
 
 
 
-        and array_add_def (builder, stable) args =
+and array_add_def (builder, stable) args =
     match args with
       (typ, SId(list_id)) :: index :: (vtyp, exp) :: [] ->
         let llvm_val = expr (builder, stable) (vtyp, exp) in
@@ -2097,7 +2135,7 @@ let init_stable = add_func "array_get" (None, array_get_func) init_stable in
 let init_stable = add_func "array_set" (None, array_set_func) init_stable in
 let init_stable = add_func "array_add" (None, array_add_func) init_stable in
 let init_stable = add_func "array_len" (None, array_len_func) init_stable in
-(* let init_stable = add_func "array_delete" (None, array_delete_func) init_stable in *)
+let init_stable = add_func "array_del" (None, array_del_func) init_stable in
 (*let init_stable = add_func "addNode" (None, addNode) init_stable in *)
 let init_stable = add_func "nodeExists" (None, nodeExists_func) init_stable in 
 

@@ -28,6 +28,8 @@ declare i8 @nodeExists(%node_struct*, ...)
 
 declare i8* @array_add(i8*, i32, i8*, ...)
 
+declare i8* @array_del(i8*, i32, ...)
+
 define i32 @main() {
 entry:
   store i8* getelementptr inbounds ([9 x i8], [9 x i8]* @0, i32 0, i32 0), i8** @a, align 8

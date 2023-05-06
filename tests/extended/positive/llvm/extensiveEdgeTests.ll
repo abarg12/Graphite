@@ -42,6 +42,8 @@ declare i8 @nodeExists(%node_struct*, ...)
 
 declare i8* @array_add(i8*, i32, i8*, ...)
 
+declare i8* @array_del(i8*, i32, ...)
+
 define i32 @main() {
 entry:
   %malloccall = tail call i8* @malloc(i32 ptrtoint (%edge_t* getelementptr (%edge_t, %edge_t* null, i32 1) to i32))

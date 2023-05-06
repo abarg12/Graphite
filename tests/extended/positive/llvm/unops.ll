@@ -30,6 +30,8 @@ declare i8 @nodeExists(%node_struct*, ...)
 
 declare i8* @array_add(i8*, i32, i8*, ...)
 
+declare i8* @array_del(i8*, i32, ...)
+
 define i32 @main() {
 entry:
   %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @0, i32 0, i32 0))
