@@ -282,6 +282,11 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
                                 let e_cast_val = L.build_load e_cast "val_ptr" builder in
                                 let _ = L.build_store e_cast_val (find_variable stable s) builder in 
                                 e'
+        | SDotCall(_, "get", _) -> let e' = expr (builder, stable) (typ, sexp) in
+                                        let e_cast = L.build_pointercast e' (L.type_of (find_variable stable s)) "li_conv" builder in
+                                        let e_cast_val = L.build_load e_cast "val_ptr" builder in
+                                        let _ = L.build_store e_cast_val (find_variable stable s) builder in 
+                                        e'
         | _ -> let e' = expr (builder, stable) (typ, sexp) in
           let _ = L.build_store e' (find_variable stable s) builder in 
           e')
@@ -1832,7 +1837,7 @@ and stmt (builder, stable) = function
     SExpr (typ, sexp) -> 
       (match (typ, sexp) with
           (A.List_t, SAssign(s, (typ, SDotCall(ds, "getEdgesOf", args)))) -> bindassign (builder, stable) (A.List_t, s, (typ, SDotCall(ds, "getEdgesOf", args)))
-        | (A.List_t, SAssign(s,(typ,SList(es)))) -> bindassign (builder, stable) 
+        | (A.List_t, SAssign(s, (typ,SList(es)))) -> bindassign (builder, stable) 
                                                     (A.List_t, s, (typ, SList(es)))
         | _ -> let _ = expr (builder, stable) (typ, sexp) in (builder, stable))
 
