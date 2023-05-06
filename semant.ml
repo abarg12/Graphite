@@ -37,7 +37,7 @@ let check (decls) =
                                                  ("array_get", List_t, [(List_t, "arr");(Int, "idx")]);
                                                  ("array_set", List_t, [(List_t, "arr");(Int, "idx");(Void, "poly")]);
                                                  ("array_add", List_t, [(List_t, "arr");(Int, "idx");(Void, "poly")]);
-                                                 ("array_delete", List_t, [(List_t, "arr");(Int, "idx");]);
+                                                 ("array_del", List_t, [(List_t, "arr");(Int, "idx");]);
                                                  ("array_len", Int, [(List_t, "arr")]);
                                                  ]
   in
@@ -75,7 +75,8 @@ let check (decls) =
     in List.fold_left add_bind StringMap.empty [ ("get", Void, [(Int, "idx")]);
                                                  ("set", List_t, [(Int, "idx");(Void, "poly")]);
                                                  ("add", List_t, [(Int, "idx");(Void, "poly")]);
-                                                 ("len", Int, []);]
+                                                 ("len", Int, []);
+                                                 ("del", Int, [(Int, "idx");])]
   in
   let built_in_node_meths =
     let add_bind map (name, ty, forms) = StringMap.add name {
