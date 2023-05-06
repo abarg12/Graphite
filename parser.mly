@@ -87,14 +87,6 @@ block_body:
 /* nothing */              { [] }
   | block_body b_line { $2 :: $1 }
 
-/* A list of declarations is a tuple of two lists:
-     the first is the bind-assign declarations,
-     the second is just variable bindings without initializations */
-vdecl_list:
-                           { ([], []) }
-  | vdecl_list vdecl       { (fst $1, ($2 :: snd $1)) }
-  | vdecl_list bind_assign { (($2 :: fst $1), snd $1) }
-
 
 vdecl:
     typ ID SEMI  { ($1, $2) }
@@ -102,11 +94,6 @@ vdecl:
 bind_assign:
     typ ID ASSIGN expr SEMI { ($1, $2, $4) }
 
-/*
-stmt_list:
-     { [] }
-  | stmt_list stmt { $2 :: $1 }
-  */
 
 stmt:
     expr SEMI                               { Expr $1               }
@@ -162,7 +149,6 @@ args_list:
     expr                    { [$1] }
   | args_list COMMA expr { $3 :: $1 }
 
-/* lists */
 list_opt:
     /* nothing */        { [] }
   | expr_list            { List.rev $1 }
@@ -170,10 +156,3 @@ list_opt:
 expr_list:
     expr                 { [$1] }
   | expr_list COMMA expr { $3 :: $1 }
-
-flag_opt:
-    /* nothing */        { [] }
-  | flags_list           { List.rev $1 }
-flags_list:
-    ID                   { [$1] }
-  | flags_list COMMA ID  { $3 :: $1 }

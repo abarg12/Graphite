@@ -29,8 +29,14 @@ HOW TO RUN TEST SCRIPT:
         This generates an executable in the folder tests/compile/
         that can be run with ./file_name.exe
 
-INTEGRATION TESTS
+EXTENDED TEST SUITES (tests/extended)
     POSITIVE TESTS: 
+    
+        add_node_by_add_edge: make sure when you add an edge which has 
+        a node not in graph it adds the node to the graph
+        
+        adding_node_to_tree: make sure you can properly add a node to 
+        tree 
     
         bind_assign.gp (NEW IN GRAPHITE)
             tests variable declaration and assignment in one line
@@ -50,12 +56,42 @@ INTEGRATION TESTS
             example: int a = 1;
                      { float a = 2.2; }
 
+        edge_dotcalls 
+            tests getting the fields of an edge and assigning it to nodes (for
+            source and destination) and ints (for weights), as well as functions
+            that perform these operations
+
+        edges_of
+            generates nodes and edges and adds it to a graph, confirms that an edge
+            exists and gets the edges associated with a node and checks that the values
+            are accurate
+                        
         functions.gp
             tests function definitions and calls
         
         literals.gp
             tests printing some literals (ints, floats, booleans)
-            
+        
+        list_del.gp
+            test deleting nodes
+        
+        list_add.gp
+            test adding elements to lists
+        
+        list_getset.gp 
+            test get and set 
+        
+        list_len.gp 
+            test getting list length. including the edge case of
+            empty lists
+        
+        list.gp 
+            test making lists in a variety of contexts
+
+        node_field.gp
+            make sure that you can set and print nodes, make sure that the info for nodes
+            changes with different assignments and make functions for it            
+        
         printing.gp
             tests the built-in print function
 
@@ -66,15 +102,28 @@ INTEGRATION TESTS
             this tests the ability to set a node field (specifically the flag) 
             value and then retrieve the set value (ex. node.flag = true)  
 
+        while.gp
+            a simple test on while loops (and its predicate of course)
+            should print a, which is 0
+        
+        unops.gp
+            a series of tests on unary operations like not and -
+            on different types like floats and bools
+
+        set_node.gp
+            set the name field of a node and print it
+            
+        retrieveNodes.gp
+            stress testing on getting nodes using getAllNodes() function
+            and array_get
+        
+        retrieveEdges.gp
+            stress testing on getting edges using getAllEdges() function
+            and array_get
+        
+        
 
     NEGATIVE TESTS:
-
-        graph_ops.gp
-            This tests graph declarations (with flags). It ensures that improper 
-            invariant flags are rejected. 
-            example: graph<tree, other> g1;
-
-            'other' is not an approved invariant, so it is rejected. 
 
         neg_binops1.gp
             Graphite does not support binary operations of different types
@@ -94,10 +143,22 @@ INTEGRATION TESTS
             Testing semantic checking of rebind errors; in this test we declare the
             same variable with two different variables, which is not allowed (you 
             can instead redefine the value, you can't redeclare it)
-             
 
+    DEMOS/REPRESENTATIVE PROGRAMS (tests/demos)
+        bobs_connections.gp
+            a simple application using graphs as social networks between
+            friends and connections. prints the number of connections 1
+            user has.
+        
+        claudiasTests.gp
+            creates a function that adds the weight of the first two edges
+            in a list of edges of a node, and returns that total weight 
 
-SYNTAX WE STILL NEED TO ADD:
-    We may look into syntactic sugar for dictionaries, such as:
-        dict_name[key_name] = some_value;
-    
+        edgeBetween.gp
+            a simple function that, given two nodes in a graph, can tell you if 
+            an edge exists between them. 
+        
+        integrationGraphs.gp
+            a simple script that places students-nodes with list data in a graph 
+            and then removes them to calculate the average score of an index in 
+            the list 
