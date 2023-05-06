@@ -1,4 +1,11 @@
-(* Semantically-checked Abstract Syntax Tree and functions for printing it *)
+(*
+sast.ml
+
+@authors Aidan Barg
+         Abby Larson
+         Claudia Aranda Barrios
+         Steven Oh
+*)
 
 open Ast
 (*binop, uniop, dotcall*)
@@ -10,7 +17,6 @@ and sx =
   | SFliteral of string 
   | SId of string
   | SBinop of sexpr * op * sexpr
-  | SSetop of sexpr * setop * sexpr
   | SCall of string * sexpr list
   | SUnop of uop * sexpr
   | SAssign of string * sexpr
@@ -18,8 +24,6 @@ and sx =
   | SDotOp of string * string
   | SDotAssign of string * string * sexpr
   | SList of sexpr list
-  | SDict of (string * ((typ * string * sexpr) list)
-                     * ((typ * string) list))
   | SEdge of sexpr * sexpr
   | SNoexpr
 
@@ -68,8 +72,6 @@ string_of_sexpr (t, e) =
     f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
   | SBinop(e1, o, e2) ->
       string_of_sexpr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_sexpr e2 
-  | SSetop(e1, setop, e2) ->
-      string_of_sexpr e1 ^ " " ^ string_of_setop setop ^ " " ^ string_of_sexpr e2 
   | SId(s) -> s
   | SUnop(o, e) -> string_of_uop o ^ string_of_sexpr e
   | SAssign(n, e) -> n ^ " = " ^ string_of_sexpr e
@@ -77,9 +79,6 @@ string_of_sexpr (t, e) =
   | SDotOp(n1, n2) -> n1 ^ "." ^ n2
   | SDotAssign(n1, n2, e) -> n1 ^ "." ^ n2 ^ " = " ^ string_of_sexpr e
   | SList(es) -> "[" ^ String.concat ", " (List.map string_of_sexpr es) ^ "]"
-  | SDict(id, bind_assigns, binds) -> "dict " ^ id ^ " = " ^ "{\n" ^ 
-                    String.concat "" (List.map string_of_sbind_assign bind_assigns) ^
-                    String.concat "" (List.map string_of_svdecl binds) ^ "}"
   | SEdge(e1, e2) -> string_of_sexpr e1 ^ " -> " ^ string_of_sexpr e2
   | SNoexpr -> ""
  ) ^ ")"

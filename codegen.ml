@@ -1,15 +1,10 @@
-(* Code generation: translate takes a semantically checked AST and
-produces LLVM IR
+(*
+codegen.ml
 
-LLVM tutorial: Make sure to read the OCaml version of the tutorial
-
-http://llvm.org/docs/tutorial/index.html
-
-Detailed documentation on the OCaml LLVM library:
-
-http://llvm.moe/
-http://llvm.moe/ocaml/
-
+@authors Aidan Barg
+         Abby Larson
+         Claudia Aranda Barrios
+         Steven Oh
 *)
 
 (* We'll refer to Llvm and Ast constructs with module names *)
@@ -209,7 +204,7 @@ let to_string styp e = match e with
       true -> SString("1\n")
     | _ -> SString("0\n") )
   | (_, SFliteral f) -> SString (f ^ "\n")
-  | _ -> raise (Failure("type to string not implemented for non-literals"))
+  | _ -> raise (Failure("printf: argument of unsupported type"))
 in
 
   
@@ -458,8 +453,6 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
       let _ = L.build_store initWeight weight builder in 
       edge_struct 
       
-  | _ -> raise (Failure("expr: not implemented"))
-
 (*** begin built-in func defs ***)
 
 (** need to traverse the array for as many steps as indicated in the
@@ -1839,7 +1832,6 @@ and get_edges_of_def (builder, stable) ds_name lst =
   let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
   let _ = L.build_br pred_bb builder in
   let _ = L.position_at_end merge_bb builder in
-    
   L.build_load edgesList "return" builder  
 in
 

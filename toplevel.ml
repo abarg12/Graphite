@@ -1,3 +1,12 @@
+(*
+toplevel.ml
+
+@authors Aidan Barg
+         Abby Larson
+         Claudia Aranda Barrios
+         Steven Oh
+*)
+   
    type action = Ast | Sast | LLVM_IR | Compile
 
    let () =

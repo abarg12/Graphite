@@ -1,12 +1,19 @@
-/* Ocamlyacc parser for Graphite */
+/*
+toplevel.ml
+
+@authors Aidan Barg
+         Abby Larson
+         Claudia Aranda Barrios
+         Steven Oh
+*/
 
 %{
 open Ast
 %}
 
 %token SEMI LPAREN RPAREN LBRACE RBRACE LBRAC RBRAC COMMA PLUS MINUS TIMES DIVIDE ASSIGN COLON NEWLINE DOT ARROW
-%token NOT EQ NEQ LT LEQ GT GEQ AND OR INTER UNION DIFF XOR
-%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID LIST STRING_T DICT 
+%token NOT EQ NEQ LT LEQ GT GEQ AND OR
+%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID LIST STRING_T  
 %token <int> LITERAL
 %token <bool> BLIT
 %token <string> ID FLIT STRING
@@ -23,7 +30,6 @@ open Ast
 %left AND
 %left EQ NEQ
 %left LT GT LEQ GEQ
-%left INTER UNION DIFF XOR
 %left PLUS MINUS
 %left TIMES DIVIDE
 %nonassoc ARROW
@@ -67,7 +73,6 @@ typ:
   | EDGE  LT typ      GT { Edge ($3) } 
   | STRING_T { String }
   | LIST     { List_t }
-  | DICT     { Dict   }
   | NODE  LT typ      GT { Node ($3) } 
   | GRAPH LT typ GT { Graph($3) }
 
@@ -137,10 +142,6 @@ expr:
   | expr GEQ    expr { Binop($1, Geq,   $3)   }
   | expr AND    expr { Binop($1, And,   $3)   }
   | expr OR     expr { Binop($1, Or,    $3)   }
-  | expr UNION  expr { Setop($1, Union, $3)   }
-  | expr INTER  expr { Setop($1, Inter, $3)   }
-  | expr DIFF   expr { Setop($1, Diff, $3)    }
-  | expr XOR    expr { Setop($1, Xor, $3)     }
   | MINUS expr %prec NOT { Unop(Neg, $2)      }
   | NOT expr         { Unop(Not, $2)          }
   | ID ASSIGN expr   { Assign($1, $3)         }
@@ -152,8 +153,6 @@ expr:
   | ID DOT ID ASSIGN expr 
                      { DotAssign($1, $3, $5)  }
   | LBRAC list_opt RBRAC { List($2)           }
-  | typ ID ASSIGN LBRACE vdecl_list RBRACE 
-          { Dict($2, fst $5, snd $5) }
 
 args_opt:
     /* nothing */ { [] }

@@ -1,14 +1,19 @@
-(* Abstract Syntax Tree and functions for printing it *)
+(*
+ast.ml
+
+@authors Aidan Barg
+         Abby Larson
+         Claudia Aranda Barrios
+         Steven Oh
+*)
 
 type op = Add | Sub | Mult | Div | Equal | Neq | Less | Leq | Greater | Geq |
           And | Or 
 
-type setop = Inter | Diff | Union | Xor
-
 type uop = Neg | Not
 
 type typ = Int | Bool | Float | Void | Node of typ | Edge of typ | String |
-           List_t | Dict | Uninitialized | Graph of typ
+           List_t | Uninitialized | Graph of typ
 (* "Uninitialized" is a temp type holder used for node *)
 
 type bind = typ * string
@@ -21,15 +26,12 @@ type expr =
   | String of string
   | Binop of expr * op * expr
   | Unop of uop * expr
-  | Setop of expr * setop * expr
   | Assign of string * expr
   | Call of string * expr list
   | DotCall of string * string * expr list
   | DotOp of string * string 
   | DotAssign of string * string * expr
   | List of expr list
-  | Dict of (string * ((typ * string * expr) list) 
-                      * ((typ * string) list))
   | Edge of expr * expr
   | Noexpr
 
@@ -81,12 +83,6 @@ let string_of_op = function
   | And -> "and"
   | Or -> "or"
 
-let string_of_setop = function
-    Union -> "union"
-  | Inter -> "inter"
-  | Xor -> "xor"
-  | Diff -> "diff"
-
 let string_of_uop = function
     Neg -> "-"
   | Not -> "not"
@@ -102,7 +98,6 @@ let rec string_of_typ = function
   | Graph(typ) -> "graph <" ^ string_of_typ typ ^ ">"
   | String -> "string"
   | List_t -> "list"
-  | Dict -> "dict"
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
 
@@ -119,8 +114,6 @@ string_of_expr = function
   | Binop(e1, o, e2) ->
       string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
   | Unop(o, e) -> string_of_uop o ^ string_of_expr e
-  | Setop(e1, o, e2) ->
-      string_of_expr e1 ^ " " ^ string_of_setop o ^ " " ^ string_of_expr e2
   | Assign(v, e) -> v ^ " = " ^ string_of_expr e
   | Call(f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
@@ -128,9 +121,6 @@ string_of_expr = function
   | DotAssign(i1, i2, e1) -> i1 ^ "." ^ i2 ^ " = " ^ string_of_expr e1
   | DotCall(i1, i2, el) -> i1 ^ "." ^ i2 ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | List(e) -> "[" ^ String.concat ", " (List.map string_of_expr e) ^ "]"
-  | Dict(id, init_binds, binds) -> "dict " ^ id ^ " = " ^ "{\n" ^ 
-                   String.concat "" (List.map string_of_bind_assign init_binds) ^ 
-                   String.concat "" (List.map string_of_vdecl binds) ^ "}"
   | Edge(e1, e2) -> string_of_expr e1 ^ " -> " ^ string_of_expr e2
   | Noexpr -> ""
 

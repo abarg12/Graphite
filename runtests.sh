@@ -50,7 +50,7 @@ run_batch() {
     TEST_DIRS="$BASE_DIR/$1/$SIGN/*"
 
     # make llvm dir
-    if [ $1 == "hello_world" ] || [ $1 == "extended" ]
+    if [ $1 == "hello_world" ] || [ $1 == "extended" ] || [ $1 == "representative" ]
     then make_dir "$BASE_DIR/$1/$SIGN/llvm"
     fi
     
@@ -73,6 +73,14 @@ run_batch() {
             fi
         done
     elif [ $1 == "extended" ]
+    then
+        for TEST_DIR in $TEST_DIRS; do
+            if [[ $TEST_DIR == *.gp ]]
+            then
+                run_llvm $TEST_DIR $SIGN
+            fi
+        done
+    elif [ $1 == "representative" ]
     then
         for TEST_DIR in $TEST_DIRS; do
             if [[ $TEST_DIR == *.gp ]]
@@ -122,6 +130,7 @@ run_all() {
     run_batch "hello_world"
     run_batch "extended" "positive"
     run_batch "extended" "negative"
+    run_batch "representative" "positive"
 }
 
 # $1 TEST_DIR

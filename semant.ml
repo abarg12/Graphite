@@ -357,7 +357,6 @@ let check (decls) =
                             se :: convert_es es scope funcs
         in
         (List_t, SList(convert_es elist scope funcs))
-    | _ -> raise (Failure("expr: " ^ string_of_expr e ^ " not implemented"))
 in
 
 

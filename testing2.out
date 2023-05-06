@@ -1,5 +1,0 @@
-graph<node<int>> g1;
-node<node<int>> n1;
-g1.addNode(n1);
-bool f = g1.nodeExists(n1);
-printf(f);

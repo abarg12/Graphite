@@ -1,4 +1,11 @@
-(* Ocamllex scanner for Graphite *)
+(*
+scanner.mll
+
+@authors Aidan Barg
+         Abby Larson
+         Claudia Aranda Barrios
+         Steven Oh
+*)
 
 { open Parser }
 
