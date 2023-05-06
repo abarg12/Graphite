@@ -65,6 +65,7 @@ define i32 @main() {
 entry:
   %malloccall = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list = bitcast i8* %malloccall to %list_node**
+  store %list_node* null, %list_node** %new_list, align 8
   %malloccall1 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
   %arr_val = bitcast i8* %malloccall1 to i8**
   store i8* getelementptr inbounds ([12 x i8], [12 x i8]* @0, i32 0, i32 0), i8** %arr_val, align 8
@@ -101,6 +102,7 @@ entry:
   store %list_node* %temp16, %list_node** @assignment_names, align 8
   %malloccall17 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list18 = bitcast i8* %malloccall17 to %list_node**
+  store %list_node* null, %list_node** %new_list18, align 8
   %malloccall19 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
   %arr_val20 = bitcast i8* %malloccall19 to i32*
   store i32 13, i32* %arr_val20, align 4
@@ -139,6 +141,7 @@ entry:
   store i32 1, i32* @id_ix, align 4
   %malloccall40 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list41 = bitcast i8* %malloccall40 to %list_node**
+  store %list_node* null, %list_node** %new_list41, align 8
   %assignment_names = load %list_node*, %list_node** @assignment_names, align 8
   %malloccall42 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %arr_val43 = bitcast i8* %malloccall42 to %list_node**
@@ -182,6 +185,7 @@ entry:
   store i8* getelementptr inbounds ([5 x i8], [5 x i8]* @3, i32 0, i32 0), i8** %temp59, align 8
   %malloccall60 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list61 = bitcast i8* %malloccall60 to %list_node**
+  store %list_node* null, %list_node** %new_list61, align 8
   %malloccall62 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
   %arr_val63 = bitcast i8* %malloccall62 to i32*
   store i32 95, i32* %arr_val63, align 4
@@ -243,6 +247,7 @@ entry:
   store i8* getelementptr inbounds ([5 x i8], [5 x i8]* @4, i32 0, i32 0), i8** %temp100, align 8
   %malloccall101 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list102 = bitcast i8* %malloccall101 to %list_node**
+  store %list_node* null, %list_node** %new_list102, align 8
   %malloccall103 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
   %arr_val104 = bitcast i8* %malloccall103 to i32*
   store i32 91, i32* %arr_val104, align 4
@@ -304,6 +309,7 @@ entry:
   store i8* getelementptr inbounds ([5 x i8], [5 x i8]* @5, i32 0, i32 0), i8** %temp142, align 8
   %malloccall143 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list144 = bitcast i8* %malloccall143 to %list_node**
+  store %list_node* null, %list_node** %new_list144, align 8
   %malloccall145 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
   %arr_val146 = bitcast i8* %malloccall145 to i32*
   store i32 95, i32* %arr_val146, align 4
@@ -365,6 +371,7 @@ entry:
   store i8* getelementptr inbounds ([5 x i8], [5 x i8]* @6, i32 0, i32 0), i8** %temp184, align 8
   %malloccall185 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list186 = bitcast i8* %malloccall185 to %list_node**
+  store %list_node* null, %list_node** %new_list186, align 8
   %malloccall187 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
   %arr_val188 = bitcast i8* %malloccall187 to i32*
   store i32 44, i32* %arr_val188, align 4

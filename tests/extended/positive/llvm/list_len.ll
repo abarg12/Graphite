@@ -40,6 +40,7 @@ define i32 @main() {
 entry:
   %malloccall = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list = bitcast i8* %malloccall to %list_node**
+  store %list_node* null, %list_node** %new_list, align 8
   %malloccall1 = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
   %arr_val = bitcast i8* %malloccall1 to i32*
   store i32 1, i32* %arr_val, align 4
@@ -109,6 +110,7 @@ entry:
   store %list_node* %temp37, %list_node** @l, align 8
   %malloccall38 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list39 = bitcast i8* %malloccall38 to %list_node**
+  store %list_node* null, %list_node** %new_list39, align 8
   %malloccall40 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
   %arr_val41 = bitcast i8* %malloccall40 to i8**
   store i8* getelementptr inbounds ([2 x i8], [2 x i8]* @1, i32 0, i32 0), i8** %arr_val41, align 8
@@ -156,6 +158,7 @@ entry:
   store %list_node* %temp67, %list_node** @l2, align 8
   %malloccall68 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list69 = bitcast i8* %malloccall68 to %list_node**
+  store %list_node* null, %list_node** %new_list69, align 8
   %malloccall70 = tail call i8* @malloc(i32 ptrtoint (i8** getelementptr (i8*, i8** null, i32 1) to i32))
   %arr_val71 = bitcast i8* %malloccall70 to i8**
   store i8* getelementptr inbounds ([2 x i8], [2 x i8]* @4, i32 0, i32 0), i8** %arr_val71, align 8
@@ -170,6 +173,7 @@ entry:
   store %list_node* %temp76, %list_node** @l3, align 8
   %malloccall77 = tail call i8* @malloc(i32 ptrtoint (%list_node** getelementptr (%list_node*, %list_node** null, i32 1) to i32))
   %new_list78 = bitcast i8* %malloccall77 to %list_node**
+  store %list_node* null, %list_node** %new_list78, align 8
   %temp79 = load %list_node*, %list_node** %new_list78, align 8
   store %list_node* %temp79, %list_node** @l4, align 8
   %list = load %list_node*, %list_node** @l, align 8

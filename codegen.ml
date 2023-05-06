@@ -70,29 +70,6 @@ let translate decls =
   let graph_ptr = Llvm.pointer_type graph_t in
 
 
-  let rec enforce_invariants gname flags (action : string) = match flags with
-      [] -> "proceed"
-    | flag::rest ->
-      let err = action ^ " failed on " ^ flag ^ " graph " ^ gname in
-      (match (flag, action) with
-          (* adding node to a tree won't break any rules. always true *)
-          ("tree", "addNode") -> enforce_invariants gname rest action
-
-          (* prob need to do dfs  *)
-        | ("tree", "addEdge") -> raise (Failure ("addEdge to tree cannot be enforced yet"))
-
-        (* adding node to a connected graph will always create a disconnected node. always false  *)
-        | ("connected", "addNode") -> raise (Failure (err))
-
-          (* 1. either node x or y must be in graph -> need to search vertex list
-          2.  *)
-        | ("connected", "addEdge") -> raise (Failure ("addEdge to connected cannot be enforced yet"))
-
-        | _ -> raise (Failure ("not an invariant"))
-
-      )
-  in
-
   let list_node = L.named_struct_type context "list_node" in 
     let _ = L.struct_set_body list_node
             [| L.pointer_type (L.i8_type context); L.pointer_type list_node |] false
@@ -414,6 +391,7 @@ let rec expr (builder, stable) ((styp, e) : sexpr) = match e with
 
   | SList(ses) ->
     let list_head = L.build_malloc list_t "new_list" builder in
+    let _ = L.build_store (L.const_pointer_null (L.pointer_type list_node)) list_head builder in
 
     let rec link_list idx es prev_node = (match es with 
         [] -> 0
@@ -1201,7 +1179,7 @@ let src_ptr = L.build_struct_gep e_to_add 0 "src_ptr" builder in
     let _ = L.build_br if_bb builder in
   
     let if_builder = L.builder_at_end context if_bb in
-    let br_ifelse = L.build_cond_br src_exists_loaded merge_bb else_bb if_builder in
+    let _ = L.build_cond_br src_exists_loaded merge_bb else_bb if_builder in
   
     let else_builder = L.builder_at_end context else_bb in
 
@@ -1216,7 +1194,7 @@ let src_ptr = L.build_struct_gep e_to_add 0 "src_ptr" builder in
       let _ = L.build_br if_bb2 builder in
     
       let if_builder2 = L.builder_at_end context if_bb2 in
-      let br_ifelse2 = L.build_cond_br dst_exists_loaded merge_bb2 else_bb2 if_builder2 in
+      let _ = L.build_cond_br dst_exists_loaded merge_bb2 else_bb2 if_builder2 in
     
       let else_builder2 = L.builder_at_end context else_bb2 in
   
@@ -1298,7 +1276,7 @@ and ll_node_exists_then_add_node_def (builder, stable) ds_name to_find' =
 
   let if_builder = L.builder_at_end context if_bb in
   let if_found_bool_val = L.build_icmp L.Icmp.Eq currNode to_find' "found?" if_builder in
-  let br_ifelse = L.build_cond_br if_found_bool_val then_bb else_bb if_builder in
+  let _ = L.build_cond_br if_found_bool_val then_bb else_bb if_builder in
 
   (* then basic block and builder that returns a true if found *)
   let then_builder = L.builder_at_end context then_bb in
@@ -1921,7 +1899,7 @@ and  bind (builder, stable) = function
             | A.Node(ntyp) -> L.const_pointer_null node_t 
             | A.Edge(t) -> L.const_pointer_null edge_t 
             | A.Graph(t, invars) -> L.const_pointer_null graph_ptr 
-            | A.List_t -> L.const_pointer_null (L.pointer_type i8_t)
+            | A.List_t -> L.const_pointer_null (L.pointer_type list_node)
             | _ -> raise (Failure "no global default value set")
           in 
           let new_glob = L.define_global s init the_module in
@@ -2030,7 +2008,7 @@ and bindassign (builder, stable) = function
             | A.Graph(t, invars) -> L.const_pointer_null graph_ptr    
             | A.Node(t) -> L.const_pointer_null node_t           
             | A.Edge(t) -> L.const_pointer_null edge_t   
-            | A.List_t -> L.const_pointer_null (L.type_of e')
+            | A.List_t -> L.const_pointer_null (L.pointer_type list_node)
             | _ -> raise (Failure "no global default value set")
           in 
           let new_glob = L.define_global s init the_module in
