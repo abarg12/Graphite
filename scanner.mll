@@ -42,11 +42,6 @@ rule token = parse
   | "and"    { AND }
   | "or"     { OR }
   | "not"    { NOT }
-  (* set operators *)
-  | "union"  { UNION }
-  | "diff"   { DIFF }
-  | "inter"  { INTER }
-  | "xor"    { XOR }
   (* statements *)
   | "if"     { IF }
   | "else"   { ELSE }
@@ -63,7 +58,6 @@ rule token = parse
   | "edge"   { EDGE }
   | "graph"  { GRAPH }
   | "string" { STRING_T }
-  | "dict"   { DICT }
   (* boolean literals *)
   | "true"   { BLIT(true)  }
   | "false"  { BLIT(false) }

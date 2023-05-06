@@ -1180,13 +1180,6 @@ and add_node_def (builder, stable) styp ds_name lst =
   let _ = L.build_store nodes_hd lst_rst builder in (* add ptr to rest of nodes list *)
   let _ = L.build_store n_to_add node_ptr builder in (* point to newly added node *)
 
-  (* BEGIN INVARIANT *)
-  (*let flags = match styp with
-      Graph(t, flags) -> flags
-    | _ -> raise (Failure ("SDotCall not supported for non-graphs"))
-  in
-  let _ = enforce_invariants ds_name flags "addNode" in*)
-  (* END INVARIANT *)
 
   L.build_store new_node nodes builder
 and add_edge_def (builder, stable) styp ds_name lst =
@@ -1245,18 +1238,7 @@ let src_ptr = L.build_struct_gep e_to_add 0 "src_ptr" builder in
       let _ = L.build_br merge_bb2 else_builder2 in
       let _ = L.position_at_end merge_bb2 builder in
   
-  
-(* let _ =  add_ll_node_def (builder, stable) styp ds_name src in
-let _ =  add_ll_node_def (builder, stable) styp ds_name dst in *)
 
-
-  (* BEGIN INVARIANT *)
-  (* let flags = match styp with
-      Graph(t, flags) -> flags
-    | _ -> raise (Failure ("SDotCall not supported for non-graphs"))
-  in
-  let _ = enforce_invariants ds_name flags "addEdge" in *)
-  (* END INVARIANT *)
 
   L.build_store new_edge edges builder
 and add_ll_node_def (builder, stable) styp ds_name n_to_add =
@@ -1941,7 +1923,7 @@ and  bind (builder, stable) = function
             | A.String -> L.const_pointer_null (L.pointer_type i8_t)
             | A.Node(ntyp) -> L.const_pointer_null node_t 
             | A.Edge(t) -> L.const_pointer_null edge_t 
-            | A.Graph(t, invars) -> L.const_pointer_null graph_ptr 
+            | A.Graph(t) -> L.const_pointer_null graph_ptr 
             | A.List_t -> L.const_pointer_null (L.pointer_type list_node)
             | _ -> raise (Failure "no global default value set")
           in 
@@ -1960,7 +1942,7 @@ and  bind (builder, stable) = function
                   let _ = L.build_store data_ptr data' builder in 
                   let _ = L.build_store node new_glob builder in
                   true
-              | A.Graph(ntyp, invars) -> 
+              | A.Graph(ntyp) -> 
                   let graph = L.build_malloc graph_t "node" builder in 
                   let nodes = L.const_pointer_null (L.pointer_type node_node) in 
                   let edges = L.const_pointer_null (L.pointer_type edge_node) in 
@@ -2001,7 +1983,7 @@ and  bind (builder, stable) = function
                   let _ = L.build_store data_ptr data' builder in 
                   let _ = L.build_store node new_var builder in
                   true
-              | A.Graph(ntyp, invars) -> 
+              | A.Graph(ntyp) -> 
                   let graph = L.build_malloc graph_t "node" builder in 
                   let nodes = L.const_pointer_null (L.pointer_type node_node) in 
                   let edges = L.const_pointer_null (L.pointer_type edge_node) in 
@@ -2048,7 +2030,7 @@ and bindassign (builder, stable) = function
             | A.Int -> L.const_int (ltype_of_typ typ) 0
             | A.Bool -> L.const_int (ltype_of_typ typ) 0
             | A.String -> L.const_pointer_null (L.type_of e')
-            | A.Graph(t, invars) -> L.const_pointer_null graph_ptr    
+            | A.Graph(t) -> L.const_pointer_null graph_ptr    
             | A.Node(t) -> L.const_pointer_null node_t           
             | A.Edge(t) -> L.const_pointer_null edge_t   
             | A.List_t -> L.const_pointer_null (L.pointer_type list_node)
@@ -2069,7 +2051,7 @@ and bindassign (builder, stable) = function
                   let _ = L.build_store data_ptr data' builder in 
                   let _ = L.build_store node new_glob builder in
                   true
-              | A.Graph(ntyp, invars) -> 
+              | A.Graph(ntyp) -> 
                 let graph = L.build_malloc graph_t "node" builder in 
                 let nodes = L.const_pointer_null (L.pointer_type node_node) in 
                 let edges = L.const_pointer_null (L.pointer_type edge_node) in 

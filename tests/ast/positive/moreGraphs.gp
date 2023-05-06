@@ -1,11 +1,11 @@
-graph <int, tree, connected> sometraversal(graph<int, tree> somevar) {
-    graph<int, tree, connected> pants;
+graph <int> sometraversal(graph<int> somevar) {
+    graph<int> pants;
     return pants;
 }
 
-graph <int, tree> abc; 
-graph <int, tree, connected> abcd = sometraversal(abc);
+graph <int> abc; 
+graph <int> abcd = sometraversal(abc);
 
-graph <int, tree, connected> abcde;
+graph <int> abcde;
 
 abcde = sometraversal(abc);
