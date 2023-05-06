@@ -1,4 +1,4 @@
-graph <int, tree, connected> sometraversal(graph<int, flag1, flag3> somevar) {
-    graph<int, tree, blah> pants;
+graph <int> sometraversal(graph<int> somevar) {
+    graph<int> pants;
     return pants;
 }

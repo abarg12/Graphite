@@ -60,11 +60,7 @@ let check (decls) =
                                                  ("getAllNodes", List_t, []);
 
                                                  ("nodeExists", Bool, [(Node(Uninitialized), "toFind")]); 
-                                                 ("removeNode", Bool, [(Node(Uninitialized), "toFind")]); 
-                                                 
-                                                (* ("getByName", Graph(Uninitialized, []), [(String, "toFind")]); 
-                                                 ("nodeExists", Bool, [(Node(Uninitialized), "toFind")]); 
-                                                 ("getNode", Node(Uninitialized), [(Node(Uninitialized), "toFind")]); *)]
+                                                 ("removeNode", Bool, [(Node(Uninitialized), "toFind")]); ]
   in
   let built_in_list_meths = 
     let add_bind map (name, ty, forms) = StringMap.add name {
@@ -88,7 +84,6 @@ let check (decls) =
     
 
   (* this is where we're gonna add more invariants later heeheehoohoo*)
-  let invariants = ["tree"; "connected"; "uniqueName"]  in
   let graph_meths = built_in_graph_meths in
   let node_meths = built_in_node_meths in 
   let list_meths = built_in_list_meths in 
@@ -102,9 +97,6 @@ let check (decls) =
   in 
 
   (* make sure that an invariant is a valid invariant *)
-  let find_invar x = 
-    find_elt x invariants "invariant"
-  in 
 
   let find_node_field x = 
     find_elt x node_fields "node field" 
@@ -114,17 +106,11 @@ let check (decls) =
     find_elt x edge_fields "edge field" 
   in
   
-  (* let find_method m data_structs = (* needs to  *)
-    let meths = graph_meths (* instead of hard coding graph meths, make it so that you can pattern match and find which ds you want*)
-    in  
-    try StringMap.find m meths
-    with Not_found -> raise (Failure ("method " ^ m ^ " not found in data struct")) 
-  in *)
 
   let find_method m data_structs scope = 
     let ds = find_variable scope data_structs in (*data_structs is the name, we need the actual type of it *)
     let meths = (match ds with 
-        Graph(_, _) -> graph_meths
+        Graph(_) -> graph_meths
       | Node(_) -> node_meths
       | List_t -> list_meths
       | _ -> raise (Failure ("Data Struct " ^ string_of_typ ds ^ " not found")))
@@ -224,7 +210,6 @@ let check (decls) =
           let err = "illegal assignment " ^ x ^ " : " ^ string_of_typ lt ^ " = " ^ string_of_typ rt in
           if lt = rt then (rt, SAssign(x, (rt, e'))) else raise (Failure err))
     | DotOp(var, field) ->
-      (* node.field access *)
 
       (* assert field is correct *)
       let _ = assert_field var field scope in
@@ -234,22 +219,15 @@ let check (decls) =
 
       (field_ty, SDotOp(var, field))
     | DotAssign(var, field, e) -> 
-        (* node.field = value *)
 
         (* assert field is correct *)
         let _ = assert_field var field scope in
         (* get the type of field *)
         let field_ty = get_field_ty var field scope in
-        (* expr returns (scope, (A.typ, S.sx)) *)
         let (e_ty, e_sx) = expr scope funcs e in
 
         let err = "illegal assignment " ^ var ^ "." ^ field ^ " : " ^ string_of_typ field_ty ^ " = " ^ string_of_typ e_ty in
-       (*(match field_ty with
-            (* if field is Uninitialized, bind to type of expression *)
-            Uninitialized ->
-              (* let field_bound_scope = bind_var scope var (Node(e_ty)) in *)
-              (e_ty, SDotAssign(var, field, (e_ty, e_sx)))
-          | _ ->*)
+ 
             (if field_ty = e_ty
             then (e_ty, SDotAssign(var, field, (e_ty, e_sx)))
             else raise (Failure err))
@@ -281,26 +259,6 @@ let check (decls) =
                     string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^
                     string_of_typ t2 ^ " in " ^ string_of_expr e))
       in (ty, SBinop((t1, e1'), op, (t2, e2')))
-    | Setop(e1, setop, e2) as e -> 
-        let (t1, e1') = expr scope funcs e1 in
-        let (t2, e2') = expr scope funcs e2 in
-
-        let same = t1 = t2 in
-        let (typ, fields) = match t1 with 
-          Graph(typ, fields) -> (typ, fields)
-          | _ -> raise (
-            Failure ("illegal set operator " ^
-                          string_of_typ t1 ^ " " ^ string_of_setop setop ^ " " ^
-                          string_of_typ t2 ^ " in " ^ string_of_expr e))
-        in 
-        let ty = match setop with
-          Union | Inter | Xor | Diff when same && t1 = Graph(typ, fields) -> Graph(typ, fields)
-        | _ -> raise (
-          Failure ("illegal binary operator " ^
-                    string_of_typ t1 ^ " " ^ string_of_setop setop ^ " " ^
-                    string_of_typ t2 ^ " in " ^ string_of_expr e))
-        in 
-        (ty, SSetop((t1, e1'), setop, (t2, e2')))
     | Call(fname, args) ->
       let f = find_func fname funcs in
       if fname = "printf"
@@ -356,7 +314,7 @@ let check (decls) =
       let dsty = find_variable scope ds in
       let dsIntTy = match dsty with 
           Node(ty) -> ty 
-        | Graph(ty, invars) -> ty
+        | Graph(ty) -> ty
         | Edge(ty) -> ty 
         | List_t -> List_t 
         | _ -> raise(Failure("semant/DotCall: invalid dsty"))
@@ -374,7 +332,7 @@ let check (decls) =
             (* make sure that overall type for function matches (eg node given for a node)
                and the type of that matches the type of the ds *)
              (Node(ty1), Node(ty2)) -> ty1 = dsIntTy
-           | (Graph(ty1, invars), Graph(ty2, invars2)) -> ty1 = dsIntTy (* TODO might have to change later to check invars*)
+           | (Graph(ty1), Graph(ty2)) -> ty1 = dsIntTy (* TODO might have to change later to check invars*)
            | (Edge(ty1), Edge(ty2)) -> ty1 = dsIntTy
            | (ty1, ty2) -> ty1 = ty2
         in
@@ -388,35 +346,9 @@ let check (decls) =
         | _ -> md.typ
       in
       (match mname with
-          "addNode" -> (dsty, SDotCall(ds, mname, sexprs)) (* codegen might need the flags info *)
-        | "addEdge" -> (dsty, SDotCall(ds, mname, sexprs)) (* codegen might need the flags info *)
+          "addNode" -> (dsty, SDotCall(ds, mname, sexprs)) 
+        | "addEdge" -> (dsty, SDotCall(ds, mname, sexprs)) 
         | _ -> (retTy, SDotCall(ds, mname, sexprs)))
-    (* | DotCall(oname, mname, args) -> (*find_method takes a data structure and a fname and throws error if not there*)
-      (* graph_name.add(node_name); *)
-      (* why do we need to check this by hardcoding?
-      graph methods should be able to handle any node
-      we cannot expect a node<?> because we don't know <?> *)
-      let o_ty = find_variable scope oname in
-      (match o_ty with
-          Graph(typ, flags) ->
-            (match mname with
-                "add" ->
-                  (match args with
-                      [Id(nname)] ->
-                        let sexpr = expr scope funcs (Id(nname)) in
-                        let (node_ty, node_sx) = sexpr in
-                        (match node_ty with
-                            Node(d_ty) ->
-                              (node_ty, SDotCall(oname, mname, [sexpr]))
-                          | _ -> raise (Failure("dotcall: graph. " ^ mname ^ " not yet implemented for non-node"))
-                        )
-                    | _ -> raise (Failure("dotcall: graph. " ^ mname ^ " expects id as arg"))
-                  )
-              | _ -> raise (Failure("dotcall: graph. " ^ mname ^ " not yet implemented"))
-            (* (scope, (node_ty, SDotCall(oname, mname, sargs))) *)
-            )
-        | _ -> raise (Failure("dotcall: non-graph not yet implemented"))
-      )*)
     | List(elist) ->
         let rec convert_es es scope funcs = match es with
             [] -> []
@@ -438,16 +370,10 @@ in
   let rec check_dty n1 n2 = match (n1, n2) with
       (Node(dty1), Node(dty2)) -> dty1 = dty2
     | (Edge(dty1), Edge(dty2)) -> dty1 = dty2
-    | (Graph(typ1, fields1), Graph(typ2, fields2)) -> 
-        if typ1 = typ2 && fields1 = fields2 then true else false
+    | (Graph(typ1), Graph(typ2)) -> typ1 = typ2 
     | _ -> raise (Failure("node/edge typecheck failed"))
   in 
 
-  (*let same_graph_typ t1 t2 = match (t1, t2) with  
-    (Graph(typ1, fields1), Graph(typ2, fields2)) -> 
-        if typ1 = typ2 && fields1 = fields2 then true else false
-    | _ -> t1 = t2 
-  in*)
   (* Return a semantically-checked statement i.e. containing sexprs *)
   let rec check_stmt scope funcs s =
     match s with
@@ -487,11 +413,6 @@ in
           let my_func = find_func (extract_func_name scope.curr_func) funcs in 
           if my_func.typ = ty_e (*|| (same_graph_typ my_func.typ ty_e)*) then SReturn (sast)
           else raise (Failure ("function " ^ my_func.fname ^ " returning wrong type " ^ string_of_typ ty_e ^ " rather than " ^ string_of_typ my_func.typ)) 
-          (** TODO: in the function body that holds 
-                                    this return, look at the type of
-                                    e returned and make sure it matches
-                                    function return type in func def **)
-      (** add another global to tell us which function nwe are in *)
     | Block(bs) -> 
         let new_scope = { variables = StringMap.empty ; parent = Some scope; curr_func = scope.curr_func } in
         SBlock(check_body new_scope funcs bs)
@@ -504,18 +425,13 @@ in
         raise (Failure (x ^ " already declared in current scope"))
       with Not_found -> 
         match t with 
-           Graph(typ, fields) ->
-              let _ = List.map find_invar fields in
+           Graph(typ) ->
               SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest
           | Node(ty) -> 
             let scope1 = (bind_var scope x t) in 
-            (*let scope2 = (bind_var scope1 (x ^ ".data") Uninitialized) in *)
-            (*I THINK NODES NEED TO BE (NODE of DATA)*)
             SLocalBind(t, x)::check_body scope1 funcs rest
           | Edge(ty) -> 
             let scope1 = (bind_var scope x t) in 
-            (*let scope2 = (bind_var scope1 (x ^ ".src.data") Uninitialized) in 
-            let scope3 = (bind_var scope2 (x ^ ".dst.data") Uninitialized) in *)
             SLocalBind(t, x)::check_body scope1 funcs rest
           | _ -> SLocalBind(t, x)::check_body (bind_var scope x t) funcs rest)
   | LocalBindAssign(t, x, e)::rest -> 
@@ -532,14 +448,8 @@ in
         ) in 
 
         match t with 
-          Graph(typ, fields) ->
-              let _ = List.map find_invar fields in  
+          Graph(typ) ->
               SLocalBindAssign(t, x, (t', sexp))::check_body (bind_var scope x t) funcs rest (*CHANGEED HERE ASK ABBY*)
-        (*| Edge -> 
-          let scope1 = (bind_var scope x t) in 
-          let scope2 = (bind_var scope1 (x ^ ".src.data") Uninitialized) in 
-          let scope3 = (bind_var scope2 (x ^ ".dst.data") Uninitialized) in 
-          SLocalBind(t, x)::check_body scope3 funcs rest*)
         | _ -> 
         let (_, sexp) = expr scope funcs e in
         SLocalBindAssign(t, x, (t', sexp))::check_body (bind_var scope x t) funcs rest) (*should this be the new scope?*)
@@ -566,30 +476,19 @@ in
           raise (Failure (x ^ " already declared in current scope"))
         with Not_found -> 
           match t with 
-             Graph(typ, fields) ->
-                let _ = List.map find_invar fields in  
+             Graph(typ) ->
                 SBind(t, x)::check_decls (bind_var scope x t) funcs rest
             | Node(ty) -> 
               let scope1 = (bind_var scope x t) in 
-              (*let scope2 = (bind_var scope1 (x ^ ".data") Uninitialized) in *)
               SBind(t, x)::check_decls scope1 funcs rest
             | Edge(ty) -> 
               let scope1 = (bind_var scope x t) in 
-              (*let scope2 = (bind_var scope1 (x ^ "src.data") Uninitialized) in 
-              let scope3 = (bind_var scope2 (x ^ "dst.data") Uninitialized) in *)
               SBind(t, x)::check_decls scope1 funcs rest
             | _ -> SBind(t, x)::check_decls (bind_var scope x t) funcs rest)
     | BindAssign(t, x, e)::rest ->
         (try
           let _ = find_loc_variable scope x in
           raise (Failure (x ^ " already declared in current scope"))
-        (* with Not_found -> 
-          let (_, (t', sexp)) = expr scope funcs e in
-          let _ = (match sexp with
-              SCall("array_get", _) -> ()
-            | _ -> if t != t' then raise (Failure("bind assign"))
-          ) in 
-          match t with  *)
         with Not_found ->
 
         (* real stuff here *)
@@ -607,31 +506,10 @@ in
           then raise (Failure(err))
           else SBindAssign(t, x, (et, sx))::check_decls (bind_var scope x t) funcs rest
           (* graphs cannot be assigned to something??? *)
-          (* match t with 
-            Graph(fields) ->
-                let _ = List.map find_invar fields in  
-                let (_, sexp) = expr scope funcs e in 
-                SBindAssign(t,x , sexp)::check_decls (bind_var scope x t) funcs rest
-            | _ -> 
-                let (_, sexp) = expr scope funcs e in 
-                SBindAssign(t,x , sexp)::check_decls (bind_var scope x t) funcs rest) *)
         )
         (* *)
     | Statement(s)::rest ->
-      (*let node_data_typ = { changed = false; type_of = Uninitialized } in 
-      let node_data_typ_ptr node_data_typ = Pointer (ref node_data_typ) in *)
       let ss = check_stmt scope funcs s in   
-      (*let (t, e') = match s with 
-         Expr e -> 
-            match e with 
-               DotAssign(var, field, e) -> expr scope funcs e
-      in 
-      let new_scope = match node_data_typ.changed with    
-            true -> 
-              match s with 
-              bind_var scope x node_data_typ.type_of
-          | false -> scope 
-      in *)
       SStatement(ss)::check_decls scope funcs rest
     | Fdecl(b)::rest -> 
       let updated_funcs = add_func b funcs in 

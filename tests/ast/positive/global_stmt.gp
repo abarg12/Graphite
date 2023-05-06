@@ -12,10 +12,6 @@ int main () {
 
 int c;
 
-dict deStruct = {
-    int i;
-};
-
 int fun1 () {
     int d;
     d = 3;
